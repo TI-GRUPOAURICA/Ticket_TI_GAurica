@@ -11,10 +11,18 @@ import Reportes from "./pages/Reportes";
 import Inventario from "./pages/Inventario";
 import SeguimientoTicket from "./pages/SeguimientoTicket";
 import ColaboradorHome from "./pages/ColaboradoresHome";
+import { ADMINS } from "./config/admins";
 
 export default function App() {
 
   const [session, setSession] = useState(null);
+
+const user = {
+  email: "stanley@grupoaurica.com"
+};
+
+const esAdmin =
+  ADMINS.includes(user.email);
 
   const [loading, setLoading] = useState(true);
 
@@ -125,14 +133,24 @@ export default function App() {
     }
 
     // HOME COLABORADOR
-    return <Login />;
-    // LOGIN
-    return (
+  if (esAdmin) {
 
-      <Login />
+  return (
 
-    );
+    <Layout
+      onNavigate={setCurrentPage}
+      currentPage={currentPage}
+    >
 
+      {renderPage()}
+
+    </Layout>
+
+  );
+
+}
+
+return <Login />;
   }
 
   // RENDER ADMIN
