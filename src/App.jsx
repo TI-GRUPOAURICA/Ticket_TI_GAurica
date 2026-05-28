@@ -125,34 +125,7 @@ export default function App() {
     }
 
     // HOME COLABORADOR
-    if (viendoColaboradorHome) {
-
-      return (
-
-        <ColaboradorHome
-
-          user={{
-            name: "Stanley"
-          }}
-
-          onRegistrarTicket={() =>
-            setViendoPortal(true)
-          }
-
-          onSeguimiento={() =>
-            setViendoSeguimiento(true)
-          }
-
-          onLogout={() =>
-            console.log("logout")
-          }
-
-        />
-
-      );
-
-    }
-
+    return <Login />;
     // LOGIN
     return (
 
