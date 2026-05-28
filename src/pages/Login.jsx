@@ -12,7 +12,7 @@ export default function Login() {
     try {
       setLoading(true);
       setError("");
-      await instance.loginPopup(loginRequest);
+      await instance.loginRedirect(loginRequest);
     } catch (err) {
       setError("Error iniciando sesión con Microsoft");
       setLoading(false);

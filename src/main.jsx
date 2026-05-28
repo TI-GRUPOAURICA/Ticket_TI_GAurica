@@ -7,6 +7,7 @@ import { MsalProvider } from '@azure/msal-react'
 import { msalConfig } from './Config/authConfig'
 
 const msalInstance = new PublicClientApplication(msalConfig)
+msalInstance.handleRedirectPromise().catch(console.error)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
