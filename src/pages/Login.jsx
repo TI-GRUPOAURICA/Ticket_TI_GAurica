@@ -10,16 +10,21 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const handleMicrosoftLogin = async () => {
-    try {
-      if (inProgress !== InteractionStatus.None) return;
-      setLoading(true);
-      setError("");
-      await instance.loginRedirect(loginRequest);
-    } catch (err) {
-      setError("Error iniciando sesión con Microsoft");
-      setLoading(false);
+  try {
+    if (inProgress !== InteractionStatus.None) {
+      console.log("MSAL en progreso:", inProgress);
+      return;
     }
-  };
+    setLoading(true);
+    setError("");
+    console.log("Iniciando redirect...");
+    await instance.loginRedirect(loginRequest);
+  } catch (err) {
+    console.log("ERROR COMPLETO:", err);
+    setError("Error: " + err.message);
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex" style={{ background: "#f0f4f8" }}>
