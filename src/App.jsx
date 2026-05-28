@@ -11,7 +11,7 @@ import Reportes from "./pages/Reportes";
 import Inventario from "./pages/Inventario";
 import SeguimientoTicket from "./pages/SeguimientoTicket";
 import ColaboradorHome from "./pages/ColaboradoresHome";
-import { ADMINS } from "./config/admins";
+import { ADMINS } from "./Config/admins";
 
 export default function App() {
 
