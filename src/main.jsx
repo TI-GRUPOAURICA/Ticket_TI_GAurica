@@ -8,12 +8,10 @@ import { msalConfig } from './Config/authConfig'
 
 const msalInstance = new PublicClientApplication(msalConfig)
 
-msalInstance.initialize().then(() => {
-  createRoot(document.getElementById('root')).render(
-    <StrictMode>
-      <MsalProvider instance={msalInstance}>
-        <App />
-      </MsalProvider>
-    </StrictMode>,
-  )
-})
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <MsalProvider instance={msalInstance}>
+      <App />
+    </MsalProvider>
+  </StrictMode>,
+)

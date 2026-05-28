@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
 import { loginRequest } from "../Config/authConfig";
 
 export default function Login() {
 
-  const { instance } = useMsal();
+  const { instance, inProgress } = useMsal();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleMicrosoftLogin = async () => {
     try {
+      if (inProgress !== InteractionStatus.None) return;
       setLoading(true);
       setError("");
       await instance.loginRedirect(loginRequest);
@@ -111,7 +113,7 @@ export default function Login() {
           {/* LOGIN MICROSOFT */}
           <button
             onClick={handleMicrosoftLogin}
-            disabled={loading}
+            disabled={loading || inProgress !== InteractionStatus.None}
             className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, #2563eb, #3b82f6)" }}
           >
