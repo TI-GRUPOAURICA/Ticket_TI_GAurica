@@ -15,6 +15,18 @@ import { ADMINS } from "./config/admins";
 
 export default function App() {
 
+const params = new URLSearchParams(
+  window.location.search
+);
+
+const esAdminTest =
+  params.get("admin") === "true";
+
+const esUsuarioTest =
+  params.get("user") === "true";
+
+
+
   const [session, setSession] = useState(null);
 
 const user = {
@@ -77,6 +89,52 @@ const esAdmin =
 
   }, []);
 
+
+
+  // RENDER ADMIN
+  const renderPage = () => {
+
+    switch (currentPage) {
+
+      case "dashboard":
+
+        return (
+          <Dashboard
+            onNavigate={setCurrentPage}
+          />
+        );
+
+      case "tickets":
+
+        return <Tickets />;
+
+      case "reportes":
+
+        return <Reportes />;
+
+      case "usuarios":
+
+        return <Usuarios />;
+
+      case "inventario":
+
+        return <Inventario />;
+
+      default:
+
+        return (
+          <Dashboard
+            onNavigate={setCurrentPage}
+          />
+        );
+
+    }
+
+  };
+
+
+
+
   // LOADING
   if (loading) {
 
@@ -133,7 +191,8 @@ const esAdmin =
     }
 
     // HOME COLABORADOR
-  if (esAdmin) {
+      if (esAdmin || esAdminTest)
+         {
 
   return (
 
@@ -149,50 +208,43 @@ const esAdmin =
   );
 
 }
+if (esUsuarioTest) {
+
+  return (
+
+    <ColaboradorHome
+
+      user={{
+        name: "Stanley"
+      }}
+
+      onRegistrarTicket={() =>
+        setViendoPortal(true)
+      }
+
+      onSeguimiento={() =>
+        setViendoSeguimiento(true)
+      }
+
+      onLogout={() => {
+
+        window.location.href = "/";
+
+      }}
+
+    />
+
+  );
+
+}
+
+
 
 return <Login />;
   }
 
   // RENDER ADMIN
-  const renderPage = () => {
 
-    switch (currentPage) {
-
-      case "dashboard":
-
-        return (
-          <Dashboard
-            onNavigate={setCurrentPage}
-          />
-        );
-
-      case "tickets":
-
-        return <Tickets />;
-
-      case "reportes":
-
-        return <Reportes />;
-
-      case "usuarios":
-
-        return <Usuarios />;
-
-      case "inventario":
-
-        return <Inventario />;
-
-      default:
-
-        return (
-          <Dashboard
-            onNavigate={setCurrentPage}
-          />
-        );
-
-    }
-
-  };
 
   // PANEL ADMIN
   return (

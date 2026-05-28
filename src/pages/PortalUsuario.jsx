@@ -120,10 +120,27 @@ export default function PortalUsuario({ onVolver }) {
           descripcion: form.descripcion,
           anydesk: form.anydesk || "No especificado",
           name: colaborador.colaborador,
-          email: "soporte@auricasac.com",
-        },
+          email: colaborador.correo,
+        },      
         "ema3sApQIaIKPzpnq"
       );
+
+      await emailjs.send(
+  "service_wzdct0i",
+  "template_nj9wy5n",
+  {
+    ticket_id: data.id,
+    colaborador: colaborador.colaborador,
+    empresa: colaborador.empresa,
+    host: colaborador.host,
+    titulo: form.descripcion,
+    descripcion: form.descripcion,
+    anydesk: form.anydesk || "No especificado",
+    name: colaborador.colaborador,
+    email: colaborador.correo,
+  },
+  "ema3sApQIaIKPzpnq"
+);
     } catch (e) {
       console.error("Error enviando correo:", e);
     }

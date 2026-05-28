@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function Login({
-  onRegistrarTicket,
-  onSeguimiento
-}) {
+export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -17,9 +14,6 @@ export default function Login({
       setLoading(true);
       setError("");
 
-      // TEMPORAL
-      // Luego aquí conectaremos Microsoft 365 real
-
       alert("Aquí conectaremos Microsoft 365 😄🔥");
 
       setLoading(false);
@@ -29,14 +23,18 @@ export default function Login({
       setError("Error iniciando sesión");
 
       setLoading(false);
+
     }
+
   };
 
   return (
 
     <div
       className="min-h-screen flex"
-      style={{ background: "#f0f4f8" }}
+      style={{
+        background: "#f0f4f8"
+      }}
     >
 
       {/* PANEL IZQUIERDO */}
@@ -120,7 +118,9 @@ export default function Login({
 
             <p
               className="text-sm"
-              style={{ color: "#64748b" }}
+              style={{
+                color: "#64748b"
+              }}
             >
               Soporte TI — Sistema de tickets
             </p>
@@ -130,16 +130,20 @@ export default function Login({
           {/* TITULO */}
           <h2
             className="text-2xl font-bold mb-1 text-center"
-            style={{ color: "#1a365d" }}
+            style={{
+              color: "#1a365d"
+            }}
           >
             Panel Administrativo
           </h2>
 
           <p
             className="text-sm mb-8 text-center"
-            style={{ color: "#718096" }}
+            style={{
+              color: "#718096"
+            }}
           >
-            Inicia sesión con tu cuenta corporativa 
+            Inicia sesión con tu cuenta corporativa
           </p>
 
           {/* ERROR */}
@@ -152,6 +156,74 @@ export default function Login({
             </div>
 
           )}
+
+          {/* BOTONES PRUEBA */}
+          <div className="space-y-4">
+
+            {/* ADMIN */}
+            <button
+
+              onClick={() =>
+                window.location.href = "/?admin=true"
+              }
+
+              className="w-full py-3 rounded-lg font-semibold text-sm text-white transition"
+
+              style={{
+                background:
+                  "linear-gradient(135deg, #1e3a8a, #2563eb)"
+              }}
+            >
+              👨‍💼 Entrar como Admin
+            </button>
+
+            {/* USUARIO */}
+            <button
+
+              onClick={() =>
+                window.location.href = "/?user=true"
+              }
+
+              className="w-full py-3 rounded-lg font-semibold text-sm transition"
+
+              style={{
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                color: "#1e293b"
+              }}
+            >
+              👨‍💻 Entrar como Usuario
+            </button>
+
+          </div>
+
+          {/* DIVIDER */}
+          <div className="flex items-center gap-3 my-7">
+
+            <div
+              className="flex-1 h-px"
+              style={{
+                background: "#e2e8f0"
+              }}
+            />
+
+            <span
+              className="text-xs"
+              style={{
+                color: "#94a3b8"
+              }}
+            >
+              Próximamente Microsoft 365
+            </span>
+
+            <div
+              className="flex-1 h-px"
+              style={{
+                background: "#e2e8f0"
+              }}
+            />
+
+          </div>
 
           {/* LOGIN MICROSOFT */}
           <button
@@ -166,15 +238,16 @@ export default function Login({
 
             {loading
               ? "Conectando..."
-              : " Iniciar sesión con Microsoft 365"}
+              : "🔵 Iniciar sesión con Microsoft 365"}
 
           </button>
-
 
           {/* FOOTER */}
           <p
             className="text-center text-xs mt-8"
-            style={{ color: "#a0aec0" }}
+            style={{
+              color: "#a0aec0"
+            }}
           >
             Grupo Aurica · Aurica · Mineralab · Metalab · Gianlu
           </p>
@@ -185,4 +258,5 @@ export default function Login({
 
     </div>
   );
+
 }
