@@ -10,6 +10,9 @@ export const msalConfig = {
   },
 };
 
+console.log("CLIENT ID:", import.meta.env.VITE_ENTRA_CLIENT_ID)
+console.log("TENANT ID:", import.meta.env.VITE_ENTRA_TENANT_ID)
+
 export const loginRequest = {
   scopes: ["User.Read"]
 };
