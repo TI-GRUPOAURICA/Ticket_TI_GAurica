@@ -147,29 +147,28 @@ export default function Inventario() {
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color ":#305da0
-" }}
+                style={{ color: "#305da0" }}
               >
                 Host
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#24599a" }}
+                style={{ color: "#305da0" }}
               >
                 Colaborador
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#24599a" }}
+                style={{ color: "#305da0" }}
               >
                 Empresa
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#24599a" }}
+                style={{ color: "#305da0" }}
               >
                 Acción
               </th>
