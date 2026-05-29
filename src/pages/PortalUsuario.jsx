@@ -324,27 +324,27 @@ if (cargandoUsuario) {
                           <div className="space-y-4">
 
                             {/* BIENVENIDA */}
-                            <div className="mb-2">
-                              <h2
-                                className="font-bold"
-                                style={{
-                                  color: tema.text,
-                                  fontSize: "clamp(20px, 5vw, 24px)"
-                                }}
-                              >
-                                Hola 👋
-                              </h2>
+                         <div className="text-center mb-4">
+                                                <h2
+                                                  className="font-bold"
+                                                  style={{
+                                                    color: tema.text,
+                                                    fontSize: "clamp(20px, 5vw, 24px)"
+                                                  }}
+                                                >
+                                                  Hola, {userName || colaborador?.colaborador || "Usuario"} 👋
+                                                </h2>
 
-                              <p
-                                style={{
-                                  color: "#718096",
-                                  fontSize: "14px",
-                                  marginTop: "4px"
-                                }}
-                              >
-                                Estamos listos para ayudarte
-                              </p>
-                            </div>
+                                                <p
+                                                  style={{
+                                                    color: "#718096",
+                                                    fontSize: "14px",
+                                                    marginTop: "4px"
+                                                  }}
+                                                >
+                                                  Estamos listos para ayudarte
+                                                </p>
+                                              </div>
 
                             {/* COLABORADOR */}
                             <div
