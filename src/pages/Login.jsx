@@ -32,7 +32,7 @@ export default function Login() {
       {/* PANEL IZQUIERDO */}
       <div
         className="hidden lg:flex flex-col w-2/5 p-12 relative"
-        style={{ background: "linear-gradient(160deg, #1a4f8a, #2B6CB0)" }}
+        style={{ background: "linear-gradient(160deg, #0056B3, #0B5ED7)" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
           <img
@@ -76,7 +76,7 @@ export default function Login() {
           </div>
 
           {/* TITULO */}
-          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#1a365d" }}>
+          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#004a99" }}>
             Panel Administrativo
           </h2>
           <p className="text-sm mb-8 text-center" style={{ color: "#718096" }}>
@@ -95,7 +95,7 @@ export default function Login() {
             <button
               onClick={() => window.location.href = "/?admin=true"}
               className="w-full py-3 rounded-lg font-semibold text-sm text-white transition"
-              style={{ background: "linear-gradient(135deg, #1e3a8a, #2563eb)" }}
+              style={{ background: "linear-gradient(135deg, #004A99, #0B5ED7)" }}
             >
               👨‍💼 Entrar como Admin
             </button>
@@ -120,7 +120,7 @@ export default function Login() {
             onClick={handleMicrosoftLogin}
             disabled={loading || inProgress !== InteractionStatus.None}
             className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #2563eb, #3b82f6)" }}
+            style={{ background: "linear-gradient(135deg, #0056B3, #0B5ED7)" }}
           >
             {loading ? "Conectando..." : "🔵 Iniciar sesión con Microsoft 365"}
           </button>
