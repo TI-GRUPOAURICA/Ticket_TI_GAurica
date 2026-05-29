@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
 
 const TEMAS = {
-  "AURICA SAC": {
+  "AURICA": {
     primary: "#2B6CB0",
     dark: "#1a4f8a",
     light: "#ebf4ff",
@@ -13,7 +13,7 @@ const TEMAS = {
     logo: "/icono aurica.svg",
     nombre: "Aurica SAC",
   },
-  "MINERALAB SAC": {
+  "MINERALAB": {
     primary: "#8B6914",
     dark: "#6b4f0f",
     light: "#fdf6e3",
@@ -23,7 +23,7 @@ const TEMAS = {
     logo: "/icono mineralab.svg",
     nombre: "Mineralab SAC",
   },
-  "METALAB SAC": {
+  "METALAB": {
     primary: "#B8860B",
     dark: "#8B6508",
     light: "#fffbeb",
