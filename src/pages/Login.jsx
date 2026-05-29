@@ -32,7 +32,7 @@ export default function Login() {
       {/* PANEL IZQUIERDO */}
       <div
         className="hidden lg:flex flex-col w-2/5 p-12 relative"
-        style={{ background: "linear-gradient(160deg, #0056B3, #305da0)" }}
+        style={{ background: "linear-gradient(160deg, #305da0, #305da0)" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
           <img
