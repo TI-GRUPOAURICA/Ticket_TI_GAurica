@@ -70,8 +70,6 @@ export default function Reportes() {
   };
 
   const exportarExcel = () => {
-    alert("Exportando reporte nuevo");
-console.log(preview);
 
     if (preview.length === 0) return;
 
