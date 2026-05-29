@@ -72,20 +72,91 @@ export default function Reportes() {
 
     if (preview.length === 0) return;
 
-    const filas = preview.map((t) => ({
-      "N° Ticket": t.id,
-      "Fecha": new Date(t.created_at).toLocaleDateString("es-PE"),
-      "Colaborador": t.nombre_colaborador || "—",
-      "Empresa": t.empresa || "—",
-      "Hostname": t.hostname || "—",
-      "Categoría": t.categorias?.nombre || "—",
-      "Título": t.titulo,
-      "Descripción": t.descripcion,
-      "Prioridad": t.prioridad,
-      "Estado": t.estado.replace("_", " "),
-      "Solución": t.solucion || "—",
-      "AnyDesk": t.anydesk || "—",
-    }));
+const filas = preview.map((t) => {
+
+  const fechaCreacion = new Date(t.created_at);
+
+  const fechaResolucion = t.resuelto_at
+    ? new Date(t.resuelto_at)
+    : null;
+
+  let duracion = "—";
+
+  if (fechaResolucion) {
+
+    const diferencia =
+      fechaResolucion - fechaCreacion;
+
+    const horas = Math.floor(
+      diferencia / (1000 * 60 * 60)
+    );
+
+    const minutos = Math.floor(
+      (diferencia % (1000 * 60 * 60))
+      / (1000 * 60)
+    );
+
+    duracion = `${horas}h ${minutos}m`;
+  }
+
+  return {
+
+    "N° Ticket": t.id,
+
+    "Fecha Creación":
+      fechaCreacion.toLocaleDateString("es-PE"),
+
+    "Hora Creación":
+      fechaCreacion.toLocaleTimeString("es-PE"),
+
+    "Fecha Resolución":
+      fechaResolucion
+        ? fechaResolucion.toLocaleDateString("es-PE")
+        : "—",
+
+    "Hora Resolución":
+      fechaResolucion
+        ? fechaResolucion.toLocaleTimeString("es-PE")
+        : "—",
+
+    "Duración":
+      duracion,
+
+    "Resuelto Por":
+      t.resuelto_por || "—",
+
+    "Colaborador":
+      t.nombre_colaborador || "—",
+
+    "Empresa":
+      t.empresa || "—",
+
+    "Hostname":
+      t.hostname || "—",
+
+    "Categoría":
+      t.categorias?.nombre || "—",
+
+    "Título":
+      t.titulo,
+
+    "Descripción":
+      t.descripcion,
+
+    "Prioridad":
+      t.prioridad,
+
+    "Estado":
+      t.estado.replace("_", " "),
+
+    "Solución":
+      t.solucion || "—",
+
+    "AnyDesk":
+      t.anydesk || "—",
+
+  };
+});
 
     const ws = XLSX.utils.json_to_sheet(filas);
 
