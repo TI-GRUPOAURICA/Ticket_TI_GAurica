@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function Layout({ children, onNavigate, currentPage }) {
+export default function Layout({ children, onNavigate, currentPage ,onlogout}) {
 
   const [menuOpen, setMenuOpen] = useState(true);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+ 
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
@@ -163,7 +161,7 @@ export default function Layout({ children, onNavigate, currentPage }) {
         >
 
           <button
-            onClick={handleLogout}
+            onClick={onLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition"
             style={{
               color: "#dbeafe",
