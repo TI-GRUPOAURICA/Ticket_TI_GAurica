@@ -6,6 +6,7 @@ function GestionTicket({
   ticketId,
   solucionInicial,
   comentarioInicial,
+  adminNombre,
   onActualizado
 
 }) {
@@ -67,7 +68,7 @@ function GestionTicket({
 
       resuelto_at: new Date().toISOString(),
 
-      resuelto_por: "Administrador"
+      resuelto_por: "adminNombre"
 
     })
     .eq("id", ticketId);
@@ -163,7 +164,10 @@ function GestionTicket({
   );
 }
 
-export default function Tickets() {
+export default function Tickets({
+  adminNombre,
+  adminCorreo
+}) {
 
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -626,15 +630,13 @@ export default function Tickets() {
               </p>
 
               <GestionTicket
-                ticketId={ticketSeleccionado.id}
-                 solucionInicial={ticketSeleccionado.solucion}
-                  comentarioInicial={ticketSeleccionado.comentario_proceso}
-
+                 ticketId={ticketSeleccionado.id}
+                    solucionInicial={ticketSeleccionado.solucion}
+                    comentarioInicial={ticketSeleccionado.comentario_proceso}
+                    adminNombre={adminNombre}
                     onActualizado={() => {
-
-                    setTicketSeleccionado(null);
-
-                    fetchTickets();
+                      setTicketSeleccionado(null);
+                      fetchTickets();
 
                     }}
                     />

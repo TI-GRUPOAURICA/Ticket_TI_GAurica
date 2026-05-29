@@ -38,7 +38,13 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard": return <Dashboard onNavigate={setCurrentPage} />;
-      case "tickets": return <Tickets />;
+      case "tickets":
+  return (
+    <Tickets
+      adminNombre={userName}
+      adminCorreo={userEmail}
+    />
+  );
       case "reportes": return <Reportes />;
       case "usuarios": return <Usuarios />;
       case "inventario": return <Inventario />;
