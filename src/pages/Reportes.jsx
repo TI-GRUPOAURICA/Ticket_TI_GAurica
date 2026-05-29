@@ -60,6 +60,7 @@ export default function Reportes() {
     }
 
     const { data } = await query;
+    console.log(data);
 
     if (data) setPreview(data);
 
@@ -409,15 +410,18 @@ const filas = preview.map((t) => {
                   >
 
                     {[
-                      "#",
-                      "Fecha",
-                      "Colaborador",
-                      "Empresa",
-                      "Host",
-                      "Título",
-                      "Categoría",
-                      "Prioridad",
-                      "Solución"
+                          "#",
+                          "Fecha",
+                          "Hora",
+                          "Resuelto Por",
+                          "Duración",
+                          "Colaborador",
+                          "Empresa",
+                          "Host",
+                          "Título",
+                          "Categoría",
+                          "Prioridad",
+                          "Solución"
                     ].map((h) => (
 
                       <th
