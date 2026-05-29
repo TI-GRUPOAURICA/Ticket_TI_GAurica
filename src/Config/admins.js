@@ -2,6 +2,6 @@ export const ADMINS = [
 
   
 
-  "soporte@auricasac.com"
-
+  "soporte@auricasac.com",
+  "ti@metalabsac.com"
 ];
