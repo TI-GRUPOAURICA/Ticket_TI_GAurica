@@ -35,12 +35,22 @@ export default function Login() {
         style={{ background: "linear-gradient(160deg, #305da0, #305da0)" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
-          <img
-            src="/Grupo-Aurica-version_alterna_blanco.png"
-            alt="Grupo Aurica"
-            className="w-[420px] object-contain"
-            style={{ filter: "brightness(0) invert(1)" }}
-          />
+         <>
+  {/* Móvil */}
+  <img
+    src="/grupoaurica-letrasazules.png"
+    alt="Grupo Aurica"
+    className="block md:hidden w-[280px] object-contain mx-auto"
+  />
+
+  {/* PC */}
+  <img
+    src="/Grupo-Aurica-version_alterna_blanco.png"
+    alt="Grupo Aurica"
+    className="hidden md:block w-[420px] object-contain"
+    style={{ filter: "brightness(0) invert(1)" }}
+  />
+</>
           <div>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
               Soporte TI — Sistema de tickets
