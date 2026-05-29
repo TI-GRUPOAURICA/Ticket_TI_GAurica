@@ -349,10 +349,7 @@ if (cargandoUsuario) {
                     </p>
                   </div>
                 </div>
-                <button onClick={() => { setPaso(1); setTema(TEMA_DEFAULT); }}
-                  className="flex-shrink-0 ml-2 text-xs font-medium" style={{ color: "#718096" }}>
-                  Cambiar
-                </button>
+               
               </div>
 
               {/* PROBLEMA */}
