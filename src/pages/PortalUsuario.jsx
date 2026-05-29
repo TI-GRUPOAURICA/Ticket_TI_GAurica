@@ -74,7 +74,9 @@ export default function PortalUsuario({
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [ticketNumero, setTicketNumero] = useState(null);
-    useEffect(() => {
+const [cargandoUsuario, setCargandoUsuario] = useState(true);
+    
+  useEffect(() => {
   cargarUsuarioAutomatico();
 }, []);
 
@@ -89,6 +91,7 @@ const cargarUsuarioAutomatico = async () => {
 
   if (error || !data) {
     console.log("Usuario no encontrado:", userEmail);
+    setCargandoUsuario(false);
     return;
   }
 
@@ -102,6 +105,7 @@ const cargarUsuarioAutomatico = async () => {
   if (cats) setCategorias(cats);
 
   setPaso(2);
+  setCargandoUsuario(false);
 };
 
   const buscarColaborador = async (texto) => {
@@ -185,6 +189,21 @@ const cargarUsuarioAutomatico = async () => {
     setEnviado(true);
     setEnviando(false);
   };
+
+if (cargandoUsuario) {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "#f0f4f8" }}
+    >
+      <div className="text-center">
+        <p style={{ color: "#2B6CB0", fontWeight: "600" }}>
+          Cargando información...
+        </p>
+      </div>
+    </div>
+  );
+}
 
   if (enviado) {
     return (
