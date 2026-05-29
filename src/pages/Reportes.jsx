@@ -73,6 +73,7 @@ export default function Reportes() {
     if (preview.length === 0) return;
 
 const filas = preview.map((t) => {
+  console.log(filas);
 
   const fechaCreacion = new Date(t.created_at);
 
