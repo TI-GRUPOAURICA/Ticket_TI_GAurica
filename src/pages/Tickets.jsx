@@ -55,7 +55,7 @@ function GestionTicket({
   }
 
   setGuardando(true);
-
+console.log("ADMIN:", adminNombre);
   await supabase
     .from("tickets")
     .update({
@@ -68,7 +68,7 @@ function GestionTicket({
 
       resuelto_at: new Date().toISOString(),
 
-      resuelto_por: "adminNombre"
+      resuelto_por: adminNombre
 
     })
     .eq("id", ticketId);
