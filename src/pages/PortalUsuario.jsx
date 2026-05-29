@@ -251,31 +251,7 @@ if (cargandoUsuario) {
       style={{ background: tema.bg, padding: "clamp(16px, 4vw, 32px)" }}>
       <div className="w-full" style={{ maxWidth: "min(100%, 520px)" }}>
 
-        {/* HEADER */}
-        <div className="text-center mb-6">
-          <div className="text-center mb-6">
-                  <h1
-                    className="font-bold transition-all duration-500"
-                    style={{
-                      color: tema.text,
-                      fontSize: "clamp(22px, 5vw, 30px)"
-                    }}
-                  >
-                    Hola, {userName || colaborador?.colaborador || "Usuario"} 👋
-                  </h1>
-
-                  <p
-                    style={{
-                      color: "#718096",
-                      fontSize: "clamp(12px, 3vw, 14px)",
-                      marginTop: "6px"
-                    }}
-                  >
-                    Cuéntanos qué problema estás presentando
-                  </p>
-                </div>
-
-        </div>
+    
 
         {/* CARD */}
         <div className="bg-white rounded-2xl shadow-sm transition-all duration-500"
@@ -344,11 +320,40 @@ if (cargandoUsuario) {
           )}
 
           {/* PASO 2 */}
-          {paso === 2 && (
-            <div className="space-y-4">
-              {/* COLABORADOR */}
-              <div className="rounded-lg p-3 flex items-center justify-between transition-all duration-500"
-                style={{ background: tema.light, border: `1px solid ${tema.border}` }}>
+                                  {paso === 2 && (
+                          <div className="space-y-4">
+
+                            {/* BIENVENIDA */}
+                            <div className="mb-2">
+                              <h2
+                                className="font-bold"
+                                style={{
+                                  color: tema.text,
+                                  fontSize: "clamp(20px, 5vw, 24px)"
+                                }}
+                              >
+                                Hola 👋
+                              </h2>
+
+                              <p
+                                style={{
+                                  color: "#718096",
+                                  fontSize: "14px",
+                                  marginTop: "4px"
+                                }}
+                              >
+                                Estamos listos para ayudarte
+                              </p>
+                            </div>
+
+                            {/* COLABORADOR */}
+                            <div
+                              className="rounded-lg p-3 flex items-center justify-between transition-all duration-500"
+                              style={{
+                                background: tema.light,
+                                border: `1px solid ${tema.border}`
+                              }}
+                            >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {tema.logo && (
                     <img src={tema.logo} alt={tema.nombre}
