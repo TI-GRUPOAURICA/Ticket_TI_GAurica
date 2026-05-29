@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function Layout({ children, onNavigate, currentPage ,onlogout}) {
-
+export default function Layout({
+  children,
+  onNavigate,
+  currentPage,
+  onLogout
+}) {
   const [menuOpen, setMenuOpen] = useState(true);
 
  

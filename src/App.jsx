@@ -71,8 +71,13 @@ export default function App() {
   // TEST PARAMS (desarrollo)
   if (esAdminTest) {
     return (
-      <Layout onNavigate={setCurrentPage} currentPage={currentPage} onlogout={handleLogout}>
-        {renderPage()}
+
+          <Layout
+  onNavigate={setCurrentPage}
+  currentPage={currentPage}
+  onLogout={handleLogout}
+>
+      {renderPage()}
       </Layout>
     );
   }
