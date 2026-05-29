@@ -461,34 +461,59 @@ const filas = preview.map((t) => {
                       }}
                     >
 
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        #{t.id}
-                      </td>
+                     <td className="px-4 py-3 text-xs text-slate-500">
+  #{t.id}
+</td>
 
-                      <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
-                        {new Date(t.created_at)
-                          .toLocaleDateString("es-PE")}
-                      </td>
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {new Date(t.created_at).toLocaleDateString("es-PE")}
+</td>
 
-                      <td className="px-4 py-3 text-sm text-slate-800 whitespace-nowrap">
-                        {t.nombre_colaborador || "—"}
-                      </td>
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {new Date(t.created_at).toLocaleTimeString("es-PE")}
+</td>
 
-                      <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
-                        {t.empresa || "—"}
-                      </td>
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {t.resuelto_por || "—"}
+</td>
 
-                      <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
-                        {t.hostname || "—"}
-                      </td>
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {t.resuelto_at
+    ? (() => {
+        const inicio = new Date(t.created_at);
+        const fin = new Date(t.resuelto_at);
 
-                      <td className="px-4 py-3 text-sm text-slate-800">
-                        {t.titulo}
-                      </td>
+        const minutos = Math.floor(
+          (fin - inicio) / (1000 * 60)
+        );
 
-                      <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
-                        {t.categorias?.nombre || "—"}
-                      </td>
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
+
+        return `${horas}h ${mins}m`;
+      })()
+    : "—"}
+</td>
+
+<td className="px-4 py-3 text-sm text-slate-800 whitespace-nowrap">
+  {t.nombre_colaborador || "—"}
+</td>
+
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {t.empresa || "—"}
+</td>
+
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {t.hostname || "—"}
+</td>
+
+<td className="px-4 py-3 text-sm text-slate-800">
+  {t.titulo}
+</td>
+
+<td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
+  {t.categorias?.nombre || "—"}
+</td>
 
                       <td className="px-4 py-3">
 
