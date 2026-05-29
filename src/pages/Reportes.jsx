@@ -197,10 +197,25 @@ const filas = preview.map((t) => {
       { type: "application/octet-stream" }
     );
 
-    saveAs(
-      blob,
-      `reporte_${empresa}_${fechaInicio}_${fechaFin}.xlsx`
-    );
+   const ahora = new Date();
+
+const fechaHora =
+  ahora.getFullYear() +
+  "-" +
+  String(ahora.getMonth() + 1).padStart(2, "0") +
+  "-" +
+  String(ahora.getDate()).padStart(2, "0") +
+  "_" +
+  String(ahora.getHours()).padStart(2, "0") +
+  "-" +
+  String(ahora.getMinutes()).padStart(2, "0") +
+  "-" +
+  String(ahora.getSeconds()).padStart(2, "0");
+
+saveAs(
+  blob,
+  `reporte_${empresa}_${fechaInicio}_${fechaFin}_${fechaHora}.xlsx`
+);
   };
 
   const prioridadColor = {
