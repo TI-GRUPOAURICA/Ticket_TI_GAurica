@@ -48,7 +48,7 @@ export default function App() {
 
   // PORTAL USUARIO
   if (viendoPortal) {
-              if (viendoPortal) {
+             
   return (
     <PortalUsuario
       onVolver={() => setViendoPortal(false)}
@@ -61,7 +61,7 @@ export default function App() {
 
 
 
-  }
+  
 
   // SEGUIMIENTO
   if (viendoSeguimiento) {
@@ -69,19 +69,17 @@ export default function App() {
   }
 
   // TEST PARAMS (desarrollo)
-  if (esAdminTest) {
-    return (
-
-          <Layout
-  onNavigate={setCurrentPage}
-  currentPage={currentPage}
-  onLogout={handleLogout}
->
+if (esAdmin) {
+  return (
+    <Layout
+      onNavigate={setCurrentPage}
+      currentPage={currentPage}
+      onLogout={handleLogout}
+    >
       {renderPage()}
-      </Layout>
-    );
-  }
-
+    </Layout>
+  );
+}
   if (esUsuarioTest) {
     return (
       <ColaboradorHome
