@@ -46,31 +46,36 @@ function GestionTicket({
   };
 
   // RESOLVER
-  const resolverTicket = async () => {
+ const resolverTicket = async () => {
 
-    if (!solucion.trim()) {
-      alert("Debes escribir una solución.");
-      return;
-    }
+  if (!solucion.trim()) {
+    alert("Debes escribir una solución.");
+    return;
+  }
 
-    setGuardando(true);
+  setGuardando(true);
 
-    await supabase
-      .from("tickets")
-      .update({
+  await supabase
+    .from("tickets")
+    .update({
 
-        solucion,
-        comentario_proceso: comentario,
-        estado: "resuelto",
-        updated_at: new Date()
+      solucion,
+      comentario_proceso: comentario,
+      estado: "resuelto",
 
-      })
-      .eq("id", ticketId);
+      updated_at: new Date(),
 
-    setGuardando(false);
+      resuelto_at: new Date().toISOString(),
 
-    onActualizado();
-  };
+      resuelto_por: "Administrador"
+
+    })
+    .eq("id", ticketId);
+
+  setGuardando(false);
+
+  onActualizado();
+};
 
   return (
 
