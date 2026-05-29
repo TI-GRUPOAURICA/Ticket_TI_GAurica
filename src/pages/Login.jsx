@@ -95,7 +95,7 @@ export default function Login() {
             <button
               onClick={() => window.location.href = "/?admin=true"}
               className="w-full py-3 rounded-lg font-semibold text-sm text-white transition"
-              style={{ background: "linear-gradient(135deg, #004A99, #0B5ED7)" }}
+              style={{ background: "linear-gradient(135deg, #305da0, #305da0)" }}
             >
               👨‍💼 Entrar como Admin
             </button>
@@ -120,7 +120,7 @@ export default function Login() {
             onClick={handleMicrosoftLogin}
             disabled={loading || inProgress !== InteractionStatus.None}
             className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #0056B3, #0B5ED7)" }}
+            style={{ background: "linear-gradient(135deg, #305da0, #305da0)" }}
           >
             {loading ? "Conectando..." : "🔵 Iniciar sesión con Microsoft 365"}
           </button>
