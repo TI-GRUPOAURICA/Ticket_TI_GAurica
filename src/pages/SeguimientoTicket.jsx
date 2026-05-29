@@ -78,7 +78,7 @@ export default function SeguimientoTicket({ onVolver }) {
         <button
           onClick={onVolver}
           className="mb-6 text-sm"
-          style={{ color: "#24599a" }}
+          style={{ color: "#305da0" }}
         >
           ← Volver
         </button>
@@ -128,7 +128,7 @@ export default function SeguimientoTicket({ onVolver }) {
               className="px-5 rounded-xl font-semibold text-white"
               style={{
                 background:
-                  "linear-gradient(135deg, #24599a, #3b82f6)"
+                  "linear-gradient(135deg, #305da0, #305da0)"
               }}
             >
 

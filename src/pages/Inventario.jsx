@@ -91,7 +91,7 @@ export default function Inventario() {
           className="px-4 py-2 rounded-xl text-sm font-semibold"
           style={{
             background: "#dbeafe",
-            color: "#24599a",
+            color: "#305da0",
             border: "1px solid #bfdbfe"
           }}
         >
@@ -115,7 +115,7 @@ export default function Inventario() {
             color: "#1e293b"
           }}
           onFocus={(e) => {
-            e.target.style.border = "1px solid #3b82f6";
+            e.target.style.border = "1px solid #305da0";
           }}
           onBlur={(e) => {
             e.target.style.border = "1px solid #dbeafe";
@@ -147,7 +147,8 @@ export default function Inventario() {
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#24599a" }}
+                style={{ color ":#305da0
+" }}
               >
                 Host
               </th>

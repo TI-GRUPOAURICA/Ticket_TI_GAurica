@@ -257,7 +257,7 @@ export default function Reportes() {
             className="px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50"
             style={{
               background:
-                "linear-gradient(135deg, #24599a, #3b82f6)",
+                "linear-gradient(135deg, #305da0, #305da0)",
               color: "#ffffff"
             }}
           >
@@ -349,7 +349,7 @@ export default function Reportes() {
                       <th
                         key={h}
                         className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap"
-                        style={{ color: "#24599a" }}
+                        style={{ color: "#305da0" }}
                       >
                         {h}
                       </th>
