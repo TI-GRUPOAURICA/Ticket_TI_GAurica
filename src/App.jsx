@@ -48,7 +48,19 @@ export default function App() {
 
   // PORTAL USUARIO
   if (viendoPortal) {
-    return <PortalUsuario onVolver={() => setViendoPortal(false)} />;
+              if (viendoPortal) {
+  return (
+    <PortalUsuario
+      onVolver={() => setViendoPortal(false)}
+      userEmail={userEmail}
+      userName={userName}
+    />
+  );
+}
+
+
+
+
   }
 
   // SEGUIMIENTO

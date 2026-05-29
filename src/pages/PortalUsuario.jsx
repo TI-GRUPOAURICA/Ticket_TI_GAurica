@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
 
@@ -56,7 +56,14 @@ const TEMA_DEFAULT = {
   nombre: "",
 };
 
-export default function PortalUsuario({ onVolver }) {
+
+export default function PortalUsuario({
+  onVolver,
+  userEmail,
+  userName
+}) {
+
+
   const [paso, setPaso] = useState(1);
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState([]);
@@ -67,6 +74,35 @@ export default function PortalUsuario({ onVolver }) {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [ticketNumero, setTicketNumero] = useState(null);
+    useEffect(() => {
+  cargarUsuarioAutomatico();
+}, []);
+
+const cargarUsuarioAutomatico = async () => {
+  if (!userEmail) return;
+
+  const { data, error } = await supabase
+    .from("colaboradores")
+    .select("*")
+    .eq("correo", userEmail)
+    .single();
+
+  if (error || !data) {
+    console.log("Usuario no encontrado:", userEmail);
+    return;
+  }
+
+  setColaborador(data);
+  setTema(TEMAS[data.empresa] || TEMA_DEFAULT);
+
+  const { data: cats } = await supabase
+    .from("categorias")
+    .select("*");
+
+  if (cats) setCategorias(cats);
+
+  setPaso(2);
+};
 
   const buscarColaborador = async (texto) => {
     setBusqueda(texto);
