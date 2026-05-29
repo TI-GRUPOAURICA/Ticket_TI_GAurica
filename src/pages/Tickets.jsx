@@ -30,6 +30,7 @@ function GestionTicket({
 
     setGuardando(true);
 
+    alert(adminNombre);
     await supabase
       .from("tickets")
       .update({
@@ -47,6 +48,7 @@ function GestionTicket({
   };
 
   // RESOLVER
+  
  const resolverTicket = async () => {
 
   if (!solucion.trim()) {
@@ -56,7 +58,8 @@ function GestionTicket({
 
   setGuardando(true);
 console.log("ADMIN:", adminNombre);
-  await supabase
+ alert("adminNombre = " + adminNombre);
+await supabase
     .from("tickets")
     .update({
 
