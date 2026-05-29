@@ -4,7 +4,7 @@ import emailjs from "@emailjs/browser";
 
 const TEMAS = {
   "AURICA": {
-    primary: "#2B6CB0",
+    primary: "#305da0",
     dark: "#1a4f8a",
     light: "#ebf4ff",
     border: "#bee3f8",
@@ -46,7 +46,7 @@ const TEMAS = {
 };
 
 const TEMA_DEFAULT = {
-  primary: "#2B6CB0",
+  primary: "#305da0",
   dark: "#1a4f8a",
   light: "#ebf4ff",
   border: "#bee3f8",
@@ -253,14 +253,28 @@ if (cargandoUsuario) {
 
         {/* HEADER */}
         <div className="text-center mb-6">
-          
-          <h1 className="font-bold transition-all duration-500"
-            style={{ color: tema.text, fontSize: "clamp(20px, 5vw, 26px)" }}>
-            Soporte TI
-          </h1>
-          <p style={{ color: "#718096", fontSize: "clamp(12px, 3vw, 14px)", marginTop: "4px" }}>
-            {tema.nombre ? `${tema.nombre} — Reporta tu problema aquí` : "Grupo Aurica — Reporta tu problema aquí"}
-          </p>
+          <div className="text-center mb-6">
+                  <h1
+                    className="font-bold transition-all duration-500"
+                    style={{
+                      color: tema.text,
+                      fontSize: "clamp(22px, 5vw, 30px)"
+                    }}
+                  >
+                    Hola, {userName || colaborador?.colaborador || "Usuario"} 👋
+                  </h1>
+
+                  <p
+                    style={{
+                      color: "#718096",
+                      fontSize: "clamp(12px, 3vw, 14px)",
+                      marginTop: "6px"
+                    }}
+                  >
+                    Cuéntanos qué problema estás presentando
+                  </p>
+                </div>
+
         </div>
 
         {/* CARD */}
