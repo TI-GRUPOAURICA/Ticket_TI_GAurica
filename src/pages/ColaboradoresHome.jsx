@@ -1,4 +1,4 @@
-import { Ticket } from "lucide-react";
+import { Ticket, ClipboardList} from "lucide-react";
 
 export default function ColaboradorHome({
   user,
@@ -30,7 +30,7 @@ export default function ColaboradorHome({
           <h1
             className="text-3xl font-bold mb-2"
             style={{
-              color: "#2B6CB0"
+              color: "#305da0"
             }}
           >
             Hola {user?.name || "Colaborador"} 
@@ -64,24 +64,24 @@ export default function ColaboradorHome({
             <div className="flex items-center gap-4">
 
               <div
-  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-  style={{
-    background: "#EBF4FF"
-  }}
->
-  <Ticket
-    size={28}
-    color="#2B6CB0"
-    strokeWidth={2}
-  />
-</div>
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: "#EBF4FF"
+                    }}
+                  >
+                    <Ticket
+                      size={28}
+                      color="#2B6CB0"
+                      strokeWidth={2}
+                    />
+                  </div>
 
               <div>
 
                 <h2
                   className="font-semibold text-lg"
                   style={{
-                    color: "#1a365d"
+                    color: "#305da0"
                   }}
                 >
                   Registrar ticket
@@ -115,23 +115,25 @@ export default function ColaboradorHome({
 
             <div className="flex items-center gap-4">
 
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #2563eb, #3b82f6)",
-                  color: "white"
-                }}
-              >
-                🔎
-              </div>
+            <div
+  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+  style={{
+    background: "#EAF2FB"
+  }}
+>
+  <ClipboardList
+    size={28}
+    color="#305DA0"
+    strokeWidth={2}
+  />
+</div>
 
               <div>
 
                 <h2
                   className="font-semibold text-lg"
                   style={{
-                    color: "#1a365d"
+                    color: "#305da0"
                   }}
                 >
                   Seguimiento ticket
