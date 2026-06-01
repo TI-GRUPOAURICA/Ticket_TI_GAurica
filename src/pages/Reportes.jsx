@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 export default function Reportes() {
@@ -160,40 +159,25 @@ const filas = preview.map((t) => {
   };
 });
 
-    const ws = XLSX.utils.json_to_sheet(filas);
+  const encabezados = Object.keys(filas[0]);
 
-    const wb = XLSX.utils.book_new();
+const csv = [
+  encabezados.join(","),
+  ...filas.map((fila) =>
+    encabezados
+      .map((campo) =>
+        `"${String(fila[campo] ?? "").replace(/"/g, '""')}"`
+      )
+      .join(",")
+  )
+].join("\n");
 
-    ws["!cols"] = [
-      { wch: 10 },
-      { wch: 12 },
-      { wch: 25 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 40 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 40 },
-      { wch: 15 },
-    ];
-
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      "Tickets Resueltos"
-    );
-
-    const excelBuffer = XLSX.write(wb, {
-      bookType: "xlsx",
-      type: "array"
-    });
-
-    const blob = new Blob(
-      [excelBuffer],
-      { type: "application/octet-stream" }
-    );
+const blob = new Blob(
+  ["\uFEFF" + csv],
+  {
+    type: "text/csv;charset=utf-8;"
+  }
+);
 
    const ahora = new Date();
 
@@ -212,7 +196,7 @@ const fechaHora =
 
 saveAs(
   blob,
-  `reporte_${empresa}_${fechaInicio}_${fechaFin}_${fechaHora}.xlsx`
+  `reporte_${empresa}_${fechaInicio}_${fechaFin}_${fechaHora}.csv`
 );
   };
 
