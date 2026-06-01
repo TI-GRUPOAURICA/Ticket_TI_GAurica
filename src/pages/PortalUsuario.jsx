@@ -256,22 +256,17 @@ return (
     }}
   >
 
-    <div className="absolute top-6 left-6">
-      <button
-        onClick={() => {
-          setPaso(1);
-          setBusqueda("");
-          setColaborador(null);
-          setTema(TEMA_DEFAULT);
-        }}
-        className="flex items-center gap-2 text-sm font-medium transition-all hover:translate-x-1"
-        style={{
-          color: "#305DA0"
-        }}
-      >
-        ← Volver
-      </button>
-    </div>
+    <div className="mb-3">
+  <button
+    onClick={onVolver}
+    className="text-sm font-medium transition-all hover:translate-x-1"
+    style={{
+      color: "#305DA0"
+    }}
+  >
+    ← Volver
+  </button>
+</div>
 
     <div
       className="w-full"
