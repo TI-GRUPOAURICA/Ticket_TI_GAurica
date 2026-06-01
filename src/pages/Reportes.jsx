@@ -78,9 +78,6 @@ const filas = preview.map((t) => {
 
   const fechaCreacion = new Date(t.created_at);
 
-  const fechaResolucion = t.resuelto_at
-    ? new Date(t.resuelto_at)
-    : null;
 
   let duracion = "—";
 
