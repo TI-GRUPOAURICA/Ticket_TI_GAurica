@@ -74,9 +74,12 @@ export default function Reportes() {
     if (preview.length === 0) return;
 
 const filas = preview.map((t) => {
-  console.log(filas);
 
   const fechaCreacion = new Date(t.created_at);
+  const fechaResolucion = t.resuelto_at
+   ? new Date(t.resuelto_at)
+    : null;
+
 
 
   let duracion = "—";
