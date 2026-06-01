@@ -1,3 +1,5 @@
+import { Ticket } from "lucide-react";
+
 export default function ColaboradorHome({
   user,
   onRegistrarTicket,
@@ -28,10 +30,10 @@ export default function ColaboradorHome({
           <h1
             className="text-3xl font-bold mb-2"
             style={{
-              color: "#1a365d"
+              color: "#2B6CB0"
             }}
           >
-            Hola {user?.name || "Colaborador"} 👋
+            Hola {user?.name || "Colaborador"} 
           </h1>
 
           <p
@@ -62,15 +64,17 @@ export default function ColaboradorHome({
             <div className="flex items-center gap-4">
 
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #2563eb, #3b82f6)",
-                  color: "white"
-                }}
-              >
-                🎟️
-              </div>
+  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+  style={{
+    background: "#EBF4FF"
+  }}
+>
+  <Ticket
+    size={28}
+    color="#2B6CB0"
+    strokeWidth={2}
+  />
+</div>
 
               <div>
 
