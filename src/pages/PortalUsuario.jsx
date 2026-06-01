@@ -209,18 +209,6 @@ if (cargandoUsuario) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-4 transition-all duration-500"
         style={{ background: tema.bg }}>
-
-          <div className="max-w-xl mx-auto mb-4">
-  <button
-    onClick={onVolver}
-    className="flex items-center gap-2 text-sm font-medium transition-all hover:translate-x-1"
-    style={{
-      color: "#305DA0"
-    }}
-  >
-    ← Volver
-  </button>
-</div>
         <div className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
           style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}>
           <div className="text-center">
@@ -258,10 +246,37 @@ if (cargandoUsuario) {
     );
   }
 
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
-      style={{ background: tema.bg, padding: "clamp(16px, 4vw, 32px)" }}>
-      <div className="w-full" style={{ maxWidth: "min(100%, 520px)" }}>
+return (
+  <div
+    className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
+    style={{
+      background: tema.bg,
+      padding: "clamp(16px, 4vw, 32px)",
+      position: "relative"
+    }}
+  >
+
+    <div className="absolute top-6 left-6">
+      <button
+        onClick={() => {
+          setPaso(1);
+          setBusqueda("");
+          setColaborador(null);
+          setTema(TEMA_DEFAULT);
+        }}
+        className="flex items-center gap-2 text-sm font-medium transition-all hover:translate-x-1"
+        style={{
+          color: "#305DA0"
+        }}
+      >
+        ← Volver
+      </button>
+    </div>
+
+    <div
+      className="w-full"
+      style={{ maxWidth: "min(100%, 520px)" }}
+    >
 
     
 
