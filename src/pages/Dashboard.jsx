@@ -5,6 +5,8 @@ import {
   CircleAlert,
   Clock3,
   CircleCheckBig,
+  FileSpreadsheet,
+  Ticket,
   FileSpreadsheet
 } from "lucide-react";
 
@@ -133,6 +135,7 @@ const statCards = [
             key={card.label}
             className="rounded-2xl p-5 shadow-sm"
             style={{
+                boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
               background: "#ffffff",
               border: "1px solid #dbeafe"
             }}
@@ -154,10 +157,10 @@ const statCards = [
                 }}
               >
                 <card.icon
-  size={22}
-  color={card.color}
-  strokeWidth={2}
-/>
+                    size={22}
+                    color={card.color}
+                    strokeWidth={2}
+                  />
               </div>
 
             </div>
@@ -182,6 +185,7 @@ const statCards = [
         <div
           className="rounded-2xl p-6 flex flex-col items-center justify-center shadow-sm"
           style={{
+              boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
             background: "#ffffff",
             border: "1px solid #dbeafe"
           }}
@@ -237,14 +241,20 @@ const statCards = [
         <div
           className="rounded-2xl p-5 shadow-sm"
           style={{
+              boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
             background: "#ffffff",
             border: "1px solid #dbeafe"
           }}
         >
 
-          <p className="text-sm font-semibold text-slate-700 mb-4">
-            Tickets por categoría
-          </p>
+          <h3
+                className="font-bold"
+                style={{
+                  color: "#305DA0"
+                }}
+              >
+                Tickets por categoría
+              </h3>
 
           {loading ? (
 
@@ -308,14 +318,20 @@ const statCards = [
         <div
           className="rounded-2xl p-5 shadow-sm"
           style={{
+              boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
             background: "#ffffff",
             border: "1px solid #dbeafe"
           }}
         >
 
-          <p className="text-sm font-semibold text-slate-700 mb-4">
-            Tickets por empresa
-          </p>
+          <h3
+                className="font-bold"
+                style={{
+                  color: "#305DA0"
+                }}
+              >
+                Tickets por empresa
+              </h3>
 
           {loading ? (
 
@@ -389,9 +405,11 @@ const statCards = [
           }}
         >
 
-          <p className="text-2xl mb-2">
-            🎫
-          </p>
+         <Ticket
+                  size={24}
+                  color="#305DA0"
+                  strokeWidth={2}
+                />
 
           <p className="font-semibold text-slate-800">
             Ver tickets pendientes
@@ -412,9 +430,11 @@ const statCards = [
           }}
         >
 
-          <p className="text-2xl mb-2">
-            📈
-          </p>
+          <FileSpreadsheet
+                  size={24}
+                  color="#305DA0"
+                  strokeWidth={2}
+                />
 
           <p className="font-semibold text-slate-800">
             Generar reporte
