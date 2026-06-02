@@ -133,13 +133,6 @@ await supabase
       {/* RESOLVER */}
       <div>
 
-          <p
-              className="text-sm font-bold mb-2"
-              style={{ color: "#305DA0" }}
-            >
-              PASO 2 · Resolver ticket
-            </p>
-
             <p
                 className="text-sm font-bold mb-2"
                 style={{ color: "#305DA0" }}
