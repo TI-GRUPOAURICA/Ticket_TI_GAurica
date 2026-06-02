@@ -102,8 +102,8 @@ export default function ColaboradorHome({
           </button>
 
           {/* SEGUIMIENTO */}
-          <button
-            onClick={onSeguimiento}
+           <button
+            onClick={onRegistrarTicket}
             className="w-full bg-white rounded-2xl p-5 text-left transition hover:scale-[1.01]"
             style={{
               border: "1px solid #dbeafe",
@@ -112,20 +112,19 @@ export default function ColaboradorHome({
             }}
           >
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center gap-4">
 
-            <div
-  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-  style={{
-    background: "#EAF2FB"
-  }}
->
-  <ClipboardList
-    size={28}
-    color="#305DA0"
-    strokeWidth={2}
-  />
-</div>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{
+                background: "#EAF2FB"
+                   }}
+                >
+                  <ClipboardList
+                    size={28}
+                    color="#305DA0"
+                    strokeWidth={2}
+                  />
+                </div>
 
               <div>
 
