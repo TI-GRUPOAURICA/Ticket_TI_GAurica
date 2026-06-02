@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import {
+  Ticket,
+  CircleAlert,
+  Clock3,
+  CircleCheckBig,
+  FileSpreadsheet
+} from "lucide-react";
 
 export default function Dashboard({ onNavigate }) {
 
@@ -64,36 +71,36 @@ export default function Dashboard({ onNavigate }) {
   const maxCat = porCategoria[0]?.[1] || 1;
   const maxEmp = porEmpresa[0]?.[1] || 1;
 
-  const statCards = [
-    {
-      label: "Total Tickets",
-      value: stats.total,
-      color: "#2563eb",
-      icon: "🎫",
-      bg: "#dbeafe"
-    },
-    {
-      label: "Abiertos",
-      value: stats.abiertos,
-      color: "#ef4444",
-      icon: "🔴",
-      bg: "#fee2e2"
-    },
-    {
-      label: "En Proceso",
-      value: stats.en_proceso,
-      color: "#f59e0b",
-      icon: "🟡",
-      bg: "#fef3c7"
-    },
-    {
-      label: "Resueltos",
-      value: stats.resueltos,
-      color: "#22c55e",
-      icon: "✅",
-      bg: "#dcfce7"
-    },
-  ];
+const statCards = [
+  {
+    label: "Total Tickets",
+    value: stats.total,
+    color: "#305DA0",
+    icon: Ticket,
+    bg: "#EAF2FB"
+  },
+  {
+    label: "Abiertos",
+    value: stats.abiertos,
+    color: "#EF4444",
+    icon: CircleAlert,
+    bg: "#FEE2E2"
+  },
+  {
+    label: "En Proceso",
+    value: stats.en_proceso,
+    color: "#F59E0B",
+    icon: Clock3,
+    bg: "#FEF3C7"
+  },
+  {
+    label: "Resueltos",
+    value: stats.resueltos,
+    color: "#22C55E",
+    icon: CircleCheckBig,
+    bg: "#DCFCE7"
+  },
+];
 
   const porcentajeResueltos =
     stats.total > 0
@@ -146,9 +153,11 @@ export default function Dashboard({ onNavigate }) {
                   background: card.bg
                 }}
               >
-                <span className="text-lg">
-                  {card.icon}
-                </span>
+                <card.icon
+  size={22}
+  color={card.color}
+  strokeWidth={2}
+/>
               </div>
 
             </div>
