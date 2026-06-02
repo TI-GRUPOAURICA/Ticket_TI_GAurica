@@ -14,6 +14,9 @@ function GestionTicket({
   const [comentario, setComentario] =
     useState(comentarioInicial || "");
 
+   const tieneSeguimiento =
+  comentario && comentario.trim().length > 0;
+
   const [solucion, setSolucion] =
     useState(solucionInicial || "");
 
@@ -88,9 +91,12 @@ await supabase
       {/* EN PROCESO */}
       <div>
 
-        <p className="text-sm font-semibold text-slate-700 mb-2">
-          Seguimiento interno
-        </p>
+            <p
+                className="text-sm font-bold mb-2"
+                style={{ color: "#F59E0B" }}
+              >
+                PASO 1 · Seguimiento interno
+              </p>
 
         <textarea
           value={comentario}
@@ -127,16 +133,45 @@ await supabase
       {/* RESOLVER */}
       <div>
 
-        <p className="text-sm font-semibold text-slate-700 mb-2">
-          Solución final
-        </p>
+          <p
+              className="text-sm font-bold mb-2"
+              style={{ color: "#305DA0" }}
+            >
+              PASO 2 · Resolver ticket
+            </p>
+
+            <p
+                className="text-sm font-bold mb-2"
+                style={{ color: "#305DA0" }}
+              >
+                PASO 2 · Resolver ticket
+              </p>
+
+              {!tieneSeguimiento && (
+                <div
+                  className="mb-3 p-3 rounded-xl text-sm"
+                  style={{
+                    background: "#FEF3C7",
+                    color: "#92400E",
+                    border: "1px solid #FCD34D"
+                  }}
+                >
+                  ⚠ Debe registrar un seguimiento antes de resolver el ticket.
+                </div>
+              )}
 
         <textarea
           value={solucion}
+          disabled={!tieneSeguimiento}
           onChange={(e) =>
             setSolucion(e.target.value)
+     
           }
-          placeholder="Describe la solución aplicada..."
+         placeholder={
+                  tieneSeguimiento
+                    ? "Describe la solución aplicada..."
+                    : "Primero registra un seguimiento."
+                }
           rows={4}
           className="w-full text-sm px-4 py-3 rounded-xl focus:outline-none resize-none"
           style={{
@@ -147,8 +182,8 @@ await supabase
         />
 
         <button
-          onClick={resolverTicket}
-          disabled={guardando}
+          onClick={resolverTicket }
+          disabled={guardando || !tieneSeguimiento}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
           style={{
             background:
