@@ -298,8 +298,8 @@ const statCards = [
                       className="h-2 rounded-full transition-all"
                       style={{
                         width: `${(count / maxCat) * 100}%`,
-                        background:
-                          "linear-gradient(90deg, #2563eb, #60a5fa)"
+                        background:"#305DA0"
+                          
                       }}
                     />
 
@@ -375,8 +375,7 @@ const statCards = [
                       className="h-2 rounded-full transition-all"
                       style={{
                         width: `${(count / maxEmp) * 100}%`,
-                        background:
-                          "linear-gradient(90deg, #2563eb, #60a5fa)"
+                        background: "#305DA0"
                       }}
                     />
 
