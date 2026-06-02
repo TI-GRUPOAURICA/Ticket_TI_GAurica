@@ -25,7 +25,7 @@ serve(async (req) => {
         subject: `🎫 Nuevo Ticket #${ticket.id} — ${form.titulo}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #345D9D, #345D9D); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
+            <div style="background: linear-gradient(135deg, #1a4f8a, #2B6CB0); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 24px;">🎫 Nuevo Ticket Registrado</h1>
               <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0 0;">Sistema de Soporte TI — Grupo Aurica</p>
             </div>
@@ -78,7 +78,7 @@ serve(async (req) => {
                 <tr>
                   <td style="padding: 10px 0;">
                     <span style="color: #718096; font-size: 13px;">Imagen adjunta</span><br/>
-                    <a href="${imagen_url}" style="color:#345D9D;">Ver imagen</a>
+                    <a href="${imagen_url}" style="color: #2B6CB0;">Ver imagen</a>
                   </td>
                 </tr>` : ""}
               </table>
