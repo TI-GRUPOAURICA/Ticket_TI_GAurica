@@ -395,7 +395,7 @@ return (
 
               {/* PROBLEMA */}
               <div>
-                <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
+                <label className="block font-medium mb-1" style={{ color: "305DA0", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   Detalla tu problema *
                 </label>
                 <textarea
