@@ -1,5 +1,13 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import {
+  LayoutDashboard,
+  Ticket,
+  Laptop,
+  FileSpreadsheet,
+  Users
+} from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default function Layout({
   children,
@@ -12,11 +20,11 @@ export default function Layout({
  
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "📊" },
-    { id: "tickets", label: "Tickets", icon: "🎫" },
-    { id: "inventario", label: "Inventario", icon: "💻" },
-    { id: "reportes", label: "Reportes", icon: "📈" },
-    { id: "usuarios", label: "Usuarios", icon: "👥" },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "tickets", label: "Tickets", icon: Ticket },
+    { id: "inventario", label: "Inventario", icon: Laptop },
+    { id: "reportes", label: "Reportes", icon: FileSpreadsheet },
+    { id: "usuarios", label: "Usuarios", icon: Users },
   ];
 
   return (
@@ -140,9 +148,12 @@ export default function Layout({
               }}
             >
 
-              <span className="text-base">
-                {item.icon}
-              </span>
+             <span>
+                    <item.icon
+                      size={20}
+                      strokeWidth={2}
+                    />
+                  </span>
 
               {menuOpen && (
                 <span className="font-medium">
@@ -181,9 +192,10 @@ export default function Layout({
             }}
           >
 
-            <span className="text-base">
-              🚪
-            </span>
+                    <LogOut
+                    size={20}
+                    strokeWidth={2}
+                  />
 
             {menuOpen && (
               <span>
