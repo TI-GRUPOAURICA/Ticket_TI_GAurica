@@ -15,7 +15,23 @@ export default function Layout({
   currentPage,
   onLogout
 }) {
-  const [menuOpen, setMenuOpen] = useState(true);
+const [menuOpen, setMenuOpen] = useState(
+  window.innerWidth >= 768
+);
+
+useEffect(() => {
+  const handleResize = () => {
+    setMenuOpen(window.innerWidth >= 768);
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  return () =>
+    window.removeEventListener(
+      "resize",
+      handleResize
+    );
+}, []);
 
  
 
