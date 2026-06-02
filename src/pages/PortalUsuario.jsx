@@ -6,8 +6,8 @@ import React from "react";
 
 const TEMAS = {
   "AURICA": {
-    primary: "#305da0",
-    dark: "#1a4f8a",
+    primary: "#345D9D",
+    dark: "#345D9D",
     light: "#ebf4ff",
     border: "#bee3f8",
     text: "#1a365d",
@@ -48,7 +48,7 @@ const TEMAS = {
 };
 
 const TEMA_DEFAULT = {
-  primary: "#305da0",
+  primary: "#345D9D",
   dark: "#1a4f8a",
   light: "#ebf4ff",
   border: "#bee3f8",
@@ -199,7 +199,7 @@ if (cargandoUsuario) {
       style={{ background: "#f0f4f8" }}
     >
       <div className="text-center">
-        <p style={{ color: "#305da0", fontWeight: "600" }}>
+        <p style={{ color: "#345D9D", fontWeight: "600" }}>
           Cargando información...
         </p>
       </div>
@@ -266,7 +266,7 @@ return (
           onClick={onVolver}
           className="text-sm font-medium transition-all hover:translate-x-1"
           style={{
-            color: "#305DA0"
+            color: "#345D9D"
           }}
         >
           ← Volver
@@ -350,7 +350,7 @@ return (
                                                 <h2
                                                   className="font-bold"
                                                   style={{
-                                                    color: "#305DA0",
+                                                    color: "#345D9D",
                                                     fontSize: "clamp(20px, 5vw, 24px)"
                                                   }}
                                                 >

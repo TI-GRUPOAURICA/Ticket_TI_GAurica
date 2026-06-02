@@ -106,7 +106,7 @@ export default function Usuarios() {
   const roleConfig = {
     admin: {
       label: "Admin",
-      color: "#305da0",
+      color: "#345D9D",
       bg: "#dbeafe"
     },
     usuario: {
@@ -140,7 +140,7 @@ export default function Usuarios() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition hover:opacity-90"
           style={{
             background:
-              "linear-gradient(135deg, #24599a, #305da0)",
+              "linear-gradient(135deg, #345D9D, #345D9D)",
             color: "#ffffff"
           }}
         >
@@ -189,28 +189,28 @@ export default function Usuarios() {
 
               <th
                 className="text-left px-6 py-4 font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Nombre
               </th>
 
               <th
                 className="text-left px-6 py-4 font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Correo
               </th>
 
               <th
                 className="text-left px-6 py-4 font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Rol
               </th>
 
               <th
                 className="text-left px-6 py-4 font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Registrado
               </th>
