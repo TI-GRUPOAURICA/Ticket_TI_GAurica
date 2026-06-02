@@ -253,27 +253,25 @@ return (
     className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
     style={{
       background: tema.bg,
-      padding: "clamp(16px, 4vw, 32px)",
-      position: "relative"
+      padding: "clamp(16px, 4vw, 32px)"
     }}
   >
-
-    <div className="mb-3">
-  <button
-    onClick={onVolver}
-    className="text-sm font-medium transition-all hover:translate-x-1"
-    style={{
-      color: "#305DA0"
-    }}
-  >
-    ← Volver
-  </button>
-</div>
-
     <div
       className="w-full"
       style={{ maxWidth: "min(100%, 520px)" }}
     >
+
+      <div className="mb-3">
+        <button
+          onClick={onVolver}
+          className="text-sm font-medium transition-all hover:translate-x-1"
+          style={{
+            color: "#305DA0"
+          }}
+        >
+          ← Volver
+        </button>
+      </div>
 
     
 
