@@ -522,7 +522,7 @@ export default function Usuarios() {
                 className="w-full py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 hover:opacity-90"
                 style={{
                   background:
-                    "linear-gradient(135deg, #24599a, #3b82f6)",
+                    "linear-gradient(135deg, #345D9D, #345D9D)",
                   color: "#ffffff"
                 }}
               >
