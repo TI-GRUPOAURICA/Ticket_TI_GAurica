@@ -119,13 +119,15 @@ useEffect(() => {
           )}
 
           {/* BOTON MENU */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="transition text-sm ml-1"
-            style={{ color: "#dbeafe" }}
-          >
-            {menuOpen ? "◀" : "▶"}
-          </button>
+          {window.innerWidth >= 768 && (
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="transition text-sm ml-1"
+                    style={{ color: "#dbeafe" }}
+                  >
+                    {menuOpen ? "◀" : "▶"}
+                  </button>
+                )}
 
         </div>
 
