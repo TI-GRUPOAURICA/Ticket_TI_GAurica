@@ -94,7 +94,7 @@ export default function SeguimientoTicket({ onVolver }) {
         >
 
           {/* TITULO */}
-          <h1 className="text-3xl font-bold text-center text-slate-800" style={{ color: "#305da0" }}>
+          <h1 className="text-3xl font-bold text-center" style={{ color: "#305da0" }}>
             
 
             Seguimiento de Ticket
