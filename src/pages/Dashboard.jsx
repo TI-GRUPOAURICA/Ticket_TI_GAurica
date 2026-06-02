@@ -75,7 +75,7 @@ const statCards = [
   {
     label: "Total Tickets",
     value: stats.total,
-    color: "#305DA0",
+    color: "#345D9D",
     icon: Ticket,
     bg: "#EAF2FB"
   },
@@ -116,7 +116,7 @@ const statCards = [
 
         <h1
           className="text-3xl font-bold tracking-tight"
-          style={{ color: "#305DA0" }}>
+          style={{ color: "#345D9D" }}>
               Dashboard
         </h1>
 
@@ -192,7 +192,7 @@ const statCards = [
         >
           <p
             className="text-sm mb-4 font-semibold"
-            style={{ color: "#305DA0" }}>
+            style={{ color: "#345D9D" }}>
             Tasa de resolución
           </p>
 
@@ -251,7 +251,7 @@ const statCards = [
           <h3
                 className="font-bold"
                 style={{
-                  color: "#305DA0"
+                  color: "#345D9D"
                 }}
               >
                 Tickets por categoría
@@ -283,7 +283,7 @@ const statCards = [
                       {cat}
                     </span>
 
-                    <span style={{ color: "#2563eb" }}>
+                    <span style={{ color: "#345D9D" }}>
                       {count}
                     </span>
 
@@ -298,7 +298,7 @@ const statCards = [
                       className="h-2 rounded-full transition-all"
                       style={{
                         width: `${(count / maxCat) * 100}%`,
-                        background:"#305DA0"
+                        background:"#345D9D"
                           
                       }}
                     />
@@ -328,7 +328,7 @@ const statCards = [
           <h3
                 className="font-bold"
                 style={{
-                  color: "#305DA0"
+                  color: "#345D9D"
                 }}
               >
                 Tickets por empresa
@@ -360,7 +360,7 @@ const statCards = [
                       {emp}
                     </span>
 
-                    <span style={{ color: "#2563eb" }}>
+                    <span style={{ color: "#345D9D" }}>
                       {count}
                     </span>
 
@@ -375,7 +375,7 @@ const statCards = [
                       className="h-2 rounded-full transition-all"
                       style={{
                         width: `${(count / maxEmp) * 100}%`,
-                        background: "#305DA0"
+                        background: "#345D9D"
                       }}
                     />
 
@@ -407,7 +407,7 @@ const statCards = [
 
          <Ticket
                   size={30}
-                  color="#305DA0"
+                  color="#345D9D"
                   strokeWidth={2}
                 />
 
@@ -432,7 +432,7 @@ const statCards = [
 
           <FileSpreadsheet
                   size={30}
-                  color="#305DA0"
+                  color="#345D9D"
                   strokeWidth={2}
                 />
 

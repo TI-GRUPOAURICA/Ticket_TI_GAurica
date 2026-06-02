@@ -80,7 +80,7 @@ export default function Login() {
 </div>
 
           {/* TITULO */}
-          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#004a99" }}>
+          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#345D9D}" }}>
             Portal de Soporte TI
           </h2>
           <p className="text-sm mb-8 text-center" style={{ color: "#718096" }}>
