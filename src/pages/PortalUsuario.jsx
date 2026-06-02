@@ -16,7 +16,7 @@ const TEMAS = {
     nombre: "Aurica SAC",
   },
   "MINERALAB": {
-    primary: "#8B6914",
+    primary: "#5F504D",
     dark: "#6b4f0f",
     light: "#fdf6e3",
     border: "#e9d8a6",
@@ -26,7 +26,7 @@ const TEMAS = {
     nombre: "Mineralab SAC",
   },
   "METALAB": {
-    primary: "#B8860B",
+    primary: "#B78C30",
     dark: "#8B6508",
     light: "#fffbeb",
     border: "#fde68a",
