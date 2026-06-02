@@ -81,7 +81,7 @@ export default function Login() {
 
           {/* TITULO */}
           <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#004a99" }}>
-            Panel Administrativo
+            Portal de Soporte TI
           </h2>
           <p className="text-sm mb-8 text-center" style={{ color: "#718096" }}>
             Inicia sesión con tu cuenta corporativa
