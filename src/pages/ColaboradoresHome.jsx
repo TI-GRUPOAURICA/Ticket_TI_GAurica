@@ -103,7 +103,7 @@ export default function ColaboradorHome({
 
           {/* SEGUIMIENTO */}
            <button
-            onClick={onRegistrarTicket}
+            onClick={onSeguimiento}
             className="w-full bg-white rounded-2xl p-5 text-left transition hover:scale-[1.01]"
             style={{
               border: "1px solid #dbeafe",
