@@ -350,7 +350,7 @@ return (
                                                 <h2
                                                   className="font-bold"
                                                   style={{
-                                                    color: tema.text,
+                                                    color: "#305DA0",
                                                     fontSize: "clamp(20px, 5vw, 24px)"
                                                   }}
                                                 >
