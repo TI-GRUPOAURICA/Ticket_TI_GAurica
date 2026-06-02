@@ -199,7 +199,7 @@ if (cargandoUsuario) {
       style={{ background: "#f0f4f8" }}
     >
       <div className="text-center">
-        <p style={{ color: "#2B6CB0", fontWeight: "600" }}>
+        <p style={{ color: "#305da0", fontWeight: "600" }}>
           Cargando información...
         </p>
       </div>

@@ -70,7 +70,7 @@ export default function ColaboradorHome({
                   >
                     <Ticket
                       size={28}
-                      color="#2B6CB0"
+                      color="#305da0"
                       strokeWidth={2}
                     />
                   </div>
