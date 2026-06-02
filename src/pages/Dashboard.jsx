@@ -6,8 +6,6 @@ import {
   Clock3,
   CircleCheckBig,
   FileSpreadsheet,
-  Ticket,
-  FileSpreadsheet
 } from "lucide-react";
 
 export default function Dashboard({ onNavigate }) {
@@ -116,8 +114,10 @@ const statCards = [
       {/* HEADER */}
       <div className="mb-8">
 
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-          Dashboard
+        <h1
+          className="text-3xl font-bold tracking-tight"
+          style={{ color: "#305DA0" }}>
+              Dashboard
         </h1>
 
         <p className="mt-1 text-sm text-slate-500">
@@ -190,8 +190,9 @@ const statCards = [
             border: "1px solid #dbeafe"
           }}
         >
-
-          <p className="text-sm mb-4 font-semibold text-slate-700">
+          <p
+            className="text-sm mb-4 font-semibold"
+            style={{ color: "#305DA0" }}>
             Tasa de resolución
           </p>
 
@@ -406,7 +407,7 @@ const statCards = [
         >
 
          <Ticket
-                  size={24}
+                  size={30}
                   color="#305DA0"
                   strokeWidth={2}
                 />
@@ -431,7 +432,7 @@ const statCards = [
         >
 
           <FileSpreadsheet
-                  size={24}
+                  size={30}
                   color="#305DA0"
                   strokeWidth={2}
                 />
