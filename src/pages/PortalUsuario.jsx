@@ -227,11 +227,11 @@ if (cargandoUsuario) {
                     strokeWidth={2.2}
                   />
                 </div>
-            <h2 className="font-bold mb-2" style={{ color: tema.text, fontSize: "clamp(18px, 4vw, 24px)" }}>
+            <h2 className="font-bold mb-2" style={{ color: "#345D9D", fontSize: "clamp(18px, 4vw, 24px)" }}>
               ¡Ticket Enviado!
             </h2>
             <p className="text-sm mb-1" style={{ color: "#718096" }}>Tu solicitud fue registrada correctamente.</p>
-            <p className="font-bold my-4" style={{ color: tema.primary, fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+            <p className="font-bold my-4" style={{ color: "#345D9D", fontSize: "clamp(16px, 3.5vw, 20px)" }}>
               Ticket #{ticketNumero}
             </p>
             <p className="text-sm mb-6" style={{ color: "#a0aec0" }}>El equipo de TI atenderá tu solicitud a la brevedad.</p>
