@@ -225,17 +225,7 @@ if (cargandoUsuario) {
             </p>
             <p className="text-sm mb-6" style={{ color: "#a0aec0" }}>El equipo de TI atenderá tu solicitud a la brevedad.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => {
-                  setEnviado(false); setPaso(1); setBusqueda(""); setColaborador(null);
-                  setTema(TEMA_DEFAULT);
-                  setForm({ descripcion: "", categoria_id: "", anydesk: "" });
-                }}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold text-sm text-white transition"
-                style={{ background: `linear-gradient(135deg, ${tema.dark}, ${tema.primary})` }}
-              >
-                Registrar otro
-              </button>
+             
               <button onClick={onVolver}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold text-sm transition"
                 style={{ border: `1.5px solid ${tema.primary}`, color: tema.primary, background: "transparent" }}>
