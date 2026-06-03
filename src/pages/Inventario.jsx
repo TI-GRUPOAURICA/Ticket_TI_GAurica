@@ -77,7 +77,7 @@ export default function Inventario() {
 
         <div>
 
-          <h1 className="text-3xl font-bold text-slate-800">
+          <h1 className="text-3xl font-bold text-slate-800" style={{ color: "#345D9D" }}>
             Inventario de Equipos
           </h1>
 
@@ -91,7 +91,7 @@ export default function Inventario() {
           className="px-4 py-2 rounded-xl text-sm font-semibold"
           style={{
             background: "#dbeafe",
-            color: "#305da0",
+            color: "#345D9D",
             border: "1px solid #bfdbfe"
           }}
         >
@@ -115,7 +115,7 @@ export default function Inventario() {
             color: "#1e293b"
           }}
           onFocus={(e) => {
-            e.target.style.border = "1px solid #305da0";
+            e.target.style.border = "1px solid #345D9D";
           }}
           onBlur={(e) => {
             e.target.style.border = "1px solid #dbeafe";
@@ -147,28 +147,28 @@ export default function Inventario() {
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Host
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Colaborador
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Empresa
               </th>
 
               <th
                 className="p-4 text-left text-sm font-semibold"
-                style={{ color: "#305da0" }}
+                style={{ color: "#345D9D" }}
               >
                 Acción
               </th>
@@ -354,7 +354,7 @@ export default function Inventario() {
                         className="px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90"
                         style={{
                           background:
-                            "linear-gradient(135deg, #24599a, #3b82f6)",
+                            "linear-gradient(135deg, #345D9D, #345D9D)",
                           color: "#ffffff"
                         }}
                       >
