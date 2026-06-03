@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
 import React from "react";
+import { CheckCircle2 } from "lucide-react";
 
 
 const TEMAS = {
@@ -214,8 +215,18 @@ if (cargandoUsuario) {
         <div className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
           style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}>
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto mb-4"
-              style={{ background: tema.light }}>✅</div>
+           <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+                  style={{
+                    background: "#EEF4FB"
+                  }}
+                >
+                  <CheckCircle2
+                    size={44}
+                    color="#345D9D"
+                    strokeWidth={2.2}
+                  />
+                </div>
             <h2 className="font-bold mb-2" style={{ color: tema.text, fontSize: "clamp(18px, 4vw, 24px)" }}>
               ¡Ticket Enviado!
             </h2>
