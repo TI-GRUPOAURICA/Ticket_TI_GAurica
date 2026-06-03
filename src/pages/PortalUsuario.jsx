@@ -4,7 +4,11 @@ import emailjs from "@emailjs/browser";
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
 
-
+// =============================================================
+// TEMAS POR EMPRESA
+// Cada empresa tiene su propia paleta de colores, logo y nombre.
+// Se aplica dinámicamente según el colaborador que inicia sesión.
+// =============================================================
 const TEMAS = {
   "AURICA": {
     primary: "#345D9D",
@@ -48,6 +52,7 @@ const TEMAS = {
   },
 };
 
+// Tema por defecto cuando no se encuentra la empresa del colaborador
 const TEMA_DEFAULT = {
   primary: "#345D9D",
   dark: "#1a4f8a",
@@ -59,65 +64,97 @@ const TEMA_DEFAULT = {
   nombre: "",
 };
 
+// =============================================================
+// COMPONENTE PRINCIPAL: PortalUsuario
+// Permite a un colaborador registrar un ticket de soporte TI.
+// Props:
+//   onVolver   → función para regresar a la pantalla anterior
+//   userEmail  → correo del usuario autenticado (via Microsoft)
+//   userName   → nombre del usuario autenticado (via Microsoft)
+// =============================================================
+export default function PortalUsuario({ onVolver, userEmail, userName }) {
 
-export default function PortalUsuario({
-  onVolver,
-  userEmail,
-  userName
-}) {
+  // ----------------------------------------------------------
+  // ESTADOS DEL COMPONENTE
+  // Controlan el flujo de pasos, datos del formulario y UI.
+  // ----------------------------------------------------------
+  const [paso, setPaso] = useState(1);                          // Paso actual: 1 = buscar, 2 = formulario
+  const [busqueda, setBusqueda] = useState("");                 // Texto del input de búsqueda manual
+  const [sugerencias, setSugerencias] = useState([]);           // Resultados del buscador de colaboradores
+  const [colaborador, setColaborador] = useState(null);         // Datos del colaborador identificado
+  const [tema, setTema] = useState(TEMA_DEFAULT);               // Tema visual activo según empresa
+  const [form, setForm] = useState({                            // Datos del formulario del ticket
+    descripcion: "",
+    categoria_id: "",
+    anydesk: "",
+  });
+  const [categorias, setCategorias] = useState([]);             // Lista de categorías cargadas desde Supabase
+  const [enviando, setEnviando] = useState(false);              // Bloquea el botón mientras se procesa
+  const [enviado, setEnviado] = useState(false);                // Activa la pantalla de éxito
+  const [ticketNumero, setTicketNumero] = useState(null);       // ID del ticket generado
+  const [cargandoUsuario, setCargandoUsuario] = useState(true); // Muestra pantalla de carga inicial
 
-
-  const [paso, setPaso] = useState(1);
-  const [busqueda, setBusqueda] = useState("");
-  const [sugerencias, setSugerencias] = useState([]);
-  const [colaborador, setColaborador] = useState(null);
-  const [tema, setTema] = useState(TEMA_DEFAULT);
-  const [form, setForm] = useState({ descripcion: "", categoria_id: "", anydesk: "" });
-  const [categorias, setCategorias] = useState([]);
-  const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState(false);
-  const [ticketNumero, setTicketNumero] = useState(null);
-const [cargandoUsuario, setCargandoUsuario] = useState(true);
-    
+  // ----------------------------------------------------------
+  // EFECTO INICIAL
+  // Al montar el componente intenta identificar al colaborador
+  // automáticamente usando el email del usuario autenticado.
+  // ----------------------------------------------------------
   useEffect(() => {
-  cargarUsuarioAutomatico();
-}, []);
+    cargarUsuarioAutomatico();
+  }, []);
 
-const cargarUsuarioAutomatico = async () => {
-  if (!userEmail) return;
+  // ----------------------------------------------------------
+  // CARGA AUTOMÁTICA DEL COLABORADOR
+  // Busca en Supabase el colaborador cuyo correo coincide con
+  // userEmail. Si lo encuentra, salta directo al Paso 2.
+  // Si no lo encuentra, muestra el Paso 1 (búsqueda manual).
+  // ----------------------------------------------------------
+  const cargarUsuarioAutomatico = async () => {
+    if (!userEmail) return;
 
-  const { data, error } = await supabase
-    .from("colaboradores")
-    .select("*")
-    .eq("correo", userEmail)
-    .single();
+    const { data, error } = await supabase
+      .from("colaboradores")
+      .select("*")
+      .eq("correo", userEmail)
+      .single();
 
-  if (error || !data) {
-    console.log("Usuario no encontrado:", userEmail);
+    if (error || !data) {
+      console.log("Usuario no encontrado:", userEmail);
+      setCargandoUsuario(false);
+      return;
+    }
+
+    setColaborador(data);
+    setTema(TEMAS[data.empresa] || TEMA_DEFAULT);
+
+    const { data: cats } = await supabase.from("categorias").select("*");
+    if (cats) setCategorias(cats);
+
+    setPaso(2);
     setCargandoUsuario(false);
-    return;
-  }
+  };
 
-  setColaborador(data);
-  setTema(TEMAS[data.empresa] || TEMA_DEFAULT);
-
-  const { data: cats } = await supabase
-    .from("categorias")
-    .select("*");
-
-  if (cats) setCategorias(cats);
-
-  setPaso(2);
-  setCargandoUsuario(false);
-};
-
+  // ----------------------------------------------------------
+  // BÚSQUEDA MANUAL DE COLABORADOR (Paso 1)
+  // Se activa cuando el usuario escribe en el input de nombre.
+  // Consulta la tabla "colaboradores" con búsqueda parcial.
+  // ----------------------------------------------------------
   const buscarColaborador = async (texto) => {
     setBusqueda(texto);
     if (texto.length < 2) { setSugerencias([]); return; }
-    const { data } = await supabase.from("colaboradores").select("*").ilike("colaborador", `%${texto}%`).limit(5);
+    const { data } = await supabase
+      .from("colaboradores")
+      .select("*")
+      .ilike("colaborador", `%${texto}%`)
+      .limit(5);
     if (data) setSugerencias(data);
   };
 
+  // ----------------------------------------------------------
+  // SELECCIÓN DE COLABORADOR DESDE SUGERENCIAS
+  // Al elegir un colaborador aplica su tema visual, carga las
+  // categorías disponibles y avanza al Paso 2.
+  // ----------------------------------------------------------
   const seleccionarColaborador = async (c) => {
     setColaborador(c);
     setBusqueda(c.colaborador);
@@ -128,6 +165,13 @@ const cargarUsuarioAutomatico = async () => {
     setPaso(2);
   };
 
+  // ----------------------------------------------------------
+  // ENVÍO DEL TICKET
+  // Valida campos, inserta el ticket en Supabase y envía dos
+  // correos via EmailJS:
+  //   1. Notificación interna al equipo de TI
+  //   2. Confirmación de recepción al colaborador
+  // ----------------------------------------------------------
   const enviarTicket = async () => {
     if (!form.descripcion || !form.categoria_id) {
       alert("Por favor completa el detalle del problema y la categoría.");
@@ -135,55 +179,43 @@ const cargarUsuarioAutomatico = async () => {
     }
     setEnviando(true);
 
-    const { data, error } = await supabase.from("tickets").insert({
-      titulo: form.descripcion,
-      descripcion: form.descripcion,
-      categoria_id: parseInt(form.categoria_id),
-      prioridad: "medio",
-      anydesk: form.anydesk || null,
-      hostname: colaborador.host,
-      estado: "abierto",
-      usuario_id: null,
-      nombre_colaborador: colaborador.colaborador,
-      empresa: colaborador.empresa,
-    }).select().single();
+    const { data, error } = await supabase
+      .from("tickets")
+      .insert({
+        titulo: form.descripcion,
+        descripcion: form.descripcion,
+        categoria_id: parseInt(form.categoria_id),
+        prioridad: "medio",
+        anydesk: form.anydesk || null,
+        hostname: colaborador.host,
+        estado: "abierto",
+        usuario_id: null,
+        nombre_colaborador: colaborador.colaborador,
+        empresa: colaborador.empresa,
+      })
+      .select()
+      .single();
 
     if (error) { alert("Error al enviar ticket: " + error.message); setEnviando(false); return; }
 
-    try {
-      await emailjs.send(
-        "service_wzdct0i",
-        "template_cvjx59o",
-        {
-          ticket_id: data.id,
-          colaborador: colaborador.colaborador,
-          empresa: colaborador.empresa,
-          host: colaborador.host,
-          titulo: form.descripcion,
-          descripcion: form.descripcion,
-          anydesk: form.anydesk || "No especificado",
-          name: colaborador.colaborador,
-          email: colaborador.correo,
-        },      
-        "ema3sApQIaIKPzpnq"
-      );
+    // Parámetros compartidos para ambos correos
+    const emailParams = {
+      ticket_id:   data.id,
+      colaborador: colaborador.colaborador,
+      empresa:     colaborador.empresa,
+      host:        colaborador.host,
+      titulo:      form.descripcion,
+      descripcion: form.descripcion,
+      anydesk:     form.anydesk || "No especificado",
+      name:        colaborador.colaborador,
+      email:       colaborador.correo,
+    };
 
-      await emailjs.send(
-  "service_wzdct0i",
-  "template_nj9wy5n",
-  {
-    ticket_id: data.id,
-    colaborador: colaborador.colaborador,
-    empresa: colaborador.empresa,
-    host: colaborador.host,
-    titulo: form.descripcion,
-    descripcion: form.descripcion,
-    anydesk: form.anydesk || "No especificado",
-    name: colaborador.colaborador,
-    email: colaborador.correo,
-  },
-  "ema3sApQIaIKPzpnq"
-);
+    try {
+      // Correo 1: Notificación interna al equipo de TI
+      await emailjs.send("service_wzdct0i", "template_cvjx59o", emailParams, "ema3sApQIaIKPzpnq");
+      // Correo 2: Confirmación al colaborador
+      await emailjs.send("service_wzdct0i", "template_nj9wy5n", emailParams, "ema3sApQIaIKPzpnq");
     } catch (e) {
       console.error("Error enviando correo:", e);
     }
@@ -193,40 +225,45 @@ const cargarUsuarioAutomatico = async () => {
     setEnviando(false);
   };
 
-if (cargandoUsuario) {
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "#f0f4f8" }}
-    >
-      <div className="text-center">
-        <p style={{ color: "#345D9D", fontWeight: "600" }}>
-          Cargando información...
-        </p>
+  // ----------------------------------------------------------
+  // PANTALLA DE CARGA INICIAL
+  // Se muestra mientras se consulta el colaborador por email.
+  // ----------------------------------------------------------
+  if (cargandoUsuario) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f0f4f8" }}>
+        <div className="text-center">
+          <p style={{ color: "#345D9D", fontWeight: "600" }}>Cargando información...</p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
+  // ----------------------------------------------------------
+  // PANTALLA DE ÉXITO
+  // Se muestra tras enviar el ticket correctamente.
+  // Muestra el número de ticket generado y un botón para volver.
+  // ----------------------------------------------------------
   if (enviado) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-4 transition-all duration-500"
-        style={{ background: tema.bg }}>
-        <div className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
-          style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}>
+      <div
+        className="min-h-screen w-full flex items-center justify-center p-4 transition-all duration-500"
+        style={{ background: tema.bg }}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
+          style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}
+        >
           <div className="text-center">
-           <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-                  style={{
-                    background: "#EEF4FB"
-                  }}
-                >
-                  <CheckCircle2
-                    size={44}
-                    color="#345D9D"
-                    strokeWidth={2.2}
-                  />
-                </div>
+
+            {/* Ícono de éxito con fondo azul claro */}
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{ background: "#EEF4FB" }}
+            >
+              <CheckCircle2 size={44} color="#345D9D" strokeWidth={2.2} />
+            </div>
+
             <h2 className="font-bold mb-2" style={{ color: "#345D9D", fontSize: "clamp(18px, 4vw, 24px)" }}>
               ¡Ticket Enviado!
             </h2>
@@ -235,52 +272,63 @@ if (cargandoUsuario) {
               Ticket #{ticketNumero}
             </p>
             <p className="text-sm mb-6" style={{ color: "#a0aec0" }}>El equipo de TI atenderá tu solicitud a la brevedad.</p>
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-             
-              <button onClick={onVolver}
+              <button
+                onClick={onVolver}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold text-sm transition"
-                style={{ border: `1.5px solid ${tema.primary}`, color: tema.primary, background: "transparent" }}>
+                style={{ border: `1.5px solid ${tema.primary}`, color: tema.primary, background: "transparent" }}
+              >
                 Volver al inicio
               </button>
             </div>
+
           </div>
         </div>
       </div>
     );
   }
 
-return (
-  <div
-    className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
-    style={{
-      background: tema.bg,
-      padding: "clamp(16px, 4vw, 32px)"
-    }}
-  >
+  // ----------------------------------------------------------
+  // VISTA PRINCIPAL DEL PORTAL
+  // Estructura: fondo con color del tema → contenedor centrado
+  // → botón Volver (fuera de la card) → card → footer.
+  // ----------------------------------------------------------
+  return (
     <div
-      className="w-full"
-      style={{ maxWidth: "min(100%, 520px)" }}
+      className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
+      style={{ background: tema.bg, padding: "clamp(16px, 4vw, 32px)" }}
     >
+      <div className="w-full" style={{ maxWidth: "min(100%, 520px)" }}>
 
-      <div className="mb-3">
-        <button
-          onClick={onVolver}
-          className="text-sm font-medium transition-all hover:translate-x-1"
-          style={{
-            color: "#345D9D"
-          }}
+        {/* ------------------------------------------------
+            BOTÓN VOLVER — fuera de la card, encima de ella.
+            Alineado a la izquierda del contenedor.
+        ------------------------------------------------ */}
+        <div className="mb-3">
+          <button
+            onClick={onVolver}
+            className="text-sm font-medium transition-all hover:translate-x-1"
+            style={{ color: "#345D9D" }}
+          >
+            ← Volver
+          </button>
+        </div>
+
+        {/* ------------------------------------------------
+            CARD PRINCIPAL
+            Contiene el Paso 1 o el Paso 2 condicionalmente.
+        ------------------------------------------------ */}
+        <div
+          className="bg-white rounded-2xl shadow-sm transition-all duration-500"
+          style={{ border: `1px solid ${tema.border}`, padding: "clamp(16px, 4vw, 24px)" }}
         >
-          ← Volver
-        </button>
-      </div>
 
-    
-
-        {/* CARD */}
-        <div className="bg-white rounded-2xl shadow-sm transition-all duration-500"
-          style={{ border: `1px solid ${tema.border}`, padding: "clamp(16px, 4vw, 24px)" }}>
-
-          {/* PASO 1 */}
+          {/* ----------------------------------------------
+              PASO 1 — Búsqueda manual de colaborador
+              Solo aparece si el usuario no fue identificado
+              automáticamente por su correo electrónico.
+          ---------------------------------------------- */}
           {paso === 1 && (
             <div>
               <h2 className="font-semibold mb-1" style={{ color: "#2d3748", fontSize: "clamp(14px, 3.5vw, 16px)" }}>
@@ -289,6 +337,7 @@ return (
               <p className="mb-4" style={{ color: "#718096", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                 Ingresa tu nombre completo para registrar el ticket
               </p>
+
               <div className="relative">
                 <input
                   type="text"
@@ -306,27 +355,29 @@ return (
                   onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
                   onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
                 />
+
+                {/* Lista desplegable de sugerencias */}
                 {sugerencias.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-10 shadow-lg"
-                    style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                  <div
+                    className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-10 shadow-lg"
+                    style={{ background: "#fff", border: "1px solid #e2e8f0" }}
+                  >
                     {sugerencias.map((s) => {
                       const t = TEMAS[s.empresa] || TEMA_DEFAULT;
                       return (
-                        <button key={s.id} onClick={() => seleccionarColaborador(s)}
+                        <button
+                          key={s.id}
+                          onClick={() => seleccionarColaborador(s)}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition flex items-center gap-3"
-                          style={{ fontSize: "clamp(12px, 3vw, 14px)" }}>
-                            {t.logo && (
-                                <img
-                                  src={t.logo}
-                                  alt={s.empresa}
-
-                                  className={`w-auto object-contain flex-shrink-0 ${
-                                    s.empresa === "GIANLU"
-                                      ? "h-16"
-                                      : "h-5"
-                                  }`}
-                                />
-                              )}
+                          style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
+                        >
+                          {t.logo && (
+                            <img
+                              src={t.logo}
+                              alt={s.empresa}
+                              className={`w-auto object-contain flex-shrink-0 ${s.empresa === "GIANLU" ? "h-16" : "h-5"}`}
+                            />
+                          )}
                           <div>
                             <p className="font-medium" style={{ color: "#2d3748" }}>{s.colaborador}</p>
                             <p style={{ color: "#a0aec0", fontSize: "clamp(10px, 2.5vw, 12px)", marginTop: "2px" }}>
@@ -342,45 +393,33 @@ return (
             </div>
           )}
 
-          {/* PASO 2 */}
-                                  {paso === 2 && (
-                          <div className="space-y-4">
+          {/* ----------------------------------------------
+              PASO 2 — Formulario del ticket
+              Se muestra una vez identificado el colaborador.
+              Incluye: saludo, info del colaborador, descripción,
+              categoría, AnyDesk y botón de envío.
+          ---------------------------------------------- */}
+          {paso === 2 && (
+            <div className="space-y-4">
 
-                            {/* BIENVENIDA */}
-                         <div className="text-center mb-4">
-                                                <h2
-                                                  className="font-bold"
-                                                  style={{
-                                                    color: "#345D9D",
-                                                    fontSize: "clamp(20px, 5vw, 24px)"
-                                                  }}
-                                                >
-                                                  Hola, {userName || colaborador?.colaborador || "Usuario"} 
-                                                </h2>
+              {/* Saludo personalizado con nombre del usuario */}
+              <div className="text-center mb-4">
+                <h2 className="font-bold" style={{ color: "#345D9D", fontSize: "clamp(20px, 5vw, 24px)" }}>
+                  Hola, {userName || colaborador?.colaborador || "Usuario"}
+                </h2>
+                <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
+                  Estamos listos para ayudarte
+                </p>
+              </div>
 
-                                                <p
-                                                  style={{
-                                                    color: "#718096",
-                                                    fontSize: "14px",
-                                                    marginTop: "4px"
-                                                  }}
-                                                >
-                                                  Estamos listos para ayudarte
-                                                </p>
-                                              </div>
-
-                            {/* COLABORADOR */}
-                            <div
-                              className="rounded-lg p-3 flex items-center justify-between transition-all duration-500"
-                              style={{
-                                background: tema.light,
-                                border: `1px solid ${tema.border}`
-                              }}
-                            >
+              {/* Tarjeta de identificación: logo, nombre del colaborador y host */}
+              <div
+                className="rounded-lg p-3 flex items-center justify-between transition-all duration-500"
+                style={{ background: tema.light, border: `1px solid ${tema.border}` }}
+              >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {tema.logo && (
-                    <img src={tema.logo} alt={tema.nombre}
-                        className="h-12 w-auto object-contain flex-shrink-0"/>
+                    <img src={tema.logo} alt={tema.nombre} className="h-12 w-auto object-contain flex-shrink-0" />
                   )}
                   <div className="min-w-0">
                     <p className="font-medium truncate" style={{ color: tema.text, fontSize: "clamp(12px, 3vw, 14px)" }}>
@@ -391,10 +430,9 @@ return (
                     </p>
                   </div>
                 </div>
-                
               </div>
 
-              {/* PROBLEMA */}
+              {/* Campo: descripción del problema (obligatorio) */}
               <div>
                 <label className="block font-medium mb-1" style={{ color: "305DA0", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   Detalla tu problema *
@@ -405,74 +443,70 @@ return (
                   placeholder="Describe el inconveniente que estás presentando..."
                   rows={4}
                   className="w-full px-4 py-3 rounded-lg focus:outline-none resize-none transition"
-                  style={{
-                    border: "1.5px solid #cbd5e0",
-                    color: "#2d3748",
-                    background: "#fff",
-                    fontSize: "clamp(13px, 3vw, 15px)",
-                  }}
+                  style={{ border: "1.5px solid #cbd5e0", color: "#2d3748", background: "#fff", fontSize: "clamp(13px, 3vw, 15px)" }}
                   onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
                   onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
                 />
               </div>
 
-              {/* CATEGORIA */}
+              {/* Campo: categoría del ticket (obligatorio) */}
               <div>
                 <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   Categoría *
                 </label>
-                <select value={form.categoria_id}
+                <select
+                  value={form.categoria_id}
                   onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
-                  style={{
-                    border: "1.5px solid #cbd5e0",
-                    color: "#2d3748",
-                    background: "#fff",
-                    fontSize: "clamp(13px, 3vw, 15px)",
-                  }}>
+                  style={{ border: "1.5px solid #cbd5e0", color: "#2d3748", background: "#fff", fontSize: "clamp(13px, 3vw, 15px)" }}
+                >
                   <option value="">Seleccionar...</option>
                   {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
 
-              {/* ANYDESK */}
+              {/* Campo: ID de AnyDesk (opcional, para soporte remoto) */}
               <div>
                 <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   ID AnyDesk (opcional)
                 </label>
-                <input type="text" value={form.anydesk}
+                <input
+                  type="text"
+                  value={form.anydesk}
                   onChange={(e) => setForm({ ...form, anydesk: e.target.value })}
                   placeholder="Ej: 123 456 789"
                   className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
-                  style={{
-                    border: "1.5px solid #cbd5e0",
-                    color: "#2d3748",
-                    background: "#fff",
-                    fontSize: "clamp(13px, 3vw, 15px)",
-                  }}
+                  style={{ border: "1.5px solid #cbd5e0", color: "#2d3748", background: "#fff", fontSize: "clamp(13px, 3vw, 15px)" }}
                   onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
                   onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
                 />
               </div>
 
-              {/* BOTON */}
-              <button onClick={enviarTicket} disabled={enviando}
+              {/* Botón de envío — deshabilitado mientras se procesa */}
+              <button
+                onClick={enviarTicket}
+                disabled={enviando}
                 className="w-full rounded-lg font-semibold text-white transition disabled:opacity-50"
                 style={{
                   background: `linear-gradient(135deg, ${tema.dark}, ${tema.primary})`,
                   padding: "clamp(10px, 2.5vw, 14px)",
                   fontSize: "clamp(13px, 3vw, 15px)",
-                }}>
-                {enviando ? "Enviando..." : "Enviar Ticket "}
+                }}
+              >
+                {enviando ? "Enviando..." : "Enviar Ticket"}
               </button>
+
             </div>
           )}
         </div>
 
-        {/* FOOTER */}
+        {/* --------------------------------------------------
+            FOOTER — Identidad del grupo empresarial.
+        -------------------------------------------------- */}
         <p className="text-center mt-4" style={{ color: "#a0aec0", fontSize: "clamp(10px, 2.5vw, 12px)" }}>
           Grupo Aurica · Aurica SAC · Mineralab SAC · Metalab SAC · Gianlu
         </p>
+
       </div>
     </div>
   );
