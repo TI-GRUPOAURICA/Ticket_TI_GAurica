@@ -58,7 +58,7 @@ useEffect(() => {
           menuOpen ? "w-60" : "w-16"
         } flex flex-col transition-all duration-300`}
         style={{
-          background: "#24599a",
+          background: "#345D9D",
           borderRight: "1px solid #3b82c420"
         }}
       >
@@ -80,7 +80,7 @@ useEffect(() => {
                 style={{
                   background:
                     "linear-gradient(135deg, #ffffff, #dbeafe)",
-                  color: "#2563eb",
+                  color: "#345D9D",
                 }}
               >
                 TI
@@ -110,7 +110,7 @@ useEffect(() => {
               style={{
                 background:
                   "linear-gradient(135deg, #ffffff, #dbeafe)",
-                color: "#2563eb",
+                color: "#345D9D",
               }}
             >
               TI
