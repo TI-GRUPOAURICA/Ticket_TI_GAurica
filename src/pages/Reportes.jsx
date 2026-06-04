@@ -181,7 +181,7 @@ export default function Reportes() {
           Título y descripción breve de la sección.
       -------------------------------------------------------- */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Reportes</h1>
+        <h1 className="text-3xl font-bold text-slate-800 tracking-tight" style={{ color: "#345D9D" }}>Reportes</h1>
         <p className="mt-1 text-sm text-slate-500">
           Tickets resueltos — exporta por rango de fechas y empresa
         </p>
