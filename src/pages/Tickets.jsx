@@ -405,7 +405,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
           <div className="p-6 flex justify-between items-start" style={{ borderBottom: "1px solid #dbeafe" }}>
             <div>
               <p className="text-xs mb-1" style={{ color: "#64748b" }}>Ticket #{ticketSeleccionado.id}</p>
-              <h2 className="text-lg font-bold text-slate-800"style={{ color: "#345D9D" }}>
+              <h2 className="text-lg font-bold text-slate-800">
                 {ticketSeleccionado.titulo || "Incidencia"}
               </h2>
               <p className="text-xs mt-1" style={{ color: "#64748b" }}>

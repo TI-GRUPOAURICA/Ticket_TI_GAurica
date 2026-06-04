@@ -106,7 +106,7 @@ export default function Inventario() {
       -------------------------------------------------------- */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Inventario de Equipos</h1>
+          <h1 className="text-3xl font-bold text-slate-800" style={{ color: "#345D9D" }}>Inventario de Equipos</h1>
           <p className="text-sm mt-1 text-slate-500">Lista general de equipos registrados</p>
         </div>
         <div
