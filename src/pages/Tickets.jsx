@@ -1,683 +1,499 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
+// =============================================================
+// SUBCOMPONENTE: GestionTicket
+// Panel de acciones para que el técnico TI gestione un ticket.
+// Tiene dos pasos obligatorios y en orden:
+//   PASO 1 → Guardar un comentario de seguimiento (estado: en_proceso)
+//   PASO 2 → Registrar la solución y cerrar el ticket (estado: resuelto)
+// El Paso 2 queda bloqueado hasta que el Paso 1 tenga contenido.
+//
+// Props:
+//   ticketId          → ID del ticket a actualizar
+//   solucionInicial   → solución ya guardada (si existe)
+//   comentarioInicial → seguimiento ya guardado (si existe)
+//   adminNombre       → nombre del técnico autenticado (se guarda en "resuelto_por")
+//   onActualizado     → callback que se llama al guardar o resolver
+// =============================================================
 function GestionTicket({
-
   ticketId,
   solucionInicial,
   comentarioInicial,
   adminNombre,
-  onActualizado
-
+  onActualizado,
 }) {
 
-  const [comentario, setComentario] =
-    useState(comentarioInicial || "");
+  // ----------------------------------------------------------
+  // ESTADOS DEL SUBCOMPONENTE
+  // ----------------------------------------------------------
+  const [comentario, setComentario] = useState(comentarioInicial || ""); // Texto del seguimiento interno
+  const [solucion, setSolucion]     = useState(solucionInicial || "");   // Texto de la solución final
+  const [guardando, setGuardando]   = useState(false);                   // Bloquea botones mientras se guarda
 
-   const tieneSeguimiento =
-  comentario && comentario.trim().length > 0;
+  // El Paso 2 solo se habilita cuando el comentario tiene contenido
+  const tieneSeguimiento = comentario && comentario.trim().length > 0;
 
-  const [solucion, setSolucion] =
-    useState(solucionInicial || "");
-
-  const [guardando, setGuardando] =
-    useState(false);
-
-  // GUARDAR EN PROCESO
+  // ----------------------------------------------------------
+  // PASO 1: GUARDAR SEGUIMIENTO
+  // Actualiza el ticket en Supabase con el comentario de proceso
+  // y cambia el estado a "en_proceso".
+  // ----------------------------------------------------------
   const guardarProceso = async () => {
-
     if (!comentario.trim()) {
       alert("Escribe un comentario.");
       return;
     }
-
     setGuardando(true);
-
     alert(adminNombre);
+
     await supabase
       .from("tickets")
       .update({
-
         comentario_proceso: comentario,
-        estado: "en_proceso",
-        updated_at: new Date()
-
+        estado:             "en_proceso",
+        updated_at:         new Date(),
       })
       .eq("id", ticketId);
 
     setGuardando(false);
-
     onActualizado();
   };
 
-  // RESOLVER
-  
- const resolverTicket = async () => {
+  // ----------------------------------------------------------
+  // PASO 2: RESOLVER TICKET
+  // Actualiza el ticket con la solución, marca el estado como
+  // "resuelto", registra la fecha/hora de resolución y el nombre
+  // del técnico que lo resolvió (adminNombre → resuelto_por).
+  // ----------------------------------------------------------
+  const resolverTicket = async () => {
+    if (!solucion.trim()) {
+      alert("Debes escribir una solución.");
+      return;
+    }
+    setGuardando(true);
+    console.log("ADMIN:", adminNombre);
+    alert("adminNombre = " + adminNombre);
 
-  if (!solucion.trim()) {
-    alert("Debes escribir una solución.");
-    return;
-  }
+    await supabase
+      .from("tickets")
+      .update({
+        solucion,
+        comentario_proceso: comentario,
+        estado:             "resuelto",
+        updated_at:         new Date(),
+        resuelto_at:        new Date().toISOString(),
+        resuelto_por:       adminNombre,
+      })
+      .eq("id", ticketId);
 
-  setGuardando(true);
-console.log("ADMIN:", adminNombre);
- alert("adminNombre = " + adminNombre);
-await supabase
-    .from("tickets")
-    .update({
+    setGuardando(false);
+    onActualizado();
+  };
 
-      solucion,
-      comentario_proceso: comentario,
-      estado: "resuelto",
-
-      updated_at: new Date(),
-
-      resuelto_at: new Date().toISOString(),
-
-      resuelto_por: adminNombre
-
-    })
-    .eq("id", ticketId);
-
-  setGuardando(false);
-
-  onActualizado();
-};
-
+  // ----------------------------------------------------------
+  // RENDER DEL SUBCOMPONENTE
+  // ----------------------------------------------------------
   return (
-
     <div className="space-y-6">
 
-      {/* EN PROCESO */}
+      {/* -------------------------------------------------------
+          PASO 1 — Seguimiento interno
+          Textarea para que el técnico escriba qué está haciendo.
+          Al guardar cambia el estado del ticket a "en_proceso".
+      ------------------------------------------------------- */}
       <div>
-
-            <p
-                className="text-sm font-bold mb-2"
-                style={{ color: "#F59E0B" }}
-              >
-                PASO 1 · Seguimiento interno
-              </p>
-
+        <p className="text-sm font-bold mb-2" style={{ color: "#F59E0B" }}>
+          PASO 1 · Seguimiento interno
+        </p>
         <textarea
           value={comentario}
-          onChange={(e) =>
-            setComentario(e.target.value)
-          }
+          onChange={(e) => setComentario(e.target.value)}
           placeholder="Ejemplo: Se está validando conexión de red..."
           rows={4}
           className="w-full text-sm px-4 py-3 rounded-xl focus:outline-none resize-none"
-          style={{
-            background: "#ffffff",
-            border: "1px solid #dbeafe",
-            color: "#1e293b"
-          }}
+          style={{ background: "#ffffff", border: "1px solid #dbeafe", color: "#1e293b" }}
         />
-
         <button
           onClick={guardarProceso}
           disabled={guardando}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{
-            background:
-              "linear-gradient(135deg, #f59e0b, #fbbf24)",
-            color: "#ffffff"
-          }}
+          style={{ background: "linear-gradient(135deg, #f59e0b, #fbbf24)", color: "#ffffff" }}
         >
-
           🟡 Guardar seguimiento
-
         </button>
-
       </div>
 
-      {/* RESOLVER */}
+      {/* -------------------------------------------------------
+          PASO 2 — Resolver ticket
+          Solo se habilita si el Paso 1 tiene contenido guardado.
+          Si no hay seguimiento, muestra un aviso amarillo y
+          el textarea queda deshabilitado.
+          Al resolver, registra la solución y cierra el ticket.
+      ------------------------------------------------------- */}
       <div>
+        <p className="text-sm font-bold mb-2" style={{ color: "#305DA0" }}>
+          PASO 2 · Resolver ticket
+        </p>
 
-            <p
-                className="text-sm font-bold mb-2"
-                style={{ color: "#305DA0" }}
-              >
-                PASO 2 · Resolver ticket
-              </p>
-
-              {!tieneSeguimiento && (
-                <div
-                  className="mb-3 p-3 rounded-xl text-sm"
-                  style={{
-                    background: "#FEF3C7",
-                    color: "#92400E",
-                    border: "1px solid #FCD34D"
-                  }}
-                >
-                  ⚠ Debe registrar un seguimiento antes de resolver el ticket.
-                </div>
-              )}
+        {/* Aviso de bloqueo cuando aún no hay seguimiento */}
+        {!tieneSeguimiento && (
+          <div
+            className="mb-3 p-3 rounded-xl text-sm"
+            style={{ background: "#FEF3C7", color: "#92400E", border: "1px solid #FCD34D" }}
+          >
+            ⚠ Debe registrar un seguimiento antes de resolver el ticket.
+          </div>
+        )}
 
         <textarea
           value={solucion}
           disabled={!tieneSeguimiento}
-          onChange={(e) =>
-            setSolucion(e.target.value)
-     
+          onChange={(e) => setSolucion(e.target.value)}
+          placeholder={
+            tieneSeguimiento
+              ? "Describe la solución aplicada..."
+              : "Primero registra un seguimiento."
           }
-         placeholder={
-                  tieneSeguimiento
-                    ? "Describe la solución aplicada..."
-                    : "Primero registra un seguimiento."
-                }
           rows={4}
           className="w-full text-sm px-4 py-3 rounded-xl focus:outline-none resize-none"
-          style={{
-            background: "#ffffff",
-            border: "1px solid #dbeafe",
-            color: "#1e293b"
-          }}
+          style={{ background: "#ffffff", border: "1px solid #dbeafe", color: "#1e293b" }}
         />
-
         <button
-          onClick={resolverTicket }
+          onClick={resolverTicket}
           disabled={guardando || !tieneSeguimiento}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{
-            background:
-              "linear-gradient(135deg, #16a34a, #22c55e)",
-            color: "#ffffff"
-          }}
+          style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#ffffff" }}
         >
-
           ✅ Resolver ticket
-
         </button>
-
       </div>
 
     </div>
   );
 }
 
-export default function Tickets({
-  adminNombre,
-  adminCorreo
-}) {
+// =============================================================
+// COMPONENTE PRINCIPAL: Tickets
+// Vista del panel de administración para gestionar tickets activos.
+// Layout dividido en dos paneles:
+//   - Izquierdo: lista de tickets con filtros de estado y prioridad
+//   - Derecho: detalle del ticket seleccionado + subcomponente GestionTicket
+//
+// Props:
+//   adminNombre → nombre del técnico autenticado (se pasa a GestionTicket)
+//   adminCorreo → correo del técnico (disponible para uso futuro)
+// =============================================================
+export default function Tickets({ adminNombre, adminCorreo }) {
 
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // ----------------------------------------------------------
+  // ESTADOS DEL COMPONENTE
+  // ----------------------------------------------------------
+  const [tickets, setTickets]                     = useState([]);         // Lista de tickets activos (abierto + en_proceso)
+  const [loading, setLoading]                     = useState(true);       // Estado de carga inicial
+  const [filtroEstado, setFiltroEstado]           = useState("todos");    // Filtro activo por estado
+  const [filtroPrioridad, setFiltroPrioridad]     = useState("todos");    // Filtro activo por prioridad
+  const [ticketSeleccionado, setTicketSeleccionado] = useState(null);     // Ticket abierto en el panel de detalle
 
-  const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [filtroPrioridad, setFiltroPrioridad] = useState("todos");
-
-  const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
-
+  // ----------------------------------------------------------
+  // EFECTO INICIAL
+  // Carga los tickets al montar el componente.
+  // ----------------------------------------------------------
   useEffect(() => {
     fetchTickets();
   }, []);
 
+  // ----------------------------------------------------------
+  // CARGAR TICKETS
+  // Obtiene de Supabase todos los tickets con estado "abierto"
+  // o "en_proceso", ordenados del más reciente al más antiguo.
+  // Incluye el perfil del usuario y la categoría mediante joins.
+  // ----------------------------------------------------------
   const fetchTickets = async () => {
-
     const { data } = await supabase
       .from("tickets")
-      .select(`
-        *,
-        profiles:usuario_id(full_name, email),
-        categorias(nombre)
-      `)
+      .select(`*, profiles:usuario_id(full_name, email), categorias(nombre)`)
       .in("estado", ["abierto", "en_proceso"])
       .order("created_at", { ascending: false });
 
     if (data) setTickets(data);
-
     setLoading(false);
   };
 
+  // ----------------------------------------------------------
+  // ABRIR TICKET EN EL PANEL DE DETALLE
+  // Al hacer clic en un ticket de la lista, se muestra su
+  // información completa en el panel derecho.
+  // ----------------------------------------------------------
   const abrirTicket = (ticket) => {
     setTicketSeleccionado(ticket);
   };
 
+  // ----------------------------------------------------------
+  // CAMBIAR ESTADO MANUALMENTE
+  // Permite al técnico cambiar el estado del ticket directamente
+  // desde los botones del panel de detalle (Abierto / En proceso).
+  // Recarga la lista y actualiza el ticket seleccionado en pantalla.
+  // ----------------------------------------------------------
   const cambiarEstado = async (ticketId, nuevoEstado) => {
-
     await supabase
       .from("tickets")
-      .update({
-        estado: nuevoEstado,
-        updated_at: new Date()
-      })
+      .update({ estado: nuevoEstado, updated_at: new Date() })
       .eq("id", ticketId);
 
     fetchTickets();
-
-    setTicketSeleccionado({
-      ...ticketSeleccionado,
-      estado: nuevoEstado
-    });
+    setTicketSeleccionado({ ...ticketSeleccionado, estado: nuevoEstado });
   };
 
+  // ----------------------------------------------------------
+  // CONFIGURACIÓN VISUAL DE ESTADOS Y PRIORIDADES
+  // Mapas de color usados para los badges y puntos de la lista.
+  // ----------------------------------------------------------
   const estadoConfig = {
-
-    abierto: {
-      label: "Abierto",
-      color: "#ef4444",
-      bg: "#fee2e2",
-    },
-
-    en_proceso: {
-      label: "En Proceso",
-      color: "#f59e0b",
-      bg: "#fef3c7",
-    },
-
-    resuelto: {
-      label: "Resuelto",
-      color: "#22c55e",
-      bg: "#dcfce7",
-    },
-
+    abierto:    { label: "Abierto",     color: "#ef4444", bg: "#fee2e2" },
+    en_proceso: { label: "En Proceso",  color: "#f59e0b", bg: "#fef3c7" },
+    resuelto:   { label: "Resuelto",    color: "#22c55e", bg: "#dcfce7" },
   };
 
   const prioridadConfig = {
-    bajo: { dot: "#22c55e" },
-    medio: { dot: "#f59e0b" },
-    alto: { dot: "#f97316" },
-    critico: { dot: "#ef4444" },
+    bajo:       { dot: "#22c55e" },
+    medio:      { dot: "#f59e0b" },
+    alto:       { dot: "#f97316" },
+    critico:    { dot: "#ef4444" },
     emergencia: { dot: "#a855f7" },
   };
 
+  // ----------------------------------------------------------
+  // FILTRADO LOCAL DE TICKETS
+  // Aplica los filtros de estado y prioridad seleccionados
+  // sobre la lista ya cargada en memoria (sin nueva consulta).
+  // ----------------------------------------------------------
   const ticketsFiltrados = tickets.filter((t) => {
-
-    const estadoOk =
-      filtroEstado === "todos" ||
-      t.estado === filtroEstado;
-
-    const prioridadOk =
-      filtroPrioridad === "todos" ||
-      t.prioridad === filtroPrioridad;
-
+    const estadoOk    = filtroEstado    === "todos" || t.estado    === filtroEstado;
+    const prioridadOk = filtroPrioridad === "todos" || t.prioridad === filtroPrioridad;
     return estadoOk && prioridadOk;
   });
 
+  // ----------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------
   return (
-
     <div className="flex h-screen">
 
-      {/* LISTA */}
-      <div
-        className={`${
-          ticketSeleccionado ? "w-1/2" : "w-full"
-        } flex flex-col transition-all duration-300`}
-      >
+      {/* --------------------------------------------------------
+          PANEL IZQUIERDO — Lista de tickets
+          Ocupa todo el ancho si no hay ticket seleccionado,
+          o la mitad si el panel de detalle está abierto.
+      -------------------------------------------------------- */}
+      <div className={`${ticketSeleccionado ? "w-1/2" : "w-full"} flex flex-col transition-all duration-300`}>
 
-        {/* HEADER */}
-        <div
-          className="p-6"
-          style={{
-            borderBottom: "1px solid #dbeafe"
-          }}
-        >
-
-          <h1 className="text-2xl font-bold text-slate-800 mb-4">
-            Tickets
-          </h1>
+        {/* Encabezado con título y filtros de estado y prioridad */}
+        <div className="p-6" style={{ borderBottom: "1px solid #dbeafe" }}>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Tickets</h1>
 
           <div className="flex gap-3 flex-wrap items-center">
 
+            {/* Selector de filtro por estado */}
             <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
               className="text-sm px-3 py-2 rounded-xl focus:outline-none"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe",
-                color: "#1e293b"
-              }}
+              style={{ background: "#ffffff", border: "1px solid #dbeafe", color: "#1e293b" }}
             >
-              <option value="todos">
-                Todos los estados
-              </option>
-
-              <option value="abierto">
-                Abierto
-              </option>
-
-              <option value="en_proceso">
-                En Proceso
-              </option>
-
-              <option value="resuelto">
-                Resuelto
-              </option>
-
+              <option value="todos">Todos los estados</option>
+              <option value="abierto">Abierto</option>
+              <option value="en_proceso">En Proceso</option>
+              <option value="resuelto">Resuelto</option>
             </select>
 
+            {/* Selector de filtro por prioridad */}
             <select
               value={filtroPrioridad}
               onChange={(e) => setFiltroPrioridad(e.target.value)}
               className="text-sm px-3 py-2 rounded-xl focus:outline-none"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe",
-                color: "#1e293b"
-              }}
+              style={{ background: "#ffffff", border: "1px solid #dbeafe", color: "#1e293b" }}
             >
-
-              <option value="todos">
-                Todas las prioridades
-              </option>
-
+              <option value="todos">Todas las prioridades</option>
               <option value="bajo">Bajo</option>
               <option value="medio">Medio</option>
               <option value="alto">Alto</option>
               <option value="critico">Crítico</option>
               <option value="emergencia">Emergencia</option>
-
             </select>
 
-            <span
-              className="text-xs"
-              style={{ color: "#64748b" }}
-            >
+            {/* Contador de tickets visibles según filtros */}
+            <span className="text-xs" style={{ color: "#64748b" }}>
               {ticketsFiltrados.length} tickets
             </span>
 
           </div>
-
         </div>
 
-        {/* LISTA TICKETS */}
+        {/* -------------------------------------------------------
+            LISTA DE TICKETS
+            Cada card muestra: punto de prioridad, título, ID,
+            colaborador, empresa, categoría y badge de estado.
+            El ticket seleccionado tiene borde azul para destacarlo.
+        ------------------------------------------------------- */}
         <div className="flex-1 overflow-auto p-4 space-y-3">
-
           {loading ? (
-
-            <p className="text-center mt-10 text-sm text-slate-500">
-              Cargando...
-            </p>
-
+            <p className="text-center mt-10 text-sm text-slate-500">Cargando...</p>
           ) : ticketsFiltrados.length === 0 ? (
-
-            <p className="text-center mt-10 text-sm text-slate-500">
-              No hay tickets.
-            </p>
-
+            <p className="text-center mt-10 text-sm text-slate-500">No hay tickets.</p>
           ) : (
-
             ticketsFiltrados.map((ticket) => (
-
               <div
                 key={ticket.id}
                 onClick={() => abrirTicket(ticket)}
                 className="rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md"
                 style={{
                   background: "#ffffff",
-                  border:
-                    ticketSeleccionado?.id === ticket.id
-                      ? "1px solid #3b82f6"
-                      : "1px solid #dbeafe",
+                  border: ticketSeleccionado?.id === ticket.id
+                    ? "1px solid #345D9D"
+                    : "1px solid #dbeafe",
                 }}
               >
-
                 <div className="flex items-start justify-between gap-3">
-
                   <div className="flex items-center gap-3 flex-1 min-w-0">
 
+                    {/* Punto de color según prioridad */}
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{
-                        background:
-                          prioridadConfig[ticket.prioridad]?.dot || "#6b7280"
-                      }}
+                      style={{ background: prioridadConfig[ticket.prioridad]?.dot || "#6b7280" }}
                     />
 
                     <div className="min-w-0">
-
                       <p className="font-medium text-slate-800 text-sm truncate">
                         {ticket.titulo || "Incidencia"}
                       </p>
-
-                      <p
-                        className="text-xs mt-1"
-                        style={{ color: "#64748b" }}
-                      >
-                        #{ticket.id} ·{" "}
-                        {ticket.nombre_colaborador ||
-                          ticket.profiles?.full_name}{" "}
-                        · {ticket.empresa || ""} ·{" "}
-                        {ticket.categorias?.nombre}
+                      <p className="text-xs mt-1" style={{ color: "#64748b" }}>
+                        #{ticket.id} · {ticket.nombre_colaborador || ticket.profiles?.full_name} · {ticket.empresa || ""} · {ticket.categorias?.nombre}
                       </p>
-
                     </div>
 
                   </div>
 
+                  {/* Badge de estado */}
                   <span
                     className="text-xs px-2 py-1 rounded-full font-medium"
                     style={{
-                      color:
-                        estadoConfig[ticket.estado]?.color,
-                      background:
-                        estadoConfig[ticket.estado]?.bg,
+                      color:       estadoConfig[ticket.estado]?.color,
+                      background:  estadoConfig[ticket.estado]?.bg,
                     }}
                   >
                     {estadoConfig[ticket.estado]?.label}
                   </span>
 
                 </div>
-
               </div>
-
             ))
-
           )}
-
         </div>
 
       </div>
 
-      {/* DETALLE */}
+      {/* --------------------------------------------------------
+          PANEL DERECHO — Detalle del ticket seleccionado
+          Solo visible cuando hay un ticket seleccionado.
+          Contiene: descripción, info técnica, cambio de estado
+          y el subcomponente GestionTicket para resolver el ticket.
+      -------------------------------------------------------- */}
       {ticketSeleccionado && (
+        <div className="w-1/2 flex flex-col" style={{ borderLeft: "1px solid #dbeafe" }}>
 
-        <div
-          className="w-1/2 flex flex-col"
-          style={{
-            borderLeft: "1px solid #dbeafe"
-          }}
-        >
-
-          {/* HEADER DETALLE */}
-          <div
-            className="p-6 flex justify-between items-start"
-            style={{
-              borderBottom: "1px solid #dbeafe"
-            }}
-          >
-
+          {/* Encabezado del detalle con número, título y botón de cierre */}
+          <div className="p-6 flex justify-between items-start" style={{ borderBottom: "1px solid #dbeafe" }}>
             <div>
-
-              <p
-                className="text-xs mb-1"
-                style={{ color: "#64748b" }}
-              >
-                Ticket #{ticketSeleccionado.id}
-              </p>
-
-              <h2 className="text-lg font-bold text-slate-800">
+              <p className="text-xs mb-1" style={{ color: "#64748b" }}>Ticket #{ticketSeleccionado.id}</p>
+              <h2 className="text-lg font-bold text-slate-800"style={{ color: "#345D9D" }}>
                 {ticketSeleccionado.titulo || "Incidencia"}
               </h2>
-
-              <p
-                className="text-xs mt-1"
-                style={{ color: "#64748b" }}
-              >
-                {ticketSeleccionado.nombre_colaborador ||
-                  ticketSeleccionado.profiles?.full_name}
+              <p className="text-xs mt-1" style={{ color: "#64748b" }}>
+                {ticketSeleccionado.nombre_colaborador || ticketSeleccionado.profiles?.full_name}
                 {" · "}
                 {ticketSeleccionado.empresa}
               </p>
-
             </div>
-
+            {/* Botón para cerrar el panel de detalle */}
             <button
               onClick={() => setTicketSeleccionado(null)}
               className="text-slate-400 hover:text-slate-700 text-xl"
             >
               ✕
             </button>
-
           </div>
 
-          {/* CONTENIDO */}
+          {/* Contenido desplazable del detalle */}
           <div className="flex-1 overflow-auto p-6 space-y-5">
 
-            {/* DESCRIPCIÓN */}
-            <div
-              className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe"
-              }}
-            >
-
-              <p className="text-sm font-semibold text-slate-700 mb-2">
-                Descripción
-              </p>
-
-              <p
-                className="text-sm whitespace-pre-wrap"
-                style={{ color: "#334155" }}
-              >
+            {/* Sección: descripción del problema reportado */}
+            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
+              <p className="text-sm font-semibold text-slate-700 mb-2">Descripción</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: "#334155" }}>
                 {ticketSeleccionado.descripcion || "Sin descripción"}
               </p>
-
             </div>
 
-            {/* INFORMACIÓN */}
-            <div
-              className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe"
-              }}
-            >
-
+            {/* Sección: información técnica del equipo (hostname, anydesk, categoría, prioridad) */}
+            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <div className="grid grid-cols-2 gap-4 text-sm">
-
                 <div>
-                  <p className="text-slate-500 mb-1">
-                    Hostname
-                  </p>
-
-                  <p className="font-medium text-slate-800">
-                    {ticketSeleccionado.hostname || "—"}
-                  </p>
+                  <p className="text-slate-500 mb-1">Hostname</p>
+                  <p className="font-medium text-slate-800">{ticketSeleccionado.hostname || "—"}</p>
                 </div>
-
                 <div>
-                  <p className="text-slate-500 mb-1">
-                    AnyDesk
-                  </p>
-
-                  <p className="font-medium text-slate-800">
-                    {ticketSeleccionado.anydesk || "—"}
-                  </p>
+                  <p className="text-slate-500 mb-1">AnyDesk</p>
+                  <p className="font-medium text-slate-800">{ticketSeleccionado.anydesk || "—"}</p>
                 </div>
-
                 <div>
-                  <p className="text-slate-500 mb-1">
-                    Categoría
-                  </p>
-
-                  <p className="font-medium text-slate-800">
-                    {ticketSeleccionado.categorias?.nombre || "—"}
-                  </p>
+                  <p className="text-slate-500 mb-1">Categoría</p>
+                  <p className="font-medium text-slate-800">{ticketSeleccionado.categorias?.nombre || "—"}</p>
                 </div>
-
                 <div>
-                  <p className="text-slate-500 mb-1">
-                    Prioridad
-                  </p>
-
-                  <p className="font-medium text-slate-800 capitalize">
-                    {ticketSeleccionado.prioridad}
-                  </p>
+                  <p className="text-slate-500 mb-1">Prioridad</p>
+                  <p className="font-medium text-slate-800 capitalize">{ticketSeleccionado.prioridad}</p>
                 </div>
-
               </div>
-
             </div>
 
-            {/* ESTADO */}
-            <div
-              className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe"
-              }}
-            >
-
-              <p className="text-sm font-semibold text-slate-700 mb-3">
-                Estado del ticket
-              </p>
-
+            {/* Sección: cambio manual de estado (Abierto / En proceso) */}
+            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Estado del ticket</p>
               <div className="flex gap-3 flex-wrap">
-
                 <button
-                  onClick={() =>
-                    cambiarEstado(ticketSeleccionado.id, "abierto")
-                  }
+                  onClick={() => cambiarEstado(ticketSeleccionado.id, "abierto")}
                   className="px-4 py-2 rounded-xl text-sm font-medium"
-                  style={{
-                    background: "#fee2e2",
-                    color: "#ef4444"
-                  }}
+                  style={{ background: "#fee2e2", color: "#ef4444" }}
                 >
                   Abierto
                 </button>
-
                 <button
-                  onClick={() =>
-                    cambiarEstado(ticketSeleccionado.id, "en_proceso")
-                  }
+                  onClick={() => cambiarEstado(ticketSeleccionado.id, "en_proceso")}
                   className="px-4 py-2 rounded-xl text-sm font-medium"
-                  style={{
-                    background: "#fef3c7",
-                    color: "#f59e0b"
-                  }}
+                  style={{ background: "#fef3c7", color: "#f59e0b" }}
                 >
                   En proceso
                 </button>
-
               </div>
-
             </div>
 
-            {/* SOLUCIÓN */}
-            <div
-              className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbeafe"
-              }}
-            >
-
-              <p className="text-sm font-semibold text-slate-700 mb-3">
-                Resolver ticket
-              </p>
-
+            {/* Sección: subcomponente GestionTicket para seguimiento y resolución */}
+            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Resolver ticket</p>
               <GestionTicket
-                 ticketId={ticketSeleccionado.id}
-                    solucionInicial={ticketSeleccionado.solucion}
-                    comentarioInicial={ticketSeleccionado.comentario_proceso}
-                    adminNombre={adminNombre}
-                    onActualizado={() => {
-                      setTicketSeleccionado(null);
-                      fetchTickets();
-
-                    }}
-                    />
-
+                ticketId={ticketSeleccionado.id}
+                solucionInicial={ticketSeleccionado.solucion}
+                comentarioInicial={ticketSeleccionado.comentario_proceso}
+                adminNombre={adminNombre}
+                onActualizado={() => {
+                  setTicketSeleccionado(null);
+                  fetchTickets();
+                }}
+              />
             </div>
 
           </div>
-
         </div>
-
       )}
 
     </div>

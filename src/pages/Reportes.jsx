@@ -197,7 +197,7 @@ export default function Reportes() {
         className="rounded-2xl p-6 mb-6 shadow-sm"
         style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
       >
-        <h2 className="text-slate-800 font-semibold mb-4">Filtros</h2>
+        <h2 className="text-slate-800 font-semibold mb-4" style={{ color: "#345D9D" }}>Filtros</h2>
 
         <div className="flex flex-wrap gap-4 items-end">
 
