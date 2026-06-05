@@ -15,22 +15,30 @@ export default defineConfig({
         short_name: 'Soporte TI',
         description: 'Sistema de tickets de soporte tecnológico',
         theme_color: '#345D9D',
-        background_color: '#f0f4f8',
+        background_color: '#345D9D',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
-               src: '/pwa-192x192.png',
-        sizes: '192x192',
-        type: 'image/png'
-      },
-      {
-        src: '/pwa-512x512.png',
-        sizes: '512x512',
-        type: 'image/png'
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
     })
-  ],
+  ]
 })
