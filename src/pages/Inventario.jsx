@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { Pencil, Trash2, Save } from "lucide-react";
 
 // =============================================================
 // COMPONENTE: Inventario
@@ -80,6 +81,27 @@ export default function Inventario() {
     setEditandoId(null);
     obtenerEquipos();
   }
+
+  async function eliminarEquipo(id) {
+  const confirmar = window.confirm(
+    "¿Está seguro de eliminar este equipo?"
+  );
+
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from("colaboradores")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert("Error eliminando equipo");
+    return;
+  }
+
+  obtenerEquipos();
+}
 
   // ----------------------------------------------------------
   // FILTRADO EN TIEMPO REAL
@@ -239,32 +261,57 @@ export default function Inventario() {
                       En modo edición: botón verde "Guardar" que llama a guardarCambios().
                       En modo lectura: botón azul "Editar" que activa el modo edición
                       cargando los valores actuales del item en editData. */}
-                  <td className="p-4">
-                    {editandoId === item.id ? (
-                      <button
-                        onClick={guardarCambios}
-                        className="px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90"
-                        style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#ffffff" }}
-                      >
-                        💾 Guardar
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditandoId(item.id);
-                          setEditData({
-                            host:        item.host,
-                            colaborador: item.colaborador,
-                            empresa:     item.empresa,
-                          });
-                        }}
-                        className="px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90"
-                        style={{ background: "linear-gradient(135deg, #345D9D, #345D9D)", color: "#ffffff" }}
-                      >
-                        ✏️ Editar
-                      </button>
-                    )}
-                  </td>
+                          <td className="p-4">
+                            {editandoId === item.id ? (
+                              <button
+                                onClick={guardarCambios}
+                                className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
+                                style={{
+                                  background: "#dcfce7",
+                                  color: "#16a34a",
+                                  border: "1px solid #86efac",
+                                }}
+                                title="Guardar"
+                              >
+                                <Save size={18} />
+                              </button>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditandoId(item.id);
+                                    setEditData({
+                                      host: item.host,
+                                      colaborador: item.colaborador,
+                                      empresa: item.empresa,
+                                    });
+                                  }}
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
+                                  style={{
+                                    background: "#eff6ff",
+                                    color: "#345D9D",
+                                    border: "1px solid #bfdbfe",
+                                  }}
+                                  title="Editar"
+                                >
+                                  <Pencil size={18} />
+                                </button>
+
+                                <button
+                                  onClick={() => eliminarEquipo(item.id)}
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
+                                  style={{
+                                    background: "#fef2f2",
+                                    color: "#dc2626",
+                                    border: "1px solid #fecaca",
+                                  }}
+                                  title="Eliminar"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            )}
+                          </td>
 
                 </tr>
               ))
