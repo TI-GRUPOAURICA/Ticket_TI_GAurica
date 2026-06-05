@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { saveAs } from "file-saver";
+import { Search } from "lucide-react";
 
 // =============================================================
 // COMPONENTE: Reportes
@@ -243,13 +244,16 @@ export default function Reportes() {
 
           {/* Botón: ejecutar la búsqueda con los filtros activos */}
           <button
-            onClick={buscarTickets}
-            disabled={generando}
-            className="px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #345D9D, #345D9D)", color: "#ffffff" }}
-          >
-            {generando ? "Buscando..." : "🔍 Buscar"}
-          </button>
+              onClick={buscarTickets}
+              className="px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition hover:opacity-90"
+              style={{
+                background: "#345D9D",
+                color: "#ffffff",
+              }}
+            >
+              <Search size={20} strokeWidth={2.5} />
+              Buscar
+            </button>
 
           {/* Botón: exportar CSV — solo visible si hay resultados */}
           {preview.length > 0 && (
