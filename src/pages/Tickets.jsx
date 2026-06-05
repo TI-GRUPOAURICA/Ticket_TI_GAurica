@@ -289,7 +289,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
 
         {/* Encabezado con título y filtros de estado y prioridad */}
         <div className="p-6" style={{ borderBottom: "1px solid #dbeafe" }}>
-          <h1 className="text-2xl font-bold text-slate-800 mb-4">Tickets</h1>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4"  style={{ color: "#345D9D" }}>Tickets</h1>
 
           <div className="flex gap-3 flex-wrap items-center">
 
