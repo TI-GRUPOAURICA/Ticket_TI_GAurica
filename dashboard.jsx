@@ -68,7 +68,7 @@ export default function Dashboard({ onNavigate }) {
     {
       label: "Total Tickets",
       value: stats.total,
-      color: "#2563eb",
+      color: "#345D9D",
       icon: "🎫",
       bg: "#dbeafe"
     },
@@ -263,7 +263,7 @@ export default function Dashboard({ onNavigate }) {
                       {cat}
                     </span>
 
-                    <span style={{ color: "#2563eb" }}>
+                    <span style={{ color: "#345D9D" }}>
                       {count}
                     </span>
 
@@ -279,7 +279,7 @@ export default function Dashboard({ onNavigate }) {
                       style={{
                         width: `${(count / maxCat) * 100}%`,
                         background:
-                          "linear-gradient(90deg, #2563eb, #60a5fa)"
+                          "linear-gradient(90deg, #345D9D, #345D9D)"
                       }}
                     />
 
@@ -334,7 +334,7 @@ export default function Dashboard({ onNavigate }) {
                       {emp}
                     </span>
 
-                    <span style={{ color: "#2563eb" }}>
+                    <span style={{ color: "#345D9D" }}>
                       {count}
                     </span>
 
@@ -350,7 +350,7 @@ export default function Dashboard({ onNavigate }) {
                       style={{
                         width: `${(count / maxEmp) * 100}%`,
                         background:
-                          "linear-gradient(90deg, #2563eb, #60a5fa)"
+                          "linear-gradient(90deg, #345D9D, #345D9D)"
                       }}
                     />
 
