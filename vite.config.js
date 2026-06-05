@@ -20,7 +20,7 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/pwa-192x192-B.png',
+            src: '/pwa-192-192-B.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
