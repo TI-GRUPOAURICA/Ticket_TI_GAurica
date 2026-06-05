@@ -251,7 +251,7 @@ export default function Reportes() {
                 color: "#ffffff",
               }}
             >
-              <Search size={15} strokeWidth={2.5} />
+              <Search size={14} strokeWidth={2.5} />
               Buscar
             </button>
 
