@@ -129,7 +129,7 @@ export default function Usuarios() {
       -------------------------------------------------------- */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Usuarios</h1>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight" style={color="#345D9D"}>Usuarios</h1>
           <p className="mt-1 text-sm text-slate-500">Gestión de usuarios del sistema</p>
         </div>
         <button
