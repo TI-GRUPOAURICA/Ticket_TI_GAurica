@@ -99,7 +99,7 @@ export default function Login() {
           className="text-xs text-center absolute bottom-8 left-0 right-0"
           style={{ color: "rgba(255,255,255,0.3)" }}
         >
-          © 2025 Grupo Aurica — Todos los derechos reservados
+          © 2025 Grupo Aurica — Todos los derechos reservadosJAJAJAJAaaaaaaaaaaaaaaaaaaaaaaaaaaa
         </p>
       </div>
 
