@@ -100,6 +100,7 @@ export default function Login() {
           style={{ color: "rgba(255,255,255,0.3)" }}
         >
           © 2025 Grupo Aurica — Todos los derechos reservados
+        </p>
       </div>
 
       {/* --------------------------------------------------------
@@ -125,7 +126,7 @@ export default function Login() {
           </div>
 
           {/* Título y subtítulo del formulario */}
-          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#345D9D}" }}>
+          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#345D9D" }}>
             Portal de Soporte TI
           </h2>
           <p className="text-sm mb-8 text-center" style={{ color: "#718096" }}>
