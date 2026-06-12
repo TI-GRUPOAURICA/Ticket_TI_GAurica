@@ -92,14 +92,23 @@ function GestionTicket({
 
             console.log("Enviando correo a:", correoColaborador, nombreColaborador);
 
-          try {
+              // Buscar correo del colaborador
+              const { data: colData } = await supabase
+                .from("colaboradores")
+                .select("correo")
+                .eq("colaborador", nombreColaborador)
+                .single();
+
+              const correo = colData?.correo || correoColaborador;
+            
+              try {
             await emailjs.send(
               "service_wzdct0i",
               "template_nj9wy5n",
               {
                 ticket_id:          ticketId,
                 colaborador:        nombreColaborador,
-                email:              correoColaborador,
+                email:              correo,
                 icono:              "✅",
                 titulo_email:       "Ticket Resuelto",
                 mensaje_intro:      "Tu solicitud de soporte ha sido atendida y resuelta.",
