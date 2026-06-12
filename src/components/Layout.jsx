@@ -15,9 +15,6 @@ export default function Layout({
   currentPage,
   onLogout
 }) {
-const [menuOpen, setMenuOpen] = useState(
-  window.innerWidth >= 768
-);
 
 useEffect(() => {
   const handleResize = () => {
@@ -54,14 +51,12 @@ useEffect(() => {
 
       {/* SIDEBAR */}
       <div
-        className={`${
-          menuOpen ? "w-60" : "w-16"
-        } flex flex-col transition-all duration-300`}
-        style={{
-          background: "#345D9D",
-          borderRight: "1px solid #3b82c420"
-        }}
-      >
+          className="w-60 flex flex-col"
+          style={{
+            background: "#345D9D",
+            borderRight: "1px solid #3b82c420",
+          }}
+        >
 
         {/* LOGO */}
         <div
@@ -97,15 +92,7 @@ useEffect(() => {
           )}
 
           {/* BOTON MENU */}
-          {window.innerWidth >= 768 && (
-                  <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="transition text-sm ml-1"
-                    style={{ color: "#dbeafe" }}
-                  >
-                    {menuOpen ? "◀" : "▶"}
-                  </button>
-                )}
+        
 
         </div>
 
