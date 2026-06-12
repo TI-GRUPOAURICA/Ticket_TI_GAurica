@@ -89,7 +89,6 @@ function GestionTicket({
             })
             .eq("id", ticketId);
 
-            console.log("Enviando correo a:", correoColaborador, nombreColaborador);
 
               // Buscar correo del colaborador
               const { data: colData } = await supabase
