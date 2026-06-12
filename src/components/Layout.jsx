@@ -73,35 +73,13 @@ useEffect(() => {
 
           {menuOpen ? (
 
-            <div className="flex items-center gap-2">
-
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #ffffff, #dbeafe)",
-                  color: "#345D9D",
-                }}
-              >
-                TI
-              </div>
-
-              <div>
-
-                <p className="font-bold text-white text-sm tracking-wide">
-                  Tickets TI
-                </p>
-
-                <p
-                  className="text-xs"
-                  style={{ color: "#dbeafe" }}
-                >
-                  Grupo Aurica
-                </p>
-
-              </div>
-
-            </div>
+                <div className="flex justify-center items-center w-full py-2">
+                  <img
+                    src="/Grupo-Aurica-version_alterna_blanco.png"
+                    alt="Grupo Aurica"
+                    className="h-14 object-contain"
+                  />
+                </div>
 
           ) : (
 
