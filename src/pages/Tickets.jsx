@@ -88,6 +88,8 @@ function GestionTicket({
               resuelto_por:       adminNombre,
             })
             .eq("id", ticketId);
+            console.log("ticket completo:", ticketSeleccionado);
+
             console.log("Enviando correo a:", correoColaborador, nombreColaborador);
 
           try {
