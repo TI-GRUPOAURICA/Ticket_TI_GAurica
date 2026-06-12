@@ -88,6 +88,7 @@ function GestionTicket({
               resuelto_por:       adminNombre,
             })
             .eq("id", ticketId);
+            console.log("Enviando correo a:", correoColaborador, nombreColaborador);
 
           try {
             await emailjs.send(
