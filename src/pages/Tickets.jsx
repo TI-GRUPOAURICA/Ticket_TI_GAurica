@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import emailjs from "@emailjs/browser";
+
 
 // =============================================================
 // SUBCOMPONENTE: GestionTicket
@@ -21,6 +23,8 @@ function GestionTicket({
   solucionInicial,
   comentarioInicial,
   adminNombre,
+  correoColaborador,
+  nombreColaborador,
   onActualizado,
 }) {
 
@@ -67,28 +71,53 @@ function GestionTicket({
   // del técnico que lo resolvió (adminNombre → resuelto_por).
   // ----------------------------------------------------------
   const resolverTicket = async () => {
-    if (!solucion.trim()) {
-      alert("Debes escribir una solución.");
-      return;
-    }
-    setGuardando(true);
-    console.log("ADMIN:", adminNombre);
-    alert("adminNombre = " + adminNombre);
+            if (!solucion.trim()) {
+            alert("Debes escribir una solución.");
+            return;
+          }
+          setGuardando(true);
 
-    await supabase
-      .from("tickets")
-      .update({
-        solucion,
-        comentario_proceso: comentario,
-        estado:             "resuelto",
-        updated_at:         new Date(),
-        resuelto_at:        new Date().toISOString(),
-        resuelto_por:       adminNombre,
-      })
-      .eq("id", ticketId);
+          await supabase
+            .from("tickets")
+            .update({
+              solucion,
+              comentario_proceso: comentario,
+              estado:             "resuelto",
+              updated_at:         new Date(),
+              resuelto_at:        new Date().toISOString(),
+              resuelto_por:       adminNombre,
+            })
+            .eq("id", ticketId);
 
-    setGuardando(false);
-    onActualizado();
+          try {
+            await emailjs.send(
+              "service_wzdct0i",
+              "template_nj9wy5n",
+              {
+                ticket_id:          ticketId,
+                colaborador:        nombreColaborador,
+                email:              correoColaborador,
+                icono:              "✅",
+                titulo_email:       "Ticket Resuelto",
+                mensaje_intro:      "Tu solicitud de soporte ha sido atendida y resuelta.",
+                label_detalle:      "Solución aplicada",
+                detalle:            solucion,
+                mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
+                link_encuesta_html: `<div style="text-align:center;margin-top:30px;">
+                  <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
+                    style="background:#2f64b3;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;">
+                    ⭐ Calificar atención
+                  </a>
+                </div>`,
+              },
+              "ema3sApQIaIKPzpnq"
+            );
+          } catch (e) {
+            console.error("Error enviando correo de cierre:", e);
+          }
+
+          setGuardando(false);
+          onActualizado();
   };
 
   // ----------------------------------------------------------
@@ -481,13 +510,15 @@ export default function Tickets({ adminNombre, adminCorreo }) {
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-3">Resolver ticket</p>
               <GestionTicket
-                ticketId={ticketSeleccionado.id}
-                solucionInicial={ticketSeleccionado.solucion}
-                comentarioInicial={ticketSeleccionado.comentario_proceso}
-                adminNombre={adminNombre}
-                onActualizado={() => {
-                  setTicketSeleccionado(null);
-                  fetchTickets();
+                      ticketId={ticketSeleccionado.id}
+                      solucionInicial={ticketSeleccionado.solucion}
+                      comentarioInicial={ticketSeleccionado.comentario_proceso}
+                      adminNombre={adminNombre}
+                      correoColaborador={ticketSeleccionado.email}        /* 👈 nuevo */
+                      nombreColaborador={ticketSeleccionado.nombre_colaborador}  /* 👈 nuevo */
+                      onActualizado={() => {
+                        setTicketSeleccionado(null);
+                        fetchTickets();
                 }}
               />
             </div>

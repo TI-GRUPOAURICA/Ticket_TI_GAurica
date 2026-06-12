@@ -200,15 +200,21 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
 
     // Parámetros compartidos para ambos correos
     const emailParams = {
-      ticket_id:   data.id,
-      colaborador: colaborador.colaborador,
-      empresa:     colaborador.empresa,
-      host:        colaborador.host,
-      titulo:      form.descripcion,
-      descripcion: form.descripcion,
-      anydesk:     form.anydesk || "No especificado",
-      name:        colaborador.colaborador,
-      email:       colaborador.correo,
+              ticket_id:          data.id,
+            colaborador:        colaborador.colaborador,
+            empresa:            colaborador.empresa,
+            host:               colaborador.host,
+            anydesk:            form.anydesk || "No especificado",
+            name:               colaborador.colaborador,
+            email:              colaborador.correo,
+            // Variables dinámicas para la plantilla compartida
+            icono:              "🎫",
+            titulo_email:       "Ticket Registrado",
+            mensaje_intro:      "Hemos recibido correctamente tu solicitud de soporte técnico.",
+            label_detalle:      "Descripción registrada",
+            detalle:            form.descripcion,
+            mensaje_footer:     "Nuestro equipo de TI revisará tu solicitud y comenzará la atención lo antes posible.",
+            link_encuesta_html: "",
     };
 
     try {
