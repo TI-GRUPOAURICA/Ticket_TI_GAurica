@@ -78,6 +78,20 @@ export default function Login() {
             className="w-[420px] object-contain"
             style={{ filter: "brightness(0) invert(1)" }}
           />
+          
+          <img
+            src="/CUATRO-EMPRESAS.png"
+            alt="Empresas del Grupo"
+            className="w-[180px] object-contain mt-2"
+          />
+
+
+
+
+
+
+
+
 
           <div>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
