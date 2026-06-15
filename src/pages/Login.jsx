@@ -80,7 +80,7 @@ export default function Login() {
           />
           
           <img
-            src="/cuatro-empresas.png"
+            src="/4xempresasaurica.png"
             alt="Empresas del Grupo"
             className="w-[180px] object-contain mt-2"
           />
