@@ -82,7 +82,7 @@ export default function Login() {
           <img
             src="/4xempresasaurica.png"
             alt="Empresas del Grupo"
-            className="w-[180px] object-contain mt-2"
+            style={{width: "300px", border:"3px solid red" , background:"white" }}
           />
           <div>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
