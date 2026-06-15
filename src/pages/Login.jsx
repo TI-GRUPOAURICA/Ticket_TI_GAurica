@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
 import { loginRequest } from "../Config/authConfig";
+import { AppWindow } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
+import { Grid2x2 } from "lucide-react";
+import { FaMicrosoft } from "react-icons/fa";
 
 // =============================================================
 // COMPONENTE: Login
@@ -125,7 +129,7 @@ export default function Login() {
               alt="Grupo Aurica"
               className="w-56 mx-auto mb-4 object-contain"
             />
-            <p className="text-sm" style={{ color: "#64748b" }}>
+            <p className="text-sm" style={{ color: "#f0f3f8" }}>
               Soporte TI — Sistema de tickets
             </p>
           </div>
@@ -162,15 +166,19 @@ export default function Login() {
               Se deshabilita si ya hay un proceso MSAL en curso
               o si loading está activo (para evitar doble clic).
           ------------------------------------------------------- */}
-          <button
+         <button
             onClick={handleMicrosoftLogin}
             disabled={loading || inProgress !== InteractionStatus.None}
-            className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #345D9D, #345D9D)" }}
+            className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ background: "#345D9D" }}
           >
-            {loading ? "Conectando..." : "Iniciar sesión con Microsoft 365"}
-          </button>
+            <FaMicrosoft size={18} />
 
+            {loading
+              ? "Conectando..."
+              : "Iniciar sesión con Microsoft 365"}
+          </button>
+          
           {/* Footer con identidad del grupo empresarial */}
           <p className="text-center text-xs mt-8" style={{ color: "#a0aec0" }}>
             Grupo Aurica · Aurica · Mineralab · Metalab · Gianlu
