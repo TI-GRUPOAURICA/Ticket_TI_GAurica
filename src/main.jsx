@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { msalConfig } from './Config/authConfig'
+import "./styles/fonts.css";
 
 const msalInstance = new PublicClientApplication(msalConfig)
 

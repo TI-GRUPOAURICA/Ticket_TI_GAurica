@@ -1,0 +1,20 @@
+@font-face {
+  font-family: "Nexa";
+  src: url("../assets/fonts/Nexa-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nexa";
+  src: url("../assets/fonts/Nexa-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nexa";
+  src: url("../assets/fonts/Nexa-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}

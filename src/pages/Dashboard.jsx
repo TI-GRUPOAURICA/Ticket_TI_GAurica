@@ -125,7 +125,7 @@ export default function Dashboard({ onNavigate }) {
           Título de la sección y descripción breve.
       -------------------------------------------------------- */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "#345D9D" }}>
+        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "#345D9D", fontFamily: "nexa", fontWeight: 700 }}>
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-slate-500">Resumen general del sistema</p>
