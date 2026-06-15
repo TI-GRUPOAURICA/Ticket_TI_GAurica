@@ -80,19 +80,10 @@ export default function Login() {
           />
           
           <img
-            src="/CUATRO-EMPRESAS.png"
+            src="/cuatro-empresas.png"
             alt="Empresas del Grupo"
             className="w-[180px] object-contain mt-2"
           />
-
-
-
-
-
-
-
-
-
           <div>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
               Soporte TI — Sistema de tickets
