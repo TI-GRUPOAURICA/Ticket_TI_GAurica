@@ -172,13 +172,22 @@ export default function Login() {
             className="w-full py-3 rounded-lg font-semibold text-sm text-white transition disabled:opacity-50 flex items-center justify-center gap-2"
             style={{ background: "#345D9D" }}
           >
-            <FaMicrosoft size={18} />
+              <img
+                  src="/icons8-window.png"
+                  alt="Microsoft"
+                  className="w-5 h-5"
+                    style={{
+    filter: "brightness(0) invert(1)"
+  }}
+                />
+
+
 
             {loading
               ? "Conectando..."
               : "Iniciar sesión con Microsoft 365"}
           </button>
-          
+
           {/* Footer con identidad del grupo empresarial */}
           <p className="text-center text-xs mt-8" style={{ color: "#a0aec0" }}>
             Grupo Aurica · Aurica · Mineralab · Metalab · Gianlu
