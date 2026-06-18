@@ -148,7 +148,7 @@ export default function Dashboard({ onNavigate }) {
             }}
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm" style={{ color: "#64748b" }}>{card.label}</p>
+              <p className="text-sm" style={{ color: "#345D9D" }}>{card.label}</p>
               {/* Ícono con fondo de color según el estado */}
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
