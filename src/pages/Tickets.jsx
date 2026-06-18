@@ -398,7 +398,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
                     {/* Punto de color según prioridad */}
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ background: prioridadConfig[ticket.prioridad]?.dot || "#6b7280" }}
+                      style={{ background: prioridadConfig[ticket.prioridad]?.dot || "#345d9d" }}
                     />
 
                     <div className="min-w-0">
