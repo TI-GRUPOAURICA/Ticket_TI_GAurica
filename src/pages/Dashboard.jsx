@@ -101,9 +101,9 @@ export default function Dashboard({ onNavigate }) {
   // ----------------------------------------------------------
   const statCards = [
     { label: "Total Tickets", value: stats.total,      color: "#345D9D", icon: Ticket,         bg: "#EAF2FB" },
-    { label: "Abiertos",      value: stats.abiertos,   color: "#EF4444", icon: CircleAlert,    bg: "#FEE2E2" },
-    { label: "En Proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3,         bg: "#FEF3C7" },
-    { label: "Resueltos",     value: stats.resueltos,  color: "#22C55E", icon: CircleCheckBig, bg: "#DCFCE7" },
+    { label: "Abiertos",      value: stats.abiertos,   color: "#345D9D", icon: CircleAlert,    bg: "#FEE2E2" },
+    { label: "En Proceso",    value: stats.en_proceso,  color: "#345D9D", icon: Clock3,         bg: "#FEF3C7" },
+    { label: "Resueltos",     value: stats.resueltos,  color: "#345D9D", icon: CircleCheckBig, bg: "#DCFCE7" },
   ];
 
   // ----------------------------------------------------------
@@ -125,7 +125,7 @@ export default function Dashboard({ onNavigate }) {
           Título de la sección y descripción breve.
       -------------------------------------------------------- */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "#345D9D", fontFamily: "nexa", fontWeight: 700 }}>
+        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "rgb(0, 0, 0)D9D", fontFamily: "nexa", fontWeight: 700 }}>
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-slate-500">Resumen general del sistema</p>
