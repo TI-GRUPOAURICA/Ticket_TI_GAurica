@@ -328,7 +328,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
 
         {/* Encabezado con título y filtros de estado y prioridad */}
         <div className="p-6" style={{ borderBottom: "1px solid #dbeafe" }}>
-          <h1 className="text-2xl font-bold text-slate-800 mb-4"  style={{ color: "#345D9D" }}>Tickets</h1>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4"  style={{ color: "#000000" }}>Tickets</h1>
 
           <div className="flex gap-3 flex-wrap items-center">
 
@@ -502,14 +502,14 @@ export default function Tickets({ adminNombre, adminCorreo }) {
                 <button
                   onClick={() => cambiarEstado(ticketSeleccionado.id, "abierto")}
                   className="px-4 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: "#fee2e2", color: "#ef4444" }}
+                  style={{ background: "#fee2e2", color: "#345d9d" }}
                 >
                   Abierto
                 </button>
                 <button
                   onClick={() => cambiarEstado(ticketSeleccionado.id, "en_proceso")}
                   className="px-4 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: "#fef3c7", color: "#f59e0b" }}
+                  style={{ background: "#fef3c7", color: "#345d9d" }}
                 >
                   En proceso
                 </button>
