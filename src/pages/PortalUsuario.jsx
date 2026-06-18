@@ -143,22 +143,22 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
 
     if (error) { alert("Error al enviar ticket: " + error.message); setEnviando(false); return; }
 
-    const emailParams = {
-      ticket_id:          data.id,
-      colaborador:        colaborador.colaborador,
-      empresa:            colaborador.empresa,
-      host:               colaborador.host,
-      anydesk:            form.anydesk || "No especificado",
-      name:               colaborador.colaborador,
-      email:              colaborador.correo,
-      icono:              "🎫",
-      titulo_email:       "Ticket Registrado",
-      mensaje_intro:      "Hemos recibido correctamente tu solicitud de soporte técnico.",
-      label_detalle:      "Descripción registrada",
-      detalle:            form.descripcion,
-      mensaje_footer:     "Nuestro equipo de TI revisará tu solicitud y comenzará la atención lo antes posible.",
-      link_encuesta_html: "",
-    };
+   const emailParams = {
+  ticket_id:          data.id,
+  colaborador:        colaborador.colaborador,
+  empresa:            colaborador.empresa,
+  host:               colaborador.host,
+  anydesk:            form.anydesk || "No especificado",
+  name:               colaborador.colaborador,
+  email:              colaborador.correo,
+  icono:              "",
+  titulo_email:       "Solicitud registrada",
+  mensaje_intro:      "Consulta el estado de tu caso con el número de seguimiento",
+  label_detalle:      "Descripción",
+  detalle:            form.descripcion,
+  mensaje_footer:     "Revisaremos tu solicitud y comenzaremos la atención lo antes posible.",
+  link_encuesta_html: "",
+};
 
     try {
       await emailjs.send("service_wzdct0i", "template_cvjx59o", emailParams, "ema3sApQIaIKPzpnq");

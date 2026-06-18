@@ -67,32 +67,32 @@ function GestionTicket({
 
     const correo = colData?.correo || correoColaborador;
 
-    try {
-      await emailjs.send(
-        "service_wzdct0i",
-        "template_nj9wy5n",
-        {
-          ticket_id:          ticketId,
-          colaborador:        nombreColaborador,
-          email:              correo,
-          icono:              "✅",
-          titulo_email:       "Ticket Resuelto",
-          mensaje_intro:      "Tu solicitud de soporte ha sido atendida y resuelta.",
-          label_detalle:      "Solución aplicada",
-          detalle:            solucion,
-          mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
-          link_encuesta_html: `<div style="text-align:center;margin-top:30px;">
-            <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
-              style="background:#2f64b3;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;">
-              ⭐ Calificar atención
-            </a>
-          </div>`,
-        },
-        "ema3sApQIaIKPzpnq"
-      );
-    } catch (e) {
-      console.error("Error enviando correo de cierre:", e);
-    }
+ try {
+  await emailjs.send(
+    "service_wzdct0i",
+    "template_nj9wy5n",
+    {
+      ticket_id:          ticketId,
+      colaborador:        nombreColaborador,
+      email:              correo,
+      icono:              "",
+      titulo_email:       "Solicitud resuelta",
+      mensaje_intro:      `Tu solicitud de soporte #${ticketId} ha sido atendida y resuelta`,
+      label_detalle:      "Solución aplicada",
+      detalle:            solucion,
+      mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
+      link_encuesta_html: `<div style="text-align:center;margin-top:28px;">
+        <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
+          style="background:#345d9d;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;display:inline-block;">
+          Calificar atención
+        </a>
+      </div>`,
+    },
+    "ema3sApQIaIKPzpnq"
+  );
+} catch (e) {
+  console.error("Error enviando correo de cierre:", e);
+}
 
     setGuardando(false);
     onActualizado();
