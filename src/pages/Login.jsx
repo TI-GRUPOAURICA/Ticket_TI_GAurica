@@ -88,28 +88,8 @@ export default function Login() {
             alt="Empresas del Grupo"
             className="w-[180px] object-contain -mt-14"
           />
-          <div>
-            <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-              Soporte TI — Sistema de tickets
-            </p>
-          </div>
-
-          {/* Separador decorativo */}
-          <div className="w-12 h-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.3)" }} />
-
-          <p className="text-xs px-4" style={{ color: "rgba(255,255,255,0.5)" }}>
-            Plataforma interna para el seguimiento y resolución de incidencias tecnológicas.
-          </p>
-
         </div>
 
-        {/* Copyright fijo al pie del panel izquierdo */}
-        <p
-          className="text-xs text-center absolute bottom-8 left-0 right-0"
-          style={{ color: "rgba(255,255,255,0.3)" }}
-        >
-          © 2025 Grupo Aurica — Todos los derechos reservados
-        </p>
       </div>
 
       {/* --------------------------------------------------------
@@ -188,10 +168,7 @@ export default function Login() {
               : "Iniciar sesión con Microsoft 365"}
           </button>
 
-          {/* Footer con identidad del grupo empresarial */}
-          <p className="text-center text-xs mt-8" style={{ color: "#a0aec0" }}>
-            Grupo Aurica · Aurica · Mineralab · Metalab · Gianlu
-          </p>
+        
 
         </div>
       </div>
