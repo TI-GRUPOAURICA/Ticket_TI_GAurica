@@ -158,7 +158,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             </div>
             {/* Número grande con el color del estado */}
-            <p className="text-3xl font-bold" style={{ color: card.color }}>
+            <p className="text-3xl font-bold" style={{ color:  "#345D9D" }}>
               {card.value}
             </p>
           </div>
