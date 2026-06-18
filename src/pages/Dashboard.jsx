@@ -100,10 +100,10 @@ export default function Dashboard({ onNavigate }) {
   // Cada objeto define el texto, valor, color e ícono de su card.
   // ----------------------------------------------------------
   const statCards = [
-    { label: "Total Tickets", value: stats.total,      color: "#345D9D", icon: Ticket,         bg: "#EAF2FB" },
-    { label: "Abiertos",      value: stats.abiertos,   color: "#EF4444", icon: CircleAlert,    bg: "#FEE2E2" },
-    { label: "En Proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3,         bg: "#FEF3C7" },
-    { label: "Resueltos",     value: stats.resueltos,  color: "#22C55E", icon: CircleCheckBig, bg: "#DCFCE7" },
+    { label: "Total Tickets", value: stats.total,      color: "#345D9D", icon: Ticket },
+    { label: "Abiertos",      value: stats.abiertos,   color: "#EF4444", icon: CircleAlert },
+    { label: "En Proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3 },
+    { label: "Resueltos",     value: stats.resueltos,  color: "#22C55E", icon: CircleCheckBig },
   ];
 
   // ----------------------------------------------------------
