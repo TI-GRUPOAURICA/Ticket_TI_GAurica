@@ -127,7 +127,7 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
       Portal de soporte TI
     </h1>
 
-    <p className="text-sm text-white">
+    <p className="text-sm" style={{ color: "#ffffff"}}>
       Sistema de tickets
     </p>
   </div>
