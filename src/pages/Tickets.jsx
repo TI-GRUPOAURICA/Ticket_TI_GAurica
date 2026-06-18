@@ -322,7 +322,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
       </div>
 
       {ticketSeleccionado && (
-        <div className="w-1/2 flex flex-col" style={{ borderLeft: "1px solid #dbeafe" }}>
+<div className="w-1/2 flex flex-col" style={{ borderLeft: "1px solid #dbeafe", height: "100vh", overflow: "hidden" }}>
 
           <div className="p-6 flex justify-between items-start" style={{ borderBottom: "1px solid #dbeafe" }}>
             <div>
@@ -344,7 +344,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-6 space-y-5">
+<div className="flex-1 overflow-auto p-4 space-y-3" style={{ background: "#f0f3f8" }}>
 
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-2">Descripción</p>
