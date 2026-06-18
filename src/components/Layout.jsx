@@ -55,7 +55,7 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
               <img
                 src="/Grupo-Aurica-version_alterna_blanco.png"
                 alt="Grupo Aurica"
-                className="h-28 w-auto object-contain"
+                className="h-24 w-auto object-contain"
               />
             </div>
           )}
