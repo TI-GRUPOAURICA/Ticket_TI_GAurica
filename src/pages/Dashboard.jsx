@@ -7,75 +7,46 @@ import {
   CircleCheckBig,
   FileSpreadsheet,
 } from "lucide-react";
-
-// =============================================================
-// COMPONENTE: Dashboard
-// Panel de control principal para el equipo de TI.
-// Muestra estadísticas generales de tickets, gráficos por
-// categoría y empresa, y accesos rápidos a otras secciones.
-//
-// Props:
-//   onNavigate → función que recibe una ruta ("tickets" o "reportes")
-//                y navega a la sección correspondiente del panel admin.
-// =============================================================
+ 
 export default function Dashboard({ onNavigate }) {
-
-  // ----------------------------------------------------------
-  // ESTADOS DEL COMPONENTE
-  // ----------------------------------------------------------
+ 
   const [stats, setStats] = useState({
-    abiertos: 0,       // Tickets con estado "abierto"
-    en_proceso: 0,     // Tickets con estado "en_proceso"
-    resueltos: 0,      // Tickets con estado "resuelto"
-    total: 0,          // Total de tickets registrados
+    abiertos: 0,
+    en_proceso: 0,
+    resueltos: 0,
+    total: 0,
   });
-
-  const [porCategoria, setPorCategoria] = useState([]); // Lista ordenada [nombre, cantidad]
-  const [porEmpresa, setPorEmpresa] = useState([]);     // Lista ordenada [empresa, cantidad]
-  const [loading, setLoading] = useState(true);         // Controla el estado de carga inicial
-
-  // ----------------------------------------------------------
-  // EFECTO INICIAL
-  // Carga los datos desde Supabase al montar el componente.
-  // ----------------------------------------------------------
+ 
+  const [porCategoria, setPorCategoria] = useState([]);
+  const [porEmpresa, setPorEmpresa] = useState([]);
+  const [loading, setLoading] = useState(true);
+ 
   useEffect(() => {
     fetchData();
   }, []);
-
-  // ----------------------------------------------------------
-  // CARGA DE DATOS DESDE SUPABASE
-  // Obtiene todos los tickets junto con su categoría.
-  // Con esa data calcula:
-  //   - Conteo por estado (abierto, en_proceso, resuelto)
-  //   - Agrupación por categoría (para la barra horizontal)
-  //   - Agrupación por empresa (para la barra horizontal)
-  // ----------------------------------------------------------
+ 
   const fetchData = async () => {
-
+ 
     const { data } = await supabase
       .from("tickets")
       .select(`*, categorias(nombre)`);
-
+ 
     if (data) {
-
-      // Conteo de tickets por estado
+ 
       setStats({
         abiertos:   data.filter((t) => t.estado === "abierto").length,
         en_proceso: data.filter((t) => t.estado === "en_proceso").length,
         resueltos:  data.filter((t) => t.estado === "resuelto").length,
         total:      data.length,
       });
-
-      // Agrupación por categoría: genera un objeto { "Red": 5, "Hardware": 3, ... }
-      // luego lo convierte en array ordenado de mayor a menor
+ 
       const catMap = {};
       data.forEach((t) => {
         const cat = t.categorias?.nombre || "Sin categoría";
         catMap[cat] = (catMap[cat] || 0) + 1;
       });
       setPorCategoria(Object.entries(catMap).sort((a, b) => b[1] - a[1]));
-
-      // Agrupación por empresa: misma lógica que categorías
+ 
       const empMap = {};
       data.forEach((t) => {
         const emp = t.empresa || "Sin empresa";
@@ -83,60 +54,35 @@ export default function Dashboard({ onNavigate }) {
       });
       setPorEmpresa(Object.entries(empMap).sort((a, b) => b[1] - a[1]));
     }
-
+ 
     setLoading(false);
   };
-
-  // ----------------------------------------------------------
-  // VALORES MÁXIMOS PARA LAS BARRAS DE PROGRESO
-  // Se usan para calcular el ancho relativo (%) de cada barra.
-  // El ítem con más tickets siempre ocupa el 100% del ancho.
-  // ----------------------------------------------------------
+ 
   const maxCat = porCategoria[0]?.[1] || 1;
   const maxEmp = porEmpresa[0]?.[1] || 1;
-
-  // ----------------------------------------------------------
-  // CONFIGURACIÓN DE LAS 4 TARJETAS DE ESTADÍSTICAS
-  // Cada objeto define el texto, valor, color e ícono de su card.
-  // ----------------------------------------------------------
+ 
   const statCards = [
-    { label: "Total Tickets", value: stats.total,      color: "#345D9D", icon: Ticket },
+    { label: "Total tickets", value: stats.total,      color: "#345D9D", icon: Ticket },
     { label: "Abiertos",      value: stats.abiertos,   color: "#EF4444", icon: CircleAlert },
-    { label: "En Proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3 },
+    { label: "En proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3 },
     { label: "Resueltos",     value: stats.resueltos,  color: "#22C55E", icon: CircleCheckBig },
   ];
-
-  // ----------------------------------------------------------
-  // PORCENTAJE DE RESOLUCIÓN
-  // Se muestra en el gráfico circular (donut chart SVG).
-  // Calcula cuántos tickets han sido resueltos del total.
-  // ----------------------------------------------------------
+ 
   const porcentajeResueltos =
     stats.total > 0 ? Math.round((stats.resueltos / stats.total) * 100) : 0;
-
-  // ----------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------
+ 
   return (
-    <div  className="max-w-7xl mx-auto">
-
-      {/* --------------------------------------------------------
-          ENCABEZADO
-          Título de la sección y descripción breve.
-      -------------------------------------------------------- */}
+    <div className="max-w-7xl mx-auto">
+ 
       <div className="mb-4">
-        <h1 className="text-2xl font-bold"style={{ color: "#345D9D", fontFamily: "nexa" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-slate-500">Resumen general del sistema</p>
       </div>
-
-      {/* --------------------------------------------------------
-          TARJETAS DE ESTADÍSTICAS
-          Grid de 4 cards que muestran el conteo de tickets
-          por estado. Se generan dinámicamente desde statCards[].
-      -------------------------------------------------------- */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+ 
+      {/* ---- TARJETAS ---- */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -147,38 +93,24 @@ export default function Dashboard({ onNavigate }) {
               border: "1px solid #dbeafe",
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm" style={{ color: "#345D9D" }}>{card.label}</p>
-              {/* Ícono con fondo de color según el estado */}
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: card.bg }}
-              >
-                <card.icon size={20} color={card.color} strokeWidth={2} />
-              </div>
+            {/* Label arriba */}
+            <p className="text-sm mb-2" style={{ color: "#345D9D" }}>{card.label}</p>
+ 
+            {/* Número + ícono en la misma fila, número a la izquierda, ícono a la derecha */}
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold" style={{ color: "#345D9D" }}>
+                {card.value}
+              </p>
+              <card.icon size={28} color={card.color} strokeWidth={2} />
             </div>
-            {/* Número grande con el color del estado */}
-            <p className="text-3xl font-bold" style={{ color:  "#345D9D" }}>
-              {card.value}
-            </p>
           </div>
         ))}
       </div>
-
-      {/* --------------------------------------------------------
-          SECCIÓN DE GRÁFICOS — 3 columnas
-          1. Donut chart: tasa de resolución
-          2. Barras horizontales: tickets por categoría
-          3. Barras horizontales: tickets por empresa
-      -------------------------------------------------------- */}
+ 
+      {/* ---- GRÁFICOS ---- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-        {/* -------------------------------------------------------
-            GRÁFICO 1: Tasa de resolución (donut SVG)
-            Círculo SVG donde el arco verde representa el % resuelto.
-            Se construye con strokeDasharray usando el porcentaje
-            calculado sobre una circunferencia normalizada a 100.
-        ------------------------------------------------------- */}
+ 
+        {/* Donut */}
         <div
           className="rounded-2xl p-6 flex flex-col items-center justify-center shadow-sm"
           style={{
@@ -190,12 +122,10 @@ export default function Dashboard({ onNavigate }) {
           <p className="text-sm mb-4 font-semibold" style={{ color: "#345D9D" }}>
             Tasa de resolución
           </p>
-
+ 
           <div className="relative w-32 h-32">
             <svg viewBox="0 0 36 36" className="w-32 h-32 -rotate-90">
-              {/* Círculo de fondo (gris) */}
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-              {/* Arco verde proporcional al porcentaje resuelto */}
               <circle
                 cx="18" cy="18" r="15.9"
                 fill="none"
@@ -205,22 +135,17 @@ export default function Dashboard({ onNavigate }) {
                 strokeLinecap="round"
               />
             </svg>
-            {/* Porcentaje centrado sobre el donut */}
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-2xl font-bold text-slate-800">{porcentajeResueltos}%</span>
             </div>
           </div>
-
+ 
           <p className="text-xs mt-3 text-slate-500">
             {stats.resueltos} de {stats.total} tickets
           </p>
         </div>
-
-        {/* -------------------------------------------------------
-            GRÁFICO 2: Tickets por categoría
-            Barras horizontales proporcionales al máximo (maxCat).
-            Muestra solo las 5 categorías con más tickets.
-        ------------------------------------------------------- */}
+ 
+        {/* Por categoría */}
         <div
           className="rounded-2xl p-4 shadow-sm"
           style={{
@@ -232,7 +157,7 @@ export default function Dashboard({ onNavigate }) {
           <h3 className="font-bold mb-3" style={{ color: "#345D9D" }}>
             Tickets por categoría
           </h3>
-
+ 
           {loading ? (
             <p className="text-xs text-slate-500">Cargando...</p>
           ) : porCategoria.length === 0 ? (
@@ -245,7 +170,6 @@ export default function Dashboard({ onNavigate }) {
                     <span className="text-slate-500">{cat}</span>
                     <span style={{ color: "#345D9D" }}>{count}</span>
                   </div>
-                  {/* Barra de fondo gris + barra azul proporcional */}
                   <div className="h-2 rounded-full" style={{ background: "#e2e8f0" }}>
                     <div
                       className="h-2 rounded-full transition-all"
@@ -257,12 +181,8 @@ export default function Dashboard({ onNavigate }) {
             </div>
           )}
         </div>
-
-        {/* -------------------------------------------------------
-            GRÁFICO 3: Tickets por empresa
-            Misma estructura que el gráfico de categorías,
-            pero agrupa por la empresa del colaborador que abrió el ticket.
-        ------------------------------------------------------- */}
+ 
+        {/* Por empresa */}
         <div
           className="rounded-2xl p-4 shadow-sm"
           style={{
@@ -274,7 +194,7 @@ export default function Dashboard({ onNavigate }) {
           <h3 className="font-bold mb-3" style={{ color: "#345D9D" }}>
             Tickets por empresa
           </h3>
-
+ 
           {loading ? (
             <p className="text-xs text-slate-500">Cargando...</p>
           ) : porEmpresa.length === 0 ? (
@@ -287,7 +207,6 @@ export default function Dashboard({ onNavigate }) {
                     <span className="text-slate-500">{emp}</span>
                     <span style={{ color: "#345D9D" }}>{count}</span>
                   </div>
-                  {/* Barra de fondo gris + barra azul proporcional */}
                   <div className="h-2 rounded-full" style={{ background: "#e2e8f0" }}>
                     <div
                       className="h-2 rounded-full transition-all"
@@ -299,18 +218,12 @@ export default function Dashboard({ onNavigate }) {
             </div>
           )}
         </div>
-
+ 
       </div>
-
-      {/* --------------------------------------------------------
-          ACCESOS RÁPIDOS
-          Dos botones que llevan directamente a:
-            - "tickets": lista de tickets pendientes de atención
-            - "reportes": sección para generar reportes exportables
-          Muestran conteos relevantes como contexto al usuario.
-      -------------------------------------------------------- */}
+ 
+      {/* ---- ACCESOS RÁPIDOS ---- */}
       <div className="grid grid-cols-2 gap-4">
-
+ 
         <button
           onClick={() => onNavigate("tickets")}
           className="rounded-2xl p-4 text-left transition hover:shadow-md"
@@ -322,7 +235,7 @@ export default function Dashboard({ onNavigate }) {
             {stats.abiertos + stats.en_proceso} tickets requieren atención
           </p>
         </button>
-
+ 
         <button
           onClick={() => onNavigate("reportes")}
           className="rounded-2xl p-4 text-left transition hover:shadow-md"
@@ -334,9 +247,10 @@ export default function Dashboard({ onNavigate }) {
             {stats.resueltos} tickets resueltos disponibles
           </p>
         </button>
-
+ 
       </div>
-
+ 
     </div>
   );
 }
+ 
