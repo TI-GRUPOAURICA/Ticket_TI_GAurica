@@ -42,7 +42,7 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
         }}
       >
         {/* LOGO */}
-        <div className="p-4 flex items-center justify-center" style={{ borderBottom: "1px solid #3b82c430" }}>
+        <div className="flex items-center justify-center" style={{ borderBottom: "1px solid #3b82c430" }}>
           {isMobile ? (
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm"
@@ -51,18 +51,18 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
               TI
             </div>
           ) : (
-            <div className="flex justify-center items-center w-full py-2">
+            <div className="flex justify-center items-center w-full py-0">
               <img
                 src="/Grupo-Aurica-version_alterna_blanco.png"
                 alt="Grupo Aurica"
-                className="h-30 w-auto object-contain"
+                className="h-32 w-auto object-contain"
               />
             </div>
           )}
         </div>
 
         {/* MENU */}
-        <nav className="flex-1 py-4 space-y-1 px-2">
+        <nav className="flex-1 py-0 space-y-1 px-2">
           {menuItems.map((item) => (
             <button
               key={item.id}
