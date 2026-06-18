@@ -136,7 +136,7 @@ export default function Dashboard({ onNavigate }) {
           Grid de 4 cards que muestran el conteo de tickets
           por estado. Se generan dinámicamente desde statCards[].
       -------------------------------------------------------- */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -154,7 +154,7 @@ export default function Dashboard({ onNavigate }) {
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: card.bg }}
               >
-                <card.icon size={22} color={card.color} strokeWidth={2} />
+                <card.icon size={20} color={card.color} strokeWidth={2} />
               </div>
             </div>
             {/* Número grande con el color del estado */}
