@@ -124,8 +124,8 @@ export default function Dashboard({ onNavigate }) {
           ENCABEZADO
           Título de la sección y descripción breve.
       -------------------------------------------------------- */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "rgb(0, 0, 0)D9D", fontFamily: "nexa", fontWeight: 700 }}>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold"style={{ color: "#345D9D", fontFamily: "nexa" }}>
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-slate-500">Resumen general del sistema</p>
@@ -140,7 +140,7 @@ export default function Dashboard({ onNavigate }) {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-2xl p-5 shadow-sm"
+            className="rounded-2xl p-4 shadow-sm"
             style={{
               boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
               background: "#ffffff",
@@ -158,7 +158,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             </div>
             {/* Número grande con el color del estado */}
-            <p className="text-4xl font-bold" style={{ color: card.color }}>
+            <p className="text-3xl font-bold" style={{ color: card.color }}>
               {card.value}
             </p>
           </div>
@@ -222,7 +222,7 @@ export default function Dashboard({ onNavigate }) {
             Muestra solo las 5 categorías con más tickets.
         ------------------------------------------------------- */}
         <div
-          className="rounded-2xl p-5 shadow-sm"
+          className="rounded-2xl p-4 shadow-sm"
           style={{
             boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
             background: "#ffffff",
@@ -264,7 +264,7 @@ export default function Dashboard({ onNavigate }) {
             pero agrupa por la empresa del colaborador que abrió el ticket.
         ------------------------------------------------------- */}
         <div
-          className="rounded-2xl p-5 shadow-sm"
+          className="rounded-2xl p-4 shadow-sm"
           style={{
             boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
             background: "#ffffff",
@@ -313,7 +313,7 @@ export default function Dashboard({ onNavigate }) {
 
         <button
           onClick={() => onNavigate("tickets")}
-          className="rounded-2xl p-5 text-left transition hover:shadow-md"
+          className="rounded-2xl p-4 text-left transition hover:shadow-md"
           style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
         >
           <Ticket size={30} color="#345D9D" strokeWidth={2} />
@@ -325,7 +325,7 @@ export default function Dashboard({ onNavigate }) {
 
         <button
           onClick={() => onNavigate("reportes")}
-          className="rounded-2xl p-5 text-left transition hover:shadow-md"
+          className="rounded-2xl p-4 text-left transition hover:shadow-md"
           style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
         >
           <FileSpreadsheet size={30} color="#345D9D" strokeWidth={2} />
