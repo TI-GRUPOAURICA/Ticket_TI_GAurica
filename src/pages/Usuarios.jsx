@@ -112,8 +112,8 @@ export default function Usuarios() {
   // Define el texto y colores del badge según el rol del usuario.
   // ----------------------------------------------------------
   const roleConfig = {
-    admin:   { label: "Admin",   color: "#345D9D", bg: "#dbeafe" },
-    usuario: { label: "Usuario", color: "#64748b", bg: "#f1f5f9" },
+    admin:   { label: "Admin",   color: "#345D9D", bg: "transparent" },
+    usuario: { label: "Usuario", color: "#64748b", bg: "transparent" },
   };
 
   // ----------------------------------------------------------
@@ -129,8 +129,8 @@ export default function Usuarios() {
       -------------------------------------------------------- */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight" style={{color:"#345D9D"}}>Usuarios</h1>
-          <p className="mt-1 text-sm text-slate-500">Gestión de usuarios del sistema</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight" style={{color:"#000000"}}>Usuarios</h1>
+          <p className="mt-1 text-sm text-slate-500" style={{color:"#000000"}}>Gestión de usuarios registrados en el sistema</p>
         </div>
         <button
           onClick={() => setModalAbierto(true)}

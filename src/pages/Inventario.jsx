@@ -119,7 +119,7 @@ export default function Inventario() {
   // RENDER
   // ----------------------------------------------------------
   return (
-    <div className="p-6">
+    <div className="p-6" style={{ background: "#f0f3f8", minHeight: "100vh" }}>
 
       {/* --------------------------------------------------------
           ENCABEZADO
@@ -142,7 +142,7 @@ export default function Inventario() {
       {/* --------------------------------------------------------
           BUSCADOR
           Input de texto que filtra la tabla en tiempo real
-          por host, nombre del colaborador o empresa.
+          por host, nombre del colaborador o empre
       -------------------------------------------------------- */}
       <div className="mb-5">
         <input
