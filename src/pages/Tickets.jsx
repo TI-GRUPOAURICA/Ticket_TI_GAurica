@@ -374,23 +374,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               </div>
             </div>
               <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
-                <p className="text-sm font-semibold text-slate-700 mb-3">Estado del ticket</p>
-                <div className="flex gap-3 flex-wrap">
-                  <button
-                    onClick={() => cambiarEstado(ticketSeleccionado.id, "abierto")}
-                    className="px-4 py-2 rounded-xl text-sm font-medium"
-                    style={{ background: "#fee2e2", color: "#345d9d" }}
-                  >
-                    Abierto
-                  </button>
-                  <button
-                    onClick={() => cambiarEstado(ticketSeleccionado.id, "en_proceso")}
-                    className="px-4 py-2 rounded-xl text-sm font-medium"
-                    style={{ background: "#fef3c7", color: "#345d9d" }}
-                  >
-                    En proceso
-                  </button>
-                </div>
                         
   <p className="text-sm font-semibold text-slate-700 mb-3">Prioridad</p>
   <div className="flex gap-3 flex-wrap">
