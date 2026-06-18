@@ -316,7 +316,7 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
 
               <div className="text-center mb-4">
                 <h2 className="font-bold" style={{ color: "#345D9D", fontSize: "clamp(20px, 5vw, 24px)" }}>
-                  Hola, {userName || colaborador?.colaborador || "Usuario"}
+                  Hola {userName || colaborador?.colaborador || "Usuario"}
                 </h2>
                 <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
                   Estamos listos para ayudarte
@@ -345,7 +345,7 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
               {/* Descripción */}
               <div>
                 <label className="block font-medium mb-1" style={{ color: "#305DA0", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
-                  Detalla tu solicitud *
+                  Detalla tu solicitud 
                 </label>
                 <textarea
                   value={form.descripcion}
