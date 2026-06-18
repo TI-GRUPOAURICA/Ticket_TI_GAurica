@@ -295,11 +295,11 @@ export default function Tickets({ adminNombre, adminCorreo }) {
   };
 
   const prioridadConfig = {
-    bajo:       { dot: "#22c55e" },
-    medio:      { dot: "#f59e0b" },
-    alto:       { dot: "#f97316" },
-    critico:    { dot: "#ef4444" },
-    emergencia: { dot: "#a855f7" },
+    bajo:       { dot: "#345d9d" },
+    medio:      { dot: "#345d9d" },
+    alto:       { dot: "#345d9d" },
+    critico:    { dot: "#345d9d" },
+    emergencia: { dot: "#345d9d" },
   };
 
   // ----------------------------------------------------------
