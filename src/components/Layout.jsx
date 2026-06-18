@@ -114,9 +114,26 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
       </div>
 
       {/* CONTENIDO */}
-      <div className="flex-1 overflow-auto" style={{ background: "#eaf3ff" }}>
-        {children}
-      </div>
+     {/* CONTENIDO */}
+<div
+  className="flex-1 overflow-auto p-6"
+  style={{ background: "#eaf3ff" }}
+>
+  <div
+    className="rounded-xl px-6 py-4 mb-6"
+    style={{ background: "#345D9D" }}
+  >
+    <h1 className="text-2xl font-bold text-white">
+      Portal de soporte TI
+    </h1>
+
+    <p className="text-sm text-blue-100">
+      Sistema de tickets
+    </p>
+  </div>
+
+  {children}
+</div>
 
     </div>
   );

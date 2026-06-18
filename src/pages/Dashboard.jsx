@@ -118,7 +118,7 @@ export default function Dashboard({ onNavigate }) {
   // RENDER
   // ----------------------------------------------------------
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div  className="max-w-7xl mx-auto">
 
       {/* --------------------------------------------------------
           ENCABEZADO

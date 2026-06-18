@@ -96,7 +96,7 @@ export default function Login() {
           PANEL DERECHO — Formulario de login
           Ocupa todo el ancho en mobile y el resto en desktop.
       -------------------------------------------------------- */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#f0f3f8" }}>
         <div className="w-full max-w-md">
 
           {/* -------------------------------------------------------
@@ -115,11 +115,12 @@ export default function Login() {
           </div>
 
           {/* Título y subtítulo del formulario */}
-          <h2 className="text-2xl font-bold mb-1 text-center" style={{ color: "#345D9D" }}>
+          <h2 className="text-6xl font-bold mb-1 text-center" style={{ color: "#345D9D" }}>
             Portal de Soporte TI
           </h2>
-          <p className="text-sm mb-8 text-center" style={{ color: "#718096" }}>
-            Inicia sesión con tu cuenta corporativa
+           <br />
+          <p className="text-xl mb-8 text-center" style={{ color: "#345D9D" }}>
+            Sistema de Tickets
           </p>
 
           {/* -------------------------------------------------------
@@ -133,12 +134,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* Separador visual con etiqueta "Microsoft 365" */}
-          <div className="flex items-center gap-3 my-7">
-            <div className="flex-1 h-px" style={{ background: "#e2e8f0" }} />
-            <span className="text-xs" style={{ color: "#94a3b8" }}>Microsoft 365</span>
-            <div className="flex-1 h-px" style={{ background: "#e2e8f0" }} />
-          </div>
+         
 
           {/* -------------------------------------------------------
               BOTÓN: Iniciar sesión con Microsoft 365
