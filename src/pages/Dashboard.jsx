@@ -75,10 +75,10 @@ export default function Dashboard({ onNavigate }) {
     <div className="max-w-7xl mx-auto">
  
       <div className="mb-4">
-        <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">Resumen general del sistema</p>
+       <h1 className="text-2xl font-bold" style={{ color: "#1e293b" }}>
+  Dashboard
+</h1>
+<p className="mt-1 text-sm" style={{ color: "#1e293b" }}>Resumen general del sistema</p>
       </div>
  
       {/* ---- TARJETAS ---- */}
