@@ -117,7 +117,7 @@ export default function Layout({ children, onNavigate, currentPage, onLogout }) 
      {/* CONTENIDO */}
 <div
   className="flex-1 overflow-auto p-6"
-  style={{ background: "#eaf3ff" }}
+  style={{ background: "#993dd6" }}
 >
   <div
     className="rounded-xl px-6 py-4 mb-6"
