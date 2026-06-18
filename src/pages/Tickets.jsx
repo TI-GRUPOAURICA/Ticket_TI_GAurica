@@ -3,21 +3,6 @@ import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
 
 
-// =============================================================
-// SUBCOMPONENTE: GestionTicket
-// Panel de acciones para que el técnico TI gestione un ticket.
-// Tiene dos pasos obligatorios y en orden:
-//   PASO 1 → Guardar un comentario de seguimiento (estado: en_proceso)
-//   PASO 2 → Registrar la solución y cerrar el ticket (estado: resuelto)
-// El Paso 2 queda bloqueado hasta que el Paso 1 tenga contenido.
-//
-// Props:
-//   ticketId          → ID del ticket a actualizar
-//   solucionInicial   → solución ya guardada (si existe)
-//   comentarioInicial → seguimiento ya guardado (si existe)
-//   adminNombre       → nombre del técnico autenticado (se guarda en "resuelto_por")
-//   onActualizado     → callback que se llama al guardar o resolver
-// =============================================================
 function GestionTicket({
   ticketId,
   solucionInicial,
@@ -28,21 +13,12 @@ function GestionTicket({
   onActualizado,
 }) {
 
-  // ----------------------------------------------------------
-  // ESTADOS DEL SUBCOMPONENTE
-  // ----------------------------------------------------------
-  const [comentario, setComentario] = useState(comentarioInicial || ""); // Texto del seguimiento interno
-  const [solucion, setSolucion]     = useState(solucionInicial || "");   // Texto de la solución final
-  const [guardando, setGuardando]   = useState(false);                   // Bloquea botones mientras se guarda
+  const [comentario, setComentario] = useState(comentarioInicial || "");
+  const [solucion, setSolucion]     = useState(solucionInicial || "");
+  const [guardando, setGuardando]   = useState(false);
 
-  // El Paso 2 solo se habilita cuando el comentario tiene contenido
   const tieneSeguimiento = comentario && comentario.trim().length > 0;
 
-  // ----------------------------------------------------------
-  // PASO 1: GUARDAR SEGUIMIENTO
-  // Actualiza el ticket en Supabase con el comentario de proceso
-  // y cambia el estado a "en_proceso".
-  // ----------------------------------------------------------
   const guardarProceso = async () => {
     if (!comentario.trim()) {
       alert("Escribe un comentario.");
@@ -64,83 +40,67 @@ function GestionTicket({
     onActualizado();
   };
 
-  // ----------------------------------------------------------
-  // PASO 2: RESOLVER TICKET
-  // Actualiza el ticket con la solución, marca el estado como
-  // "resuelto", registra la fecha/hora de resolución y el nombre
-  // del técnico que lo resolvió (adminNombre → resuelto_por).
-  // ----------------------------------------------------------
   const resolverTicket = async () => {
-            if (!solucion.trim()) {
-            alert("Debes escribir una solución.");
-            return;
-          }
-          setGuardando(true);
+    if (!solucion.trim()) {
+      alert("Debes escribir una solución.");
+      return;
+    }
+    setGuardando(true);
 
-          await supabase
-            .from("tickets")
-            .update({
-              solucion,
-              comentario_proceso: comentario,
-              estado:             "resuelto",
-              updated_at:         new Date(),
-              resuelto_at:        new Date().toISOString(),
-              resuelto_por:       adminNombre,
-            })
-            .eq("id", ticketId);
+    await supabase
+      .from("tickets")
+      .update({
+        solucion,
+        comentario_proceso: comentario,
+        estado:             "resuelto",
+        updated_at:         new Date(),
+        resuelto_at:        new Date().toISOString(),
+        resuelto_por:       adminNombre,
+      })
+      .eq("id", ticketId);
 
+    const { data: colData } = await supabase
+      .from("colaboradores")
+      .select("correo")
+      .eq("colaborador", nombreColaborador)
+      .single();
 
-              // Buscar correo del colaborador
-              const { data: colData } = await supabase
-                .from("colaboradores")
-                .select("correo")
-                .eq("colaborador", nombreColaborador)
-                .single();
+    const correo = colData?.correo || correoColaborador;
 
-              const correo = colData?.correo || correoColaborador;
-            
-              try {
-            await emailjs.send(
-              "service_wzdct0i",
-              "template_nj9wy5n",
-              {
-                ticket_id:          ticketId,
-                colaborador:        nombreColaborador,
-                email:              correo,
-                icono:              "✅",
-                titulo_email:       "Ticket Resuelto",
-                mensaje_intro:      "Tu solicitud de soporte ha sido atendida y resuelta.",
-                label_detalle:      "Solución aplicada",
-                detalle:            solucion,
-                mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
-                link_encuesta_html: `<div style="text-align:center;margin-top:30px;">
-                  <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
-                    style="background:#2f64b3;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;">
-                    ⭐ Calificar atención
-                  </a>
-                </div>`,
-              },
-              "ema3sApQIaIKPzpnq"
-            );
-          } catch (e) {
-            console.error("Error enviando correo de cierre:", e);
-          }
+    try {
+      await emailjs.send(
+        "service_wzdct0i",
+        "template_nj9wy5n",
+        {
+          ticket_id:          ticketId,
+          colaborador:        nombreColaborador,
+          email:              correo,
+          icono:              "✅",
+          titulo_email:       "Ticket Resuelto",
+          mensaje_intro:      "Tu solicitud de soporte ha sido atendida y resuelta.",
+          label_detalle:      "Solución aplicada",
+          detalle:            solucion,
+          mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
+          link_encuesta_html: `<div style="text-align:center;margin-top:30px;">
+            <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
+              style="background:#2f64b3;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;">
+              ⭐ Calificar atención
+            </a>
+          </div>`,
+        },
+        "ema3sApQIaIKPzpnq"
+      );
+    } catch (e) {
+      console.error("Error enviando correo de cierre:", e);
+    }
 
-          setGuardando(false);
-          onActualizado();
+    setGuardando(false);
+    onActualizado();
   };
 
-  // ----------------------------------------------------------
-  // RENDER DEL SUBCOMPONENTE
-  // ----------------------------------------------------------
   return (
     <div className="space-y-6">
 
-      {/* -------------------------------------------------------
-          PASO 1 — Seguimiento interno
-          Textarea para que el técnico escriba qué está haciendo.
-          Al guardar cambia el estado del ticket a "en_proceso".
-      ------------------------------------------------------- */}
       <div>
         <p className="text-sm font-bold mb-2" style={{ color: "#F59E0B" }}>
           PASO 1 · Seguimiento interno
@@ -163,19 +123,11 @@ function GestionTicket({
         </button>
       </div>
 
-      {/* -------------------------------------------------------
-          PASO 2 — Resolver ticket
-          Solo se habilita si el Paso 1 tiene contenido guardado.
-          Si no hay seguimiento, muestra un aviso amarillo y
-          el textarea queda deshabilitado.
-          Al resolver, registra la solución y cierra el ticket.
-      ------------------------------------------------------- */}
       <div>
         <p className="text-sm font-bold mb-2" style={{ color: "#305DA0" }}>
           PASO 2 · Resolver ticket
         </p>
 
-        {/* Aviso de bloqueo cuando aún no hay seguimiento */}
         {!tieneSeguimiento && (
           <div
             className="mb-3 p-3 rounded-xl text-sm"
@@ -212,42 +164,18 @@ function GestionTicket({
   );
 }
 
-// =============================================================
-// COMPONENTE PRINCIPAL: Tickets
-// Vista del panel de administración para gestionar tickets activos.
-// Layout dividido en dos paneles:
-//   - Izquierdo: lista de tickets con filtros de estado y prioridad
-//   - Derecho: detalle del ticket seleccionado + subcomponente GestionTicket
-//
-// Props:
-//   adminNombre → nombre del técnico autenticado (se pasa a GestionTicket)
-//   adminCorreo → correo del técnico (disponible para uso futuro)
-// =============================================================
 export default function Tickets({ adminNombre, adminCorreo }) {
 
-  // ----------------------------------------------------------
-  // ESTADOS DEL COMPONENTE
-  // ----------------------------------------------------------
-  const [tickets, setTickets]                     = useState([]);         // Lista de tickets activos (abierto + en_proceso)
-  const [loading, setLoading]                     = useState(true);       // Estado de carga inicial
-  const [filtroEstado, setFiltroEstado]           = useState("todos");    // Filtro activo por estado
-  const [filtroPrioridad, setFiltroPrioridad]     = useState("todos");    // Filtro activo por prioridad
-  const [ticketSeleccionado, setTicketSeleccionado] = useState(null);     // Ticket abierto en el panel de detalle
+  const [tickets, setTickets]                       = useState([]);
+  const [loading, setLoading]                       = useState(true);
+  const [filtroEstado, setFiltroEstado]             = useState("todos");
+  const [filtroPrioridad, setFiltroPrioridad]       = useState("todos");
+  const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
 
-  // ----------------------------------------------------------
-  // EFECTO INICIAL
-  // Carga los tickets al montar el componente.
-  // ----------------------------------------------------------
   useEffect(() => {
     fetchTickets();
   }, []);
 
-  // ----------------------------------------------------------
-  // CARGAR TICKETS
-  // Obtiene de Supabase todos los tickets con estado "abierto"
-  // o "en_proceso", ordenados del más reciente al más antiguo.
-  // Incluye el perfil del usuario y la categoría mediante joins.
-  // ----------------------------------------------------------
   const fetchTickets = async () => {
     const { data } = await supabase
       .from("tickets")
@@ -259,21 +187,10 @@ export default function Tickets({ adminNombre, adminCorreo }) {
     setLoading(false);
   };
 
-  // ----------------------------------------------------------
-  // ABRIR TICKET EN EL PANEL DE DETALLE
-  // Al hacer clic en un ticket de la lista, se muestra su
-  // información completa en el panel derecho.
-  // ----------------------------------------------------------
   const abrirTicket = (ticket) => {
     setTicketSeleccionado(ticket);
   };
 
-  // ----------------------------------------------------------
-  // CAMBIAR ESTADO MANUALMENTE
-  // Permite al técnico cambiar el estado del ticket directamente
-  // desde los botones del panel de detalle (Abierto / En proceso).
-  // Recarga la lista y actualiza el ticket seleccionado en pantalla.
-  // ----------------------------------------------------------
   const cambiarEstado = async (ticketId, nuevoEstado) => {
     await supabase
       .from("tickets")
@@ -284,16 +201,13 @@ export default function Tickets({ adminNombre, adminCorreo }) {
     setTicketSeleccionado({ ...ticketSeleccionado, estado: nuevoEstado });
   };
 
-  // ----------------------------------------------------------
-  // CONFIGURACIÓN VISUAL DE ESTADOS Y PRIORIDADES
-  // Mapas de color usados para los badges y puntos de la lista.
-  // ----------------------------------------------------------
   const estadoConfig = {
-    abierto:    { label: "Abierto",     color: "#ef4444", bg: "#fee2e2" },
-    en_proceso: { label: "En Proceso",  color: "#f59e0b", bg: "#fef3c7" },
-    resuelto:   { label: "Resuelto",    color: "#22c55e", bg: "#dcfce7" },
+    abierto:    { label: "Abierto",    color: "#ef4444", bg: "#fee2e2" },
+    en_proceso: { label: "En Proceso", color: "#f59e0b", bg: "#fef3c7" },
+    resuelto:   { label: "Resuelto",   color: "#22c55e", bg: "#dcfce7" },
   };
 
+  // 👇 todas las prioridades con #345d9d y fallback también azul
   const prioridadConfig = {
     bajo:       { dot: "#345d9d" },
     medio:      { dot: "#345d9d" },
@@ -302,37 +216,22 @@ export default function Tickets({ adminNombre, adminCorreo }) {
     emergencia: { dot: "#345d9d" },
   };
 
-  // ----------------------------------------------------------
-  // FILTRADO LOCAL DE TICKETS
-  // Aplica los filtros de estado y prioridad seleccionados
-  // sobre la lista ya cargada en memoria (sin nueva consulta).
-  // ----------------------------------------------------------
   const ticketsFiltrados = tickets.filter((t) => {
     const estadoOk    = filtroEstado    === "todos" || t.estado    === filtroEstado;
     const prioridadOk = filtroPrioridad === "todos" || t.prioridad === filtroPrioridad;
     return estadoOk && prioridadOk;
   });
 
-  // ----------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------
   return (
     <div className="flex h-screen">
 
-      {/* --------------------------------------------------------
-          PANEL IZQUIERDO — Lista de tickets
-          Ocupa todo el ancho si no hay ticket seleccionado,
-          o la mitad si el panel de detalle está abierto.
-      -------------------------------------------------------- */}
       <div className={`${ticketSeleccionado ? "w-1/2" : "w-full"} flex flex-col transition-all duration-300`}>
 
-        {/* Encabezado con título y filtros de estado y prioridad */}
         <div className="p-6" style={{ borderBottom: "1px solid #dbeafe" }}>
-          <h1 className="text-2xl font-bold text-slate-800 mb-4"  style={{ color: "#000000" }}>Tickets</h1>
+          <h1 className="text-2xl font-bold mb-4" style={{ color: "#000000" }}>Tickets</h1>
 
           <div className="flex gap-3 flex-wrap items-center">
 
-            {/* Selector de filtro por estado */}
             <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
@@ -345,7 +244,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               <option value="resuelto">Resuelto</option>
             </select>
 
-            {/* Selector de filtro por prioridad */}
             <select
               value={filtroPrioridad}
               onChange={(e) => setFiltroPrioridad(e.target.value)}
@@ -360,7 +258,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               <option value="emergencia">Emergencia</option>
             </select>
 
-            {/* Contador de tickets visibles según filtros */}
             <span className="text-xs" style={{ color: "#64748b" }}>
               {ticketsFiltrados.length} tickets
             </span>
@@ -368,12 +265,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
           </div>
         </div>
 
-        {/* -------------------------------------------------------
-            LISTA DE TICKETS
-            Cada card muestra: punto de prioridad, título, ID,
-            colaborador, empresa, categoría y badge de estado.
-            El ticket seleccionado tiene borde azul para destacarlo.
-        ------------------------------------------------------- */}
         <div className="flex-1 overflow-auto p-4 space-y-3">
           {loading ? (
             <p className="text-center mt-10 text-sm text-slate-500">Cargando...</p>
@@ -395,7 +286,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
 
-                    {/* Punto de color según prioridad */}
+                    {/* 👇 fallback también azul */}
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ background: prioridadConfig[ticket.prioridad]?.dot || "#345d9d" }}
@@ -412,12 +303,11 @@ export default function Tickets({ adminNombre, adminCorreo }) {
 
                   </div>
 
-                  {/* Badge de estado */}
                   <span
                     className="text-xs px-2 py-1 rounded-full font-medium"
                     style={{
-                      color:       estadoConfig[ticket.estado]?.color,
-                      background:  estadoConfig[ticket.estado]?.bg,
+                      color:      estadoConfig[ticket.estado]?.color,
+                      background: estadoConfig[ticket.estado]?.bg,
                     }}
                   >
                     {estadoConfig[ticket.estado]?.label}
@@ -431,16 +321,9 @@ export default function Tickets({ adminNombre, adminCorreo }) {
 
       </div>
 
-      {/* --------------------------------------------------------
-          PANEL DERECHO — Detalle del ticket seleccionado
-          Solo visible cuando hay un ticket seleccionado.
-          Contiene: descripción, info técnica, cambio de estado
-          y el subcomponente GestionTicket para resolver el ticket.
-      -------------------------------------------------------- */}
       {ticketSeleccionado && (
         <div className="w-1/2 flex flex-col" style={{ borderLeft: "1px solid #dbeafe" }}>
 
-          {/* Encabezado del detalle con número, título y botón de cierre */}
           <div className="p-6 flex justify-between items-start" style={{ borderBottom: "1px solid #dbeafe" }}>
             <div>
               <p className="text-xs mb-1" style={{ color: "#64748b" }}>Ticket #{ticketSeleccionado.id}</p>
@@ -453,7 +336,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
                 {ticketSeleccionado.empresa}
               </p>
             </div>
-            {/* Botón para cerrar el panel de detalle */}
             <button
               onClick={() => setTicketSeleccionado(null)}
               className="text-slate-400 hover:text-slate-700 text-xl"
@@ -462,10 +344,8 @@ export default function Tickets({ adminNombre, adminCorreo }) {
             </button>
           </div>
 
-          {/* Contenido desplazable del detalle */}
           <div className="flex-1 overflow-auto p-6 space-y-5">
 
-            {/* Sección: descripción del problema reportado */}
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-2">Descripción</p>
               <p className="text-sm whitespace-pre-wrap" style={{ color: "#334155" }}>
@@ -473,7 +353,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               </p>
             </div>
 
-            {/* Sección: información técnica del equipo (hostname, anydesk, categoría, prioridad) */}
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -495,7 +374,6 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               </div>
             </div>
 
-            {/* Sección: cambio manual de estado (Abierto / En proceso) */}
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-3">Estado del ticket</p>
               <div className="flex gap-3 flex-wrap">
@@ -516,19 +394,18 @@ export default function Tickets({ adminNombre, adminCorreo }) {
               </div>
             </div>
 
-            {/* Sección: subcomponente GestionTicket para seguimiento y resolución */}
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-3">Resolver ticket</p>
               <GestionTicket
-                      ticketId={ticketSeleccionado.id}
-                      solucionInicial={ticketSeleccionado.solucion}
-                      comentarioInicial={ticketSeleccionado.comentario_proceso}
-                      adminNombre={adminNombre}
-                      correoColaborador={ticketSeleccionado.email}        /* 👈 nuevo */
-                      nombreColaborador={ticketSeleccionado.nombre_colaborador}  /* 👈 nuevo */
-                      onActualizado={() => {
-                        setTicketSeleccionado(null);
-                        fetchTickets();
+                ticketId={ticketSeleccionado.id}
+                solucionInicial={ticketSeleccionado.solucion}
+                comentarioInicial={ticketSeleccionado.comentario_proceso}
+                adminNombre={adminNombre}
+                correoColaborador={ticketSeleccionado.email}
+                nombreColaborador={ticketSeleccionado.nombre_colaborador}
+                onActualizado={() => {
+                  setTicketSeleccionado(null);
+                  fetchTickets();
                 }}
               />
             </div>
