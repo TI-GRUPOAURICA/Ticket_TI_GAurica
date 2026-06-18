@@ -180,7 +180,7 @@ export default function Tickets({ adminNombre, adminCorreo }) {
     const { data } = await supabase
       .from("tickets")
       .select(`*, profiles:usuario_id(full_name, email), categorias(nombre)`)
-      .in("estado", ["abierto", "en_proceso"])
+      .in("estado", ["abierto", "en_proceso","resuelto"])
       .order("created_at", { ascending: false });
 
     if (data) setTickets(data);
