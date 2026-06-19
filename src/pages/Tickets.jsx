@@ -81,7 +81,7 @@ function GestionTicket({
       label_detalle:      "Solución aplicada",
       detalle:            solucion,
       mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
-    link_encuesta_html: `
+link_encuesta_html: `
 <div style="text-align:center;margin-top:28px;">
 
   <p style="color:#64748b;font-size:14px;margin-bottom:15px;">
@@ -89,21 +89,21 @@ function GestionTicket({
   </p>
 
   <a
-    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=feliz"
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
     style="text-decoration:none;font-size:42px;margin:0 12px;"
   >
     😀
   </a>
 
   <a
-    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=regular"
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=regular"
     style="text-decoration:none;font-size:42px;margin:0 12px;"
   >
     😐
   </a>
 
   <a
-    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=triste"
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=triste"
     style="text-decoration:none;font-size:42px;margin:0 12px;"
   >
     ☹️
