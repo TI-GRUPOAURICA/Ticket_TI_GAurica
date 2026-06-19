@@ -158,6 +158,18 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
   detalle:            form.descripcion,
   mensaje_footer:     "Revisaremos tu solicitud y comenzaremos la atención lo antes posible.",
   link_encuesta_html: "",
+  // 👇 Esta caja SOLO se manda aquí (al registrar), porque mensaje_intro no incluye el número.
+  // En resolverTicket (Tickets.jsx) se manda vacía ("") porque el número ya va en mensaje_intro.
+  ticket_box_html: `
+    <div style="margin:0 0 28px 0;padding:24px;background:#f0f3f8;border-radius:12px;border:1px solid #dbe3ee;text-align:center;">
+      <h2 style="margin:0;color:#345d9d;font-size:42px;font-weight:bold;">
+        #${data.id}
+      </h2>
+      <p style="margin:8px 0 0 0;color:#345d9d;font-size:14px;font-weight:600;">
+        Seguimiento de Ticket
+      </p>
+    </div>
+  `,
 };
 
     try {

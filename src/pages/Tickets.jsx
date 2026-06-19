@@ -80,6 +80,8 @@ function GestionTicket({
       label_detalle:      "Solución aplicada",
       detalle:            solucion,
       mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
+      // 👇 Vacío a propósito: el número de ticket ya va en mensaje_intro, no se repite la caja.
+      ticket_box_html:    "",
       // ⚠️ OJO: URL_1...URL_5 son placeholders. Hay que reemplazarlos por links reales
       // (ver mensaje aparte) o el correo seguirá mostrando "[URL_1]" en vez del link.
 link_encuesta_html: `
