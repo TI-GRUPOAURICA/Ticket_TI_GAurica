@@ -176,7 +176,7 @@ link_encuesta_html: `
           }
           rows={4}
           className="w-full text-sm px-4 py-3 rounded-xl focus:outline-none resize-none"
-          style={{ background: "#ffffff", border: "1px solid #dbeafe", color: "#1e293b" }}
+          style={{ background: "#345D9D", color: "#ffffff" }}
         />
         <button
           onClick={resolverTicket}
