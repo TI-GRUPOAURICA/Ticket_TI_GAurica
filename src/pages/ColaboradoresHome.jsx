@@ -100,16 +100,18 @@ export default function ColaboradorHome({
         </div>
 
         {/* ✅ BOTÓN: Cerrar sesión — color cambiado a #345d9d */}
-        <button
-          onClick={onLogout}
-          className="w-full mt-6 py-3 rounded-xl text-sm font-medium transition text-white"
-          style={{
-            background: "#345d9d",
-            border: "none",
-          }}
-        >
-          Cerrar sesión
-        </button>
+       <div className="text-center mt-6">
+  <button
+    onClick={onLogout}
+    className="px-8 py-3 rounded-xl text-sm font-medium transition text-white"
+    style={{
+      background: "#345d9d",
+      border: "none",
+    }}
+  >
+    Cerrar sesión
+  </button>
+</div>
 
         {/* ✅ FOOTER eliminado */}
 

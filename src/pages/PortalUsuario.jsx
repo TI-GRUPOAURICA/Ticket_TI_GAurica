@@ -182,47 +182,48 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
     );
   }
 
-  if (enviado) {
-    return (
+if (enviado) {
+  return (
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-4 transition-all duration-500"
+      style={{ background: tema.bg }}
+    >
       <div
-        className="min-h-screen w-full flex items-center justify-center p-4 transition-all duration-500"
-        style={{ background: tema.bg }}
+        className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
+        style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}
       >
-        <div
-          className="bg-white rounded-2xl shadow-sm w-full mx-4 md:mx-auto md:max-w-md"
-          style={{ border: `1px solid ${tema.border}`, padding: "clamp(24px, 5vw, 40px)" }}
-        >
-          <div className="text-center">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: "#EEF4FB" }}
-            >
-              <CheckCircle2 size={44} color="#345D9D" strokeWidth={2.2} />
-            </div>
-
-            <h2 className="font-bold mb-2" style={{ color: "#345D9D", fontSize: "clamp(18px, 4vw, 24px)" }}>
-              ¡Ticket Enviado!
-            </h2>
-            <p className="text-sm mb-1" style={{ color: "#718096" }}>Tu solicitud fue registrada correctamente.</p>
-            <p className="font-bold my-4" style={{ color: "#345D9D", fontSize: "clamp(16px, 3.5vw, 20px)" }}>
-              Ticket #{ticketNumero}
-            </p>
-            <p className="text-sm mb-6" style={{ color: "#a0aec0" }}>El equipo de TI atenderá tu solicitud a la brevedad.</p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={onVolver}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold text-sm transition"
-                style={{ border: `1.5px solid ${tema.primary}`, color: tema.primary, background: "transparent" }}
-              >
-                Volver al inicio
-              </button>
-            </div>
+        <div className="text-center">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: "#EEF4FB" }}
+          >
+            <CheckCircle2 size={44} color="#345D9D" strokeWidth={2.2} />
           </div>
+
+          <h2 className="font-bold mb-2" style={{ color: "#345D9D", fontSize: "clamp(18px, 4vw, 24px)" }}>
+            ¡Solicitud enviada!
+          </h2>
+          <p className="text-sm mb-1" style={{ color: "#718096" }}>Tu ticket fue registrado correctamente.</p>
+          <p className="font-bold my-4" style={{ color: "#345D9D", fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+            Ticket #{ticketNumero}
+          </p>
+          <p className="text-sm mb-6" style={{ color: "#a0aec0" }}>Resolveremos tu caso a la brevedad.</p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={onVolver}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold text-sm text-white transition"
+              style={{ background: "#345d9d", border: "none" }}
+            >
+              Volver al inicio
+            </button>
+          </div>
+
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div
@@ -377,18 +378,20 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
               </div>
 
               {/* Botón */}
-              <button
-                onClick={enviarTicket}
-                disabled={enviando}
-                className="w-full rounded-lg font-semibold text-white transition disabled:opacity-50"
-                style={{
-                  background: "#345d9d",
-                  padding: "clamp(10px, 2.5vw, 14px)",
-                  fontSize: "clamp(13px, 3vw, 15px)",
-                }}
-              >
-                {enviando ? "Enviando..." : "Enviar ticket"}
-              </button>
+              <div className="text-center">
+                  <button
+                    onClick={enviarTicket}
+                    disabled={enviando}
+                    className="rounded-lg font-semibold text-white transition disabled:opacity-50"
+                    style={{
+                      background: "#345d9d",
+                      padding: "clamp(10px, 2.5vw, 14px) clamp(32px, 8vw, 48px)",
+                      fontSize: "clamp(13px, 3vw, 15px)",
+                    }}
+                  >
+                    {enviando ? "Enviando..." : "Enviar ticket"}
+                  </button>
+                </div>
 
             </div>
           )}
