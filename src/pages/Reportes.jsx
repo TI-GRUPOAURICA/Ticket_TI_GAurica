@@ -74,7 +74,7 @@ export default function Reportes() {
       .order("created_at", { ascending: true });
 
     if (empresa !== "todas") {
-      query = query.eq("empresa", empresa);
+      query = query.ilike("empresa", empresa.trim());
     }
 
     const { data } = await query;
@@ -305,7 +305,7 @@ export default function Reportes() {
                 <thead>
                   <tr style={{ borderBottom: "1px solid #dbeafe" }}>
                     {["#", "Fecha", "Hora", "Resuelto Por", "Duración", "Colaborador",
-                      "Empresa", "Host", "Título", "Categoría", "Prioridad", "Solución"
+                      "Empresa", "Host", "Descripción", "Categoría", "Prioridad", "Solución"
                     ].map((h) => (
                       <th
                         key={h}
@@ -370,7 +370,7 @@ export default function Reportes() {
                       </td>
 
                       {/* Título del ticket */}
-                      <td className="px-4 py-3 text-sm text-slate-800">{t.titulo}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800">{t.descripcion}</td>
 
                       {/* Categoría del ticket */}
                       <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
