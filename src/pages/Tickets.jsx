@@ -88,49 +88,29 @@ link_encuesta_html: `
     Tu opinión nos ayuda a mejorar nuestro servicio
   </p>
 
-  <a
-<div style="text-align:center;margin-top:20px;">
+<p style="margin-top:15px;color:#64748b;font-size:13px;">
+  ¿Cómo calificarías la atención recibida?
+</p>
 
-  <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=triste"
-    style="text-decoration:none;font-size:28px;color:#f59e0b;"
-  >
-    ⭐
-  </a>
+<div style="text-align:center;margin-top:15px;">
 
-  <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=triste"
-    style="text-decoration:none;font-size:28px;color:#f59e0b;"
-  >
-    ⭐⭐
-  </a>
+  <a href="URL_1" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
 
-  <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=regular"
-    style="text-decoration:none;font-size:28px;color:#f59e0b;"
-  >
-    ⭐⭐⭐
-  </a>
+  <a href="URL_2" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
 
-  <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
-    style="text-decoration:none;font-size:28px;color:#f59e0b;"
-  >
-    ⭐⭐⭐⭐
-  </a>
+  <a href="URL_3" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
 
-  <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
-    style="text-decoration:none;font-size:28px;color:#f59e0b;"
-  >
-    ⭐⭐⭐⭐⭐
-  </a>
+  <a href="URL_4" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
+
+  <a href="URL_5" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
 
 </div>
 
-  <p style="margin-top:15px;color:#64748b;font-size:13px;">
-    ¿Cómo calificarías la atención recibida?
-  </p>
+<div style="display:flex;justify-content:space-between;margin-top:8px;padding:0 20px;font-size:12px;color:#64748b;">
+  <span>Muy mala</span>
+  <span>Regular</span>
+  <span>Excelente</span>
+</div>
 
 </div>
 `,
