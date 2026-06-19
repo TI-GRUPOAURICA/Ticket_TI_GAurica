@@ -201,7 +201,7 @@ link_encuesta_html: `
           onClick={resolverTicket}
           disabled={guardando || !tieneSeguimiento}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "#345D9D", color: "#ffffff" }}
+          style={{ background: "#ffffff", color: "#000000" }}
         >
           Resolver ticket
         </button>
