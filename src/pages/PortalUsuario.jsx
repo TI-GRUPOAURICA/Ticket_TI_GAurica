@@ -173,6 +173,7 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
 };
 
     try {
+      console.log("ESTO SE ESTA ENVIANDO:", emailParams.ticket_box_html);
       await emailjs.send("service_wzdct0i", "template_cvjx59o", emailParams, "ema3sApQIaIKPzpnq");
       await emailjs.send("service_wzdct0i", "template_nj9wy5n", emailParams, "ema3sApQIaIKPzpnq");
     } catch (e) {
