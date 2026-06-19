@@ -122,7 +122,6 @@ export default function Reportes() {
         "Empresa":          t.empresa || "—",
         "Hostname":         t.hostname || "—",
         "Categoría":        t.categorias?.nombre || "—",
-        "Título":           t.titulo,
         "Descripción":      t.descripcion,
         "Prioridad":        t.prioridad,
         "Estado":           t.estado.replace("_", " "),
