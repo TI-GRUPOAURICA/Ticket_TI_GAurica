@@ -171,10 +171,17 @@ export default function Tickets({ adminNombre, adminCorreo }) {
   const [filtroEstado, setFiltroEstado]             = useState("todos");
   const [filtroPrioridad, setFiltroPrioridad]       = useState("todos");
   const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
+  const [categorias, setCategorias] = useState([]);
 
-  useEffect(() => {
+useEffect(() => {
     fetchTickets();
+    fetchCategorias();
   }, []);
+
+  const fetchCategorias = async () => {
+    const { data } = await supabase.from("categorias").select("*");
+    if (data) setCategorias(data);
+  };
 
   const fetchTickets = async () => {
     const { data } = await supabase
@@ -400,7 +407,33 @@ export default function Tickets({ adminNombre, adminCorreo }) {
     ))}
   </div>
 </div>
+              <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
 
+  <p className="text-sm font-semibold text-slate-700 mb-3">Categoría</p>
+  <div className="flex gap-3 flex-wrap">
+    {categorias.map((c) => (
+      <button
+        key={c.id}
+        onClick={async () => {
+          await supabase
+            .from("tickets")
+            .update({ categoria_id: c.id })
+            .eq("id", ticketSeleccionado.id);
+          fetchTickets();
+          setTicketSeleccionado({ ...ticketSeleccionado, categoria_id: c.id, categorias: { nombre: c.nombre } });
+        }}
+        className="px-4 py-2 rounded-xl text-sm font-medium capitalize"
+        style={{
+          background: ticketSeleccionado.categoria_id === c.id ? "#345d9d" : "#f0f3f8",
+          color: ticketSeleccionado.categoria_id === c.id ? "#ffffff" : "#345d9d",
+          border: "1px solid #dbeafe",
+        }}
+      >
+        {c.nombre}
+      </button>
+    ))}
+  </div>
+</div>
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-3">Resolver ticket</p>
               <GestionTicket
