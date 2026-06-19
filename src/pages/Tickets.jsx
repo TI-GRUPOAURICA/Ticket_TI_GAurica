@@ -130,7 +130,7 @@ link_encuesta_html: `
     <div className="space-y-6">
 
       <div>
-        <p className="text-sm font-bold mb-2" style={{ color: "#F59E0B" }}>
+        <p className="text-sm font-bold mb-2" style={{ color: "#345D9D" }}>
           PASO 1 · Seguimiento interno
         </p>
         <textarea
@@ -145,14 +145,14 @@ link_encuesta_html: `
           onClick={guardarProceso}
           disabled={guardando}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #f59e0b, #fbbf24)", color: "#ffffff" }}
+          style={{ background: "#345D9D", color: "#ffffff" }}
         >
-          🟡 Guardar seguimiento
+           Guardar seguimiento
         </button>
       </div>
 
       <div>
-        <p className="text-sm font-bold mb-2" style={{ color: "#305DA0" }}>
+        <p className="text-sm font-bold mb-2" style={{ color: "#345D9D" }}>
           PASO 2 · Resolver ticket
         </p>
 
@@ -182,9 +182,9 @@ link_encuesta_html: `
           onClick={resolverTicket}
           disabled={guardando || !tieneSeguimiento}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#ffffff" }}
+          style={{ background: "#345D9D", color: "#ffffff" }}
         >
-          ✅ Resolver ticket
+          Resolver ticket
         </button>
       </div>
 
