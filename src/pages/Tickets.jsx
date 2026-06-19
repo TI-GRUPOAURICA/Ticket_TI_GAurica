@@ -81,12 +81,40 @@ function GestionTicket({
       label_detalle:      "Solución aplicada",
       detalle:            solucion,
       mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
-      link_encuesta_html: `<div style="text-align:center;margin-top:28px;">
-        <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=lqZMECkGrUuSEKcjOoWN773k1hrmUKRLk7bIBhlApuxUMlU4TlJROVhSQ1FUMVg3RjVDNVM2U1E2Wi4u"
-          style="background:#345d9d;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:bold;display:inline-block;">
-          Calificar atención
-        </a>
-      </div>`,
+    link_encuesta_html: `
+<div style="text-align:center;margin-top:28px;">
+
+  <p style="color:#64748b;font-size:14px;margin-bottom:15px;">
+    Tu opinión nos ayuda a mejorar nuestro servicio
+  </p>
+
+  <a
+    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=feliz"
+    style="text-decoration:none;font-size:42px;margin:0 12px;"
+  >
+    😀
+  </a>
+
+  <a
+    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=regular"
+    style="text-decoration:none;font-size:42px;margin:0 12px;"
+  >
+    😐
+  </a>
+
+  <a
+    href="https://tudominio.com/evaluacion?ticket=${ticketId}&valor=triste"
+    style="text-decoration:none;font-size:42px;margin:0 12px;"
+  >
+    ☹️
+  </a>
+
+  <p style="margin-top:15px;color:#64748b;font-size:13px;">
+    ¿Cómo calificarías la atención recibida?
+  </p>
+
+</div>
+`,
     },
     "ema3sApQIaIKPzpnq"
   );

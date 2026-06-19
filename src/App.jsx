@@ -12,7 +12,7 @@ import Inventario from "./pages/Inventario";
 import SeguimientoTicket from "./pages/SeguimientoTicket";
 import ColaboradorHome from "./pages/ColaboradoresHome";
 import { ADMINS } from "./Config/admins";
-
+import Evaluacion from "./pages/Evaluacion";
 // =============================================================
 // COMPONENTE RAÍZ: App
 // Punto de entrada de la aplicación. Controla toda la lógica
@@ -42,6 +42,11 @@ export default function App() {
   //   ?user=true   → fuerza vista de colaborador
   // ----------------------------------------------------------
   const params = new URLSearchParams(window.location.search);
+  const ruta = window.location.pathname;
+
+if (ruta === "/evaluacion") {
+  return <Evaluacion />;
+}
   const esAdminTest   = params.get("admin") === "true";
   const esUsuarioTest = params.get("user")  === "true";
 
