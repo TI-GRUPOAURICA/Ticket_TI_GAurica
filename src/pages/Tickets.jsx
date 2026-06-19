@@ -25,7 +25,6 @@ function GestionTicket({
       return;
     }
     setGuardando(true);
-    alert(adminNombre);
 
     await supabase
       .from("tickets")
@@ -81,6 +80,8 @@ function GestionTicket({
       label_detalle:      "Solución aplicada",
       detalle:            solucion,
       mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
+      // ⚠️ OJO: URL_1...URL_5 son placeholders. Hay que reemplazarlos por links reales
+      // (ver mensaje aparte) o el correo seguirá mostrando "[URL_1]" en vez del link.
 link_encuesta_html: `
 <div style="text-align:center;margin-top:28px;">
 
@@ -158,7 +159,7 @@ link_encuesta_html: `
         {!tieneSeguimiento && (
           <div
             className="mb-3 p-3 rounded-xl text-sm"
-            style={{ background: "#FEF3C7", color: "#92400E", border: "1px solid #FCD34D" }}
+            style={{ background: "#345D9D", color: "#ffffff", border: "1px solid #345D9D" }}
           >
             ⚠ Debe registrar un seguimiento antes de resolver el ticket.
           </div>
@@ -175,13 +176,18 @@ link_encuesta_html: `
           }
           rows={4}
           className="w-full text-sm px-4 py-3 rounded-xl focus:outline-none resize-none"
-          style={{ background: "#345D9D", color: "#ffffff" }}
+          style={{
+            background: "#ffffff",
+            border: "1px solid #dbeafe",
+            color: "#1e293b",
+            opacity: tieneSeguimiento ? 1 : 0.6,
+          }}
         />
         <button
           onClick={resolverTicket}
           disabled={guardando || !tieneSeguimiento}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "#ffffff", color: "#000000" }}
+          style={{ background: "#345D9D", color: "#ffffff" }}
         >
           Resolver ticket
         </button>
