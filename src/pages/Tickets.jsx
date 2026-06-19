@@ -89,25 +89,44 @@ link_encuesta_html: `
   </p>
 
   <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
-    style="text-decoration:none;font-size:42px;margin:0 12px;"
-  >
-    😀
-  </a>
+<div style="text-align:center;margin-top:20px;">
 
   <a
-    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=regular"
-    style="text-decoration:none;font-size:42px;margin:0 12px;"
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=triste"
+    style="text-decoration:none;font-size:28px;color:#f59e0b;"
   >
-    😐
+    ⭐
   </a>
 
   <a
     href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=triste"
-    style="text-decoration:none;font-size:42px;margin:0 12px;"
+    style="text-decoration:none;font-size:28px;color:#f59e0b;"
   >
-    ☹️
+    ⭐⭐
   </a>
+
+  <a
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=regular"
+    style="text-decoration:none;font-size:28px;color:#f59e0b;"
+  >
+    ⭐⭐⭐
+  </a>
+
+  <a
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
+    style="text-decoration:none;font-size:28px;color:#f59e0b;"
+  >
+    ⭐⭐⭐⭐
+  </a>
+
+  <a
+    href="https://ticket-ti-gaurica.pages.dev/evaluacion?ticket=${ticketId}&valor=feliz"
+    style="text-decoration:none;font-size:28px;color:#f59e0b;"
+  >
+    ⭐⭐⭐⭐⭐
+  </a>
+
+</div>
 
   <p style="margin-top:15px;color:#64748b;font-size:13px;">
     ¿Cómo calificarías la atención recibida?
