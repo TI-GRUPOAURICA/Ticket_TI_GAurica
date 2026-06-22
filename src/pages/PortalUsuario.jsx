@@ -176,6 +176,25 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
       console.log("ESTO SE ESTA ENVIANDO:", emailParams.ticket_box_html);
       await emailjs.send("service_wzdct0i", "template_cvjx59o", emailParams, "ema3sApQIaIKPzpnq");
       await emailjs.send("service_wzdct0i", "template_nj9wy5n", emailParams, "ema3sApQIaIKPzpnq");
+      // Brevo (nuevo)
+   const brevoResult = await supabase.functions.invoke(
+  "enviar-correo",
+  {
+    body: {
+      tipo: "registro",
+      ticket_id: data.id,
+      colaborador: colaborador.colaborador,
+      email: colaborador.correo,
+      descripcion: form.descripcion,
+      empresa: colaborador.empresa,
+      host: colaborador.host,
+      anydesk: form.anydesk || "No especificado"
+    }
+  }
+);
+
+console.log("BREVO RESULT:", brevoResult);
+
     } catch (e) {
       console.error("Error enviando correo:", e);
     }
