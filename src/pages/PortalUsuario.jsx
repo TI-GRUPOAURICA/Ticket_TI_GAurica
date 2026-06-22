@@ -195,6 +195,10 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
 
 try {
 
+  console.log("DESTINO:",colaborador.correo);
+  console.log("BREVO DATA:",brevoResult.data);
+  console.log("BREVO ERROR:",brevoResult.error);
+  console.log("COLABORADOR COMPLETO:", colaborador);
   const brevoResult = await supabase.functions.invoke(
     "enviar-correo",
     {
