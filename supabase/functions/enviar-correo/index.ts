@@ -47,12 +47,16 @@ serve(async (req) => {
             email: "soporte@auricasac.com",
           },
 
-          to: [
-            {
-              email: email,
-              name: colaborador,
-            },
-          ],
+                        to: [
+                {
+                  email: email,
+                  name: colaborador,
+                },
+                {
+                  email: "soporte@auricasac.com",
+                  name: "Mesa de Ayuda TI",
+                },
+              ],
 
           subject: `Ticket #${ticket_id} registrado`,
 
