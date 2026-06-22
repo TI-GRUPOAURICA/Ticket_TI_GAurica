@@ -14,26 +14,68 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    const {
+      ticket_id,
+      colaborador,
+      email,
+      descripcion,
+      empresa,
+      host,
+      anydesk
+    } = await req.json();
 
-    console.log("BODY RECIBIDO:", JSON.stringify(body));
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        recibido: body,
-      }),
+    const response = await fetch(
+      "https://api.brevo.com/v3/smtp/email",
       {
+        method: "POST",
         headers: {
-          ...corsHeaders,
           "Content-Type": "application/json",
+          "api-key": Deno.env.get("BREVO_API_KEY") || "",
         },
+        body: JSON.stringify({
+          sender: {
+            name: "Grupo Aurica",
+            email: "soporte@auricasac.com",
+          },
+          to: [
+            {
+              email: email,
+              name: colaborador,
+            },
+          ],
+          subject: `Ticket #${ticket_id} registrado`,
+          htmlContent: `
+            <h2>Solicitud registrada</h2>
+            <p>Hola ${colaborador},</p>
+
+            <p>Tu ticket ha sido registrado correctamente.</p>
+
+            <p><strong>Número:</strong> #${ticket_id}</p>
+            <p><strong>Empresa:</strong> ${empresa}</p>
+            <p><strong>Equipo:</strong> ${host}</p>
+            <p><strong>AnyDesk:</strong> ${anydesk}</p>
+            <p><strong>Detalle:</strong> ${descripcion}</p>
+          `,
+        }),
       }
     );
+
+    const result = await response.json();
+
+    return new Response(JSON.stringify(result), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    });
+
   } catch (error) {
+
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error
+          ? error.message
+          : String(error),
       }),
       {
         status: 500,
