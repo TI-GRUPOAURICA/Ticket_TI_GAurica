@@ -211,8 +211,8 @@ try {
     }
   );
 
-  console.log("BREVO RESULT:", brevoResult);
-
+console.log("BREVO DATA:", brevoResult.data);
+console.log("BREVO ERROR:", brevoResult.error);
 } catch (e) {
   console.error("Brevo falló:", e);
 }
