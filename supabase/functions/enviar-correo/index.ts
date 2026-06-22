@@ -10,7 +10,9 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -21,8 +23,15 @@ serve(async (req) => {
       descripcion,
       empresa,
       host,
-      anydesk
+      anydesk,
     } = await req.json();
+
+    console.log("==================================");
+    console.log("NUEVO ENVIO BREVO");
+    console.log("Ticket:", ticket_id);
+    console.log("Colaborador:", colaborador);
+    console.log("Destino:", email);
+    console.log("==================================");
 
     const response = await fetch(
       "https://api.brevo.com/v3/smtp/email",
@@ -37,24 +46,52 @@ serve(async (req) => {
             name: "Grupo Aurica",
             email: "soporte@auricasac.com",
           },
+
           to: [
             {
               email: email,
               name: colaborador,
             },
           ],
+
           subject: `Ticket #${ticket_id} registrado`,
+
           htmlContent: `
-            <h2>Solicitud registrada</h2>
-            <p>Hola ${colaborador},</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin:auto;">
+              
+              <h2 style="color:#345d9d;">
+                Solicitud registrada
+              </h2>
 
-            <p>Tu ticket ha sido registrado correctamente.</p>
+              <p>Hola <strong>${colaborador}</strong>,</p>
 
-            <p><strong>Número:</strong> #${ticket_id}</p>
-            <p><strong>Empresa:</strong> ${empresa}</p>
-            <p><strong>Equipo:</strong> ${host}</p>
-            <p><strong>AnyDesk:</strong> ${anydesk}</p>
-            <p><strong>Detalle:</strong> ${descripcion}</p>
+              <p>
+                Tu ticket ha sido registrado correctamente.
+              </p>
+
+              <hr>
+
+              <p><strong>Número:</strong> #${ticket_id}</p>
+              <p><strong>Empresa:</strong> ${empresa}</p>
+              <p><strong>Equipo:</strong> ${host}</p>
+              <p><strong>AnyDesk:</strong> ${anydesk}</p>
+
+              <p>
+                <strong>Detalle:</strong><br>
+                ${descripcion}
+              </p>
+
+              <hr>
+
+              <p>
+                Revisaremos tu solicitud y comenzaremos la atención lo antes posible.
+              </p>
+
+              <p>
+                Grupo Aurica · Sistema de Soporte TI
+              </p>
+
+            </div>
           `,
         }),
       }
@@ -62,20 +99,32 @@ serve(async (req) => {
 
     const result = await response.json();
 
-    return new Response(JSON.stringify(result), {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    });
-
-  } catch (error) {
+    console.log("STATUS BREVO:", response.status);
+    console.log("RESPUESTA BREVO:", JSON.stringify(result));
 
     return new Response(
       JSON.stringify({
-        error: error instanceof Error
-          ? error.message
-          : String(error),
+        success: response.ok,
+        status: response.status,
+        result,
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("ERROR BREVO:", error);
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
       }),
       {
         status: 500,
