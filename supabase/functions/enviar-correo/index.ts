@@ -30,10 +30,11 @@ serve(async (req) => {
     console.log("NUEVO ENVIO BREVO");
     console.log("Ticket:", ticket_id);
     console.log("Colaborador:", colaborador);
-    console.log("Destino:", email);
+    console.log("Destino Usuario:", email);
     console.log("==================================");
 
-    const response = await fetch(
+    // CORREO AL USUARIO (Plantilla #2)
+    const responseUsuario = await fetch(
       "https://api.brevo.com/v3/smtp/email",
       {
         method: "POST",
@@ -46,71 +47,70 @@ serve(async (req) => {
             name: "Grupo Aurica",
             email: "soporte@auricasac.com",
           },
-
-                        to: [
-                {
-                  email: email,
-                  name: colaborador,
-                },
-                {
-                  email: "soporte@auricasac.com",
-                  name: "Mesa de Ayuda TI",
-                },
-              ],
-
-          subject: `Ticket #${ticket_id} registrado`,
-
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin:auto;">
-              
-              <h2 style="color:#345d9d;">
-                Solicitud registrada
-              </h2>
-
-              <p>Hola <strong>${colaborador}</strong>,</p>
-
-              <p>
-                Tu ticket ha sido registrado correctamente.
-              </p>
-
-              <hr>
-
-              <p><strong>Número:</strong> #${ticket_id}</p>
-              <p><strong>Empresa:</strong> ${empresa}</p>
-              <p><strong>Equipo:</strong> ${host}</p>
-              <p><strong>AnyDesk:</strong> ${anydesk}</p>
-
-              <p>
-                <strong>Detalle:</strong><br>
-                ${descripcion}
-              </p>
-
-              <hr>
-
-              <p>
-                Revisaremos tu solicitud y comenzaremos la atención lo antes posible.
-              </p>
-
-              <p>
-                Grupo Aurica · Sistema de Soporte TI
-              </p>
-
-            </div>
-          `,
+          to: [
+            {
+              email: email,
+              name: colaborador,
+            },
+          ],
+          templateId: 2,
+          params: {
+            ticket_id,
+            colaborador,
+            descripcion,
+          },
         }),
       }
     );
 
-    const result = await response.json();
+    const resultUsuario = await responseUsuario.json();
 
-    console.log("STATUS BREVO:", response.status);
-    console.log("RESPUESTA BREVO:", JSON.stringify(result));
+    // CORREO A TI (Plantilla #3)
+    const responseTI = await fetch(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": Deno.env.get("BREVO_API_KEY") || "",
+        },
+        body: JSON.stringify({
+          sender: {
+            name: "Grupo Aurica",
+            email: "soporte@auricasac.com",
+          },
+          to: [
+            {
+              email: "soporte@auricasac.com",
+              name: "Mesa de Ayuda TI",
+            },
+          ],
+          templateId: 3,
+          params: {
+            ticket_id,
+            fecha: new Date().toLocaleDateString("es-PE"),
+            colaborador,
+            empresa,
+            host,
+            categoria: "Soporte TI",
+            titulo: descripcion,
+            descripcion,
+            anydesk,
+          },
+        }),
+      }
+    );
+
+    const resultTI = await responseTI.json();
+
+    console.log("USUARIO:", JSON.stringify(resultUsuario));
+    console.log("TI:", JSON.stringify(resultTI));
 
     return new Response(
       JSON.stringify({
-        success: response.ok,
-        status: response.status,
-        result,
+        success: true,
+        usuario: resultUsuario,
+        soporte: resultTI,
       }),
       {
         headers: {
@@ -119,6 +119,7 @@ serve(async (req) => {
         },
       }
     );
+
   } catch (error) {
     console.error("ERROR BREVO:", error);
 

@@ -209,7 +209,10 @@ try {
         descripcion: form.descripcion,
         empresa: colaborador.empresa,
         host: colaborador.host,
-        anydesk: form.anydesk || "No especificado"
+        anydesk: form.anydesk || "No especificado",
+        fecha: new Date().toLocaleString("es-PE"),
+        categoria:"Soporte TI",
+        titulo: form.descripcion
       }
     }
   );
