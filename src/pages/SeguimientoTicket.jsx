@@ -160,26 +160,26 @@ export default function SeguimientoTicket({ onVolver }) {
               style={{ background: "#f8fafc", border: "1px solid #dbeafe" }}
             >
 
-              {/* Encabezado: número, título y badge de estado */}
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <p className="text-sm" style={{ color: "#64748b" }}>Ticket #{ticket.id}</p>
-                  <h2 className="text-xl font-bold text-slate-800">
-                    {ticket.titulo || "Incidencia"}
-                  </h2>
-                </div>
-                {/* Badge de estado con color según estadoConfig */}
-                <span
-                  className="px-3 py-1 rounded-full text-sm font-semibold"
-                  style={{
-                    color:       estadoConfig[ticket.estado]?.color,
-                    background:  estadoConfig[ticket.estado]?.bg,
-                  }}
-                >
-                  {estadoConfig[ticket.estado]?.label}
-                </span>
-              </div>
-
+             {/* Encabezado: número y badge de estado */}
+<div className="flex justify-between items-start mb-6">
+  <div>
+    <p className="text-sm" style={{ color: "#64748b" }}>Ticket #{ticket.id}</p>
+    <h2 className="text-xl font-bold text-slate-800">
+      Detalle de la solicitud
+    </h2>
+  </div>
+  
+  {/* Badge de estado */}
+  <span
+    className="px-3 py-1 rounded-full text-sm font-semibold"
+    style={{
+      color:     estadoConfig[ticket.estado]?.color,
+      background:  estadoConfig[ticket.estado]?.bg,
+    }}
+  >
+    {estadoConfig[ticket.estado]?.label}
+  </span>
+</div>
               {/* Detalle del ticket en campos apilados */}
               <div className="space-y-4 text-sm">
 
