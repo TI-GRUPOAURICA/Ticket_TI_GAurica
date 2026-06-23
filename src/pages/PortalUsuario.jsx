@@ -93,10 +93,16 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
       return;
     }
 
-    setColaborador(data);
-    setTema(TEMAS[data.empresa] || TEMA_DEFAULT);
-    setPaso(2);
-    setCargandoUsuario(false);
+  setColaborador(data);
+setTema(TEMAS[data.empresa] || TEMA_DEFAULT);
+
+setForm((prev) => ({
+  ...prev,
+  anydesk: data.anydesk || "",
+}));
+
+setPaso(2);
+setCargandoUsuario(false);
   };
 
   const buscarColaborador = async (texto) => {
@@ -142,6 +148,14 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
       .single();
 
     if (error) { alert("Error al enviar ticket: " + error.message); setEnviando(false); return; }
+    if (form.anydesk) {
+  await supabase
+    .from("colaboradores")
+    .update({
+      anydesk: form.anydesk,
+    })
+    .eq("id", colaborador.id);
+}
 
    const emailParams = {
   ticket_id:          data.id,
@@ -422,16 +436,14 @@ if (enviado) {
                 <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   ID AnyDesk (opcional)
                 </label>
-                <input
-                  type="text"
-                  value={form.anydesk}
-                  onChange={(e) => setForm({ ...form, anydesk: e.target.value })}
-                  placeholder="Ej: 123 456 789"
-                  className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
-                  style={{ border: "1.5px solid #cbd5e0", color: "#2d3748", background: "#fff", fontSize: "clamp(13px, 3vw, 15px)" }}
-                  onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
-                  onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
-                />
+               <input
+  type="text"
+  value={form.anydesk}
+  disabled={!!colaborador?.anydesk}
+  onChange={(e) =>
+    setForm({ ...form, anydesk: e.target.value })
+  }
+/>
               </div>
 
               {/* Botón */}
