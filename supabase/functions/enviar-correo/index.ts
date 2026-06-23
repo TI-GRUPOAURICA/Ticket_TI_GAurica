@@ -1,3 +1,5 @@
+console.log("VERSION RESUELTO 23-06");
+
 /// <reference lib="deno.ns" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,6 +19,7 @@ serve(async (req) => {
 
   try {
     const {
+      tipo,
       ticket_id,
       colaborador,
       email,
@@ -24,16 +27,66 @@ serve(async (req) => {
       empresa,
       host,
       anydesk,
+      solucion,
     } = await req.json();
 
-    console.log("==================================");
-    console.log("NUEVO ENVIO BREVO");
-    console.log("Ticket:", ticket_id);
-    console.log("Colaborador:", colaborador);
-    console.log("Destino Usuario:", email);
-    console.log("==================================");
+    console.log("TIPO:", tipo);
 
-    // CORREO AL USUARIO (Plantilla #2)
+    // ==========================
+    // TICKET RESUELTO
+    // ==========================
+    if (tipo === "resuelto") {
+      console.log("ENTRO A RESUELTO");
+
+      const response = await fetch(
+        "https://api.brevo.com/v3/smtp/email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": Deno.env.get("BREVO_API_KEY") || "",
+          },
+          body: JSON.stringify({
+            sender: {
+              name: "Grupo Aurica",
+              email: "soporte@auricasac.com",
+            },
+            to: [
+              {
+                email: email,
+                name: colaborador,
+              },
+            ],
+            templateId: 4,
+            params: {
+              ticket_id,
+              colaborador,
+              solucion,
+            },
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          result,
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // ==========================
+    // TICKET NUEVO
+    // ==========================
+
     const responseUsuario = await fetch(
       "https://api.brevo.com/v3/smtp/email",
       {
@@ -65,7 +118,6 @@ serve(async (req) => {
 
     const resultUsuario = await responseUsuario.json();
 
-    // CORREO A TI (Plantilla #3)
     const responseTI = await fetch(
       "https://api.brevo.com/v3/smtp/email",
       {
@@ -102,9 +154,6 @@ serve(async (req) => {
     );
 
     const resultTI = await responseTI.json();
-
-    console.log("USUARIO:", JSON.stringify(resultUsuario));
-    console.log("TI:", JSON.stringify(resultTI));
 
     return new Response(
       JSON.stringify({
