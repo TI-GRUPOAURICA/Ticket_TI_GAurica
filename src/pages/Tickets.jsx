@@ -120,8 +120,10 @@ link_encuesta_html: `
     },
     "ema3sApQIaIKPzpnq"
   );
+  } catch (e) {
+  console.error("Error enviando correo de cierre:", e);
+}
 try {
-
   const brevoResult = await supabase.functions.invoke(
     "enviar-correo",
     {
@@ -130,8 +132,8 @@ try {
         ticket_id: ticketId,
         colaborador: nombreColaborador,
         email: correo,
-        solucion: solucion
-      }
+        solucion: solucion,
+      },
     }
   );
 
@@ -139,12 +141,6 @@ try {
 
 } catch (e) {
   console.error("Error Brevo Resuelto:", e);
-}
-
-
-
-} catch (e) {
-  console.error("Error enviando correo de cierre:", e);
 }
 
     setGuardando(false);
