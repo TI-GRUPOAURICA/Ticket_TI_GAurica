@@ -164,9 +164,7 @@ export default function SeguimientoTicket({ onVolver }) {
 <div className="flex justify-between items-start mb-6">
   <div>
     <p className="text-sm" style={{ color: "#64748b" }}>Ticket #{ticket.id}</p>
-    <h2 className="text-xl font-bold text-slate-800">
-      Detalle de la solicitud
-    </h2>
+    
   </div>
   
   {/* Badge de estado */}
