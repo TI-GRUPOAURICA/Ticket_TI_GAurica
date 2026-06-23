@@ -130,7 +130,8 @@ setCargandoUsuario(false);
       return;
     }
     setEnviando(true);
-
+    // 1. Usamos colaborador.anydesk directamente (el de tu BD)
+    const valorAnydesk = colaborador.anydesk || "No especificado";
     const { data, error } = await supabase
       .from("tickets")
       .insert({
@@ -148,14 +149,8 @@ setCargandoUsuario(false);
       .single();
 
     if (error) { alert("Error al enviar ticket: " + error.message); setEnviando(false); return; }
-    if (form.anydesk) {
-  await supabase
-    .from("colaboradores")
-    .update({
-      anydesk: form.anydesk,
-    })
-    .eq("id", colaborador.id);
-}
+   // NOTA: Borramos el bloque 'if (form.anydesk) { await supabase...update... }' 
+    // porque ya no lo vamos a actualizar desde el formulario.
 
    const emailParams = {
   ticket_id:          data.id,
@@ -431,37 +426,6 @@ if (enviado) {
                 />
               </div>
 
-              {/* AnyDesk */}
-              <div>
-                <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
-                  ID AnyDesk (opcional)
-                </label>
-                  <input
-                    type="text"
-                    value={form.anydesk}
-                    disabled={!!colaborador?.anydesk}
-                    onChange={(e) =>
-                      setForm({ ...form, anydesk: e.target.value })
-                    }
-                    placeholder="Ej: 123 456 789"
-                    className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
-                    style={{
-                      border: "1.5px solid #cbd5e0",
-                      color: "#2d3748",
-                      background: colaborador?.anydesk ? "#f8fafc" : "#fff",
-                      fontSize: "clamp(13px, 3vw, 15px)",
-                      cursor: colaborador?.anydesk ? "not-allowed" : "text",
-                    }}
-                    onFocus={(e) => {
-                      if (!colaborador?.anydesk) {
-                        e.target.style.border = `1.5px solid ${tema.primary}`;
-                      }
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.border = "1.5px solid #cbd5e0";
-                    }}
-                  />
-              </div>
 
               {/* Botón */}
               <div className="text-center">
