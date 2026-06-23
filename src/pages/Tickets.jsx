@@ -120,6 +120,29 @@ link_encuesta_html: `
     },
     "ema3sApQIaIKPzpnq"
   );
+try {
+
+  const brevoResult = await supabase.functions.invoke(
+    "enviar-correo",
+    {
+      body: {
+        tipo: "resuelto",
+        ticket_id: ticketId,
+        colaborador: nombreColaborador,
+        email: correo,
+        solucion: solucion
+      }
+    }
+  );
+
+  console.log("BREVO RESUELTO:", brevoResult);
+
+} catch (e) {
+  console.error("Error Brevo Resuelto:", e);
+}
+
+
+
 } catch (e) {
   console.error("Error enviando correo de cierre:", e);
 }
