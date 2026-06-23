@@ -196,11 +196,7 @@ export default function SeguimientoTicket({ onVolver }) {
                 </div>
 
                 {/* Categoría asignada al ticket */}
-                <div>
-                  <p className="text-slate-500">Categoría</p>
-                  <p className="font-medium text-slate-800">{ticket.categorias?.nombre || "—"}</p>
-                </div>
-
+              
                 {/* Comentario de seguimiento ingresado por el técnico TI */}
                 <div>
                   <p className="text-slate-500">Seguimiento TI</p>
