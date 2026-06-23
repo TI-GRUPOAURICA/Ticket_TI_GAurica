@@ -20,19 +20,19 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/Ticket-Aurica-192x192.png',
+            src: '/TICKET_AURICA2026.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/Ticket-Aurica-512x512.png',
+            src: '/TICKET_AURICA2026.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/Ticket-Aurica-512x512.png',
+            src: '/TICKET_AURICA2026.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
