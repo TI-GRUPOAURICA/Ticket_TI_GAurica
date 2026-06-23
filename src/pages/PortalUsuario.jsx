@@ -437,13 +437,20 @@ if (enviado) {
                   ID AnyDesk (opcional)
                 </label>
                <input
-  type="text"
-  value={form.anydesk}
-  disabled={!!colaborador?.anydesk}
-  onChange={(e) =>
-    setForm({ ...form, anydesk: e.target.value })
-  }
-/>
+                    type="text"
+                    value={form.anydesk}
+                    onChange={(e) => setForm({ ...form, anydesk: e.target.value })}
+                    placeholder="Ej: 123 456 789"
+                    className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
+                    style={{
+                      border: "1.5px solid #cbd5e0",
+                      color: "#2d3748",
+                      background: "#fff",
+                      fontSize: "clamp(13px, 3vw, 15px)"
+                    }}
+                    onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
+                    onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
+                  />
               </div>
 
               {/* Botón */}
