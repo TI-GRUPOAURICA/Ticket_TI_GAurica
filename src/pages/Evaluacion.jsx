@@ -1,96 +1,82 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function Evaluacion() {
+  const [calificacion, setCalificacion] = useState(0);
   const [comentario, setComentario] = useState("");
-  const [guardado, setGuardado] = useState(false);
-
+  const [enviado, setEnviado] = useState(false);
+  
   const params = new URLSearchParams(window.location.search);
-
   const ticketId = params.get("ticket");
-  const valor = params.get("valor");
 
-  useEffect(() => {
-    const guardarFeliz = async () => {
-      if (valor === "feliz") {
-        await supabase
-          .from("tickets")
-          .update({
-            valoracion_usuario: "feliz",
-            fecha_valoracion: new Date().toISOString(),
-          })
-          .eq("id", ticketId);
+  const manejarClickEstrella = async (valor) => {
+    setCalificacion(valor);
 
-        setGuardado(true);
-      }
-    };
+    // Si es 4 o 5 estrellas, guardamos directo y mostramos mensaje de gracias
+    if (valor >= 4) {
+      await guardarEnSupabase(valor, "Excelente atención");
+      setEnviado(true);
+    }
+    // Si es 1, 2 o 3, el usuario se queda en la misma página para escribir comentario
+  };
 
-    guardarFeliz();
-  }, [ticketId, valor]);
-
-  const enviarComentario = async () => {
+  const guardarEnSupabase = async (valor, texto) => {
     await supabase
       .from("tickets")
       .update({
         valoracion_usuario: valor,
-        comentario_valoracion: comentario,
+        comentario_valoracion: texto,
         fecha_valoracion: new Date().toISOString(),
       })
       .eq("id", ticketId);
-
-    setGuardado(true);
   };
 
-  if (guardado) {
+  if (enviado) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="bg-white p-8 rounded-2xl shadow-md text-center max-w-md">
-          <h1 className="text-3xl mb-3">✅</h1>
-          <h2 className="text-xl font-bold mb-2">
-            Gracias por tu evaluación
-          </h2>
-          <p className="text-slate-500">
-            Tu opinión nos ayuda a mejorar nuestro servicio.
-          </p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <h2 className="text-2xl font-bold">¡Gracias por tu valoración! 🎉</h2>
       </div>
     );
   }
 
-  if (valor === "feliz") {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-lg">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md text-center">
+        <h2 className="text-xl font-bold mb-4">¿Cómo calificarías nuestra atención?</h2>
+        
+        {/* Renderizado de 5 estrellas */}
+        <div className="flex justify-center gap-2 mb-6">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={() => manejarClickEstrella(star)}
+              className={`text-4xl transition ${calificacion >= star ? "text-yellow-400" : "text-gray-300"}`}
+            >
+              ★
+            </button>
+          ))}
+        </div>
 
-        <h2 className="text-xl font-bold mb-3">
-          {valor === "triste"
-            ? "☹️ Lamentamos tu experiencia"
-            : "😐 ¿Qué podríamos mejorar?"}
-        </h2>
-
-        <p className="text-slate-500 mb-4">
-          Tu comentario nos ayudará a mejorar nuestro servicio.
-        </p>
-
-        <textarea
-          value={comentario}
-          onChange={(e) => setComentario(e.target.value)}
-          rows={5}
-          className="w-full border rounded-xl p-3"
-          placeholder="Escribe tu comentario..."
-        />
-
-        <button
-          onClick={enviarComentario}
-          className="mt-4 w-full py-3 rounded-xl text-white font-semibold"
-          style={{ background: "#345D9D" }}
-        >
-          Enviar comentario
-        </button>
-
+        {/* Campo de comentario solo si la calificación es baja (1-3) */}
+        {calificacion > 0 && calificacion <= 3 && (
+          <div className="mt-4 animate-fadeIn">
+            <p className="mb-2 text-sm text-slate-600">Lamentamos que tu experiencia no fuera ideal. ¿Qué podemos mejorar?</p>
+            <textarea
+              className="w-full border rounded-xl p-3 mb-3"
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder="Cuéntanos más..."
+            />
+            <button
+              onClick={async () => {
+                await guardarEnSupabase(calificacion, comentario);
+                setEnviado(true);
+              }}
+              className="w-full py-2 bg-blue-600 text-white rounded-xl"
+            >
+              Enviar comentario
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
