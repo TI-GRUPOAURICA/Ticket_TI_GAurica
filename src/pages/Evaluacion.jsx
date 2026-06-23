@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function Evaluacion() {
@@ -8,16 +8,26 @@ export default function Evaluacion() {
   
   const params = new URLSearchParams(window.location.search);
   const ticketId = params.get("ticket");
+  const valorURL = params.get("valor");
+
+  // Este useEffect hace que el componente reaccione al valor de la URL al cargar
+  useEffect(() => {
+    if (valorURL) {
+      const valor = parseInt(valorURL);
+      manejarClickEstrella(valor);
+    }
+  }, []); 
 
   const manejarClickEstrella = async (valor) => {
     setCalificacion(valor);
 
-    // Si es 4 o 5 estrellas, guardamos directo y mostramos mensaje de gracias
+    // Si es 4 o 5, guardamos directo y mostramos mensaje de gracias
     if (valor >= 4) {
       await guardarEnSupabase(valor, "Excelente atención");
       setEnviado(true);
     }
-    // Si es 1, 2 o 3, el usuario se queda en la misma página para escribir comentario
+    // Si es 1, 2 o 3, el estado de 'calificacion' se actualiza 
+    // y el renderizado abajo mostrará el campo de comentario automáticamente
   };
 
   const guardarEnSupabase = async (valor, texto) => {
