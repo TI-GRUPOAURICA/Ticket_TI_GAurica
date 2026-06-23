@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Portal Soporte TI - Grupo Aurica',
+        name: 'Soporte TI - Grupo Aurica',
         short_name: 'Soporte TI',
         description: 'Sistema de tickets de soporte tecnológico',
         theme_color: '#345D9D',
