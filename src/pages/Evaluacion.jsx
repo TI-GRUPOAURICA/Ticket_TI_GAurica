@@ -29,7 +29,22 @@ export default function Evaluacion() {
     }
   };
 
-  const guardarEnSupabase = async (valor, texto) => {
+const guardarEnSupabase = async (valor, texto) => {
+    // 1. Primero verificamos si el ticket ya tiene una valoración registrada
+    const { data: ticketExistente, error } = await supabase
+      .from("tickets")
+      .select("valoracion_usuario")
+      .eq("id", ticketId)
+      .single();
+
+    // 2. Si ya existe un valor, bloqueamos el envío
+    if (ticketExistente && ticketExistente.valoracion_usuario !== null) {
+      alert("Este ticket ya ha sido calificado anteriormente.");
+      setEnviado(true);
+      return;
+    }
+
+    // 3. Si no existe, procedemos a actualizar
     await supabase
       .from("tickets")
       .update({
@@ -38,6 +53,8 @@ export default function Evaluacion() {
         fecha_valoracion: new Date().toISOString(),
       })
       .eq("id", ticketId);
+      
+    setEnviado(true);
   };
 
   if (enviado) {
