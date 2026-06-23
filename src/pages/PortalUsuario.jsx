@@ -436,20 +436,30 @@ if (enviado) {
                 <label className="block font-medium mb-1" style={{ color: "#4a5568", fontSize: "clamp(11px, 2.5vw, 13px)" }}>
                   ID AnyDesk (opcional)
                 </label>
-               <input
+                  <input
                     type="text"
                     value={form.anydesk}
-                    onChange={(e) => setForm({ ...form, anydesk: e.target.value })}
+                    disabled={!!colaborador?.anydesk}
+                    onChange={(e) =>
+                      setForm({ ...form, anydesk: e.target.value })
+                    }
                     placeholder="Ej: 123 456 789"
                     className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition"
                     style={{
                       border: "1.5px solid #cbd5e0",
                       color: "#2d3748",
-                      background: "#fff",
-                      fontSize: "clamp(13px, 3vw, 15px)"
+                      background: colaborador?.anydesk ? "#f8fafc" : "#fff",
+                      fontSize: "clamp(13px, 3vw, 15px)",
+                      cursor: colaborador?.anydesk ? "not-allowed" : "text",
                     }}
-                    onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
-                    onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
+                    onFocus={(e) => {
+                      if (!colaborador?.anydesk) {
+                        e.target.style.border = `1.5px solid ${tema.primary}`;
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.border = "1.5px solid #cbd5e0";
+                    }}
                   />
               </div>
 
