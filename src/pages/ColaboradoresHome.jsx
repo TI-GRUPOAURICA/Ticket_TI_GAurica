@@ -28,7 +28,7 @@ export default function ColaboradorHome({
             Hola {user?.name || "Colaborador"}
           </h1>
           <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
-    Gestiona tus requerimientos de soporte de forma rápida y sencilla.
+    Gestiona tus solicitudes de soporte de forma rápida y sencilla.
   </p>
 
           {/* ✅ Eliminado: párrafo "¿Qué deseas hacer hoy?" */}

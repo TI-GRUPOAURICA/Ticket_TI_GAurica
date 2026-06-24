@@ -98,7 +98,7 @@ export default function SeguimientoTicket({ onVolver }) {
 
           {/* Título y subtítulo de la sección */}
           <h1 className="text-3xl font-bold text-center" style={{ color: "#345D9D" }}>
-            Seguimiento de Ticket
+            Seguimiento de ticket
           </h1>
           <p className="text-center mt-2 mb-8" style={{ color: "#64748b" }}>
             Consulta el estado de tu solicitud
