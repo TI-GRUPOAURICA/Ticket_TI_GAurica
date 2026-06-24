@@ -386,8 +386,8 @@ if (enviado) {
                   Hola {userName || colaborador?.colaborador || "Usuario"}
                 </h2>
                 <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
-    Gestiona tus requerimientos de soporte de forma rápida y sencilla.
-  </p>
+                  Estamos listos para ayudarte
+                </p>
               </div>
 
               <div
