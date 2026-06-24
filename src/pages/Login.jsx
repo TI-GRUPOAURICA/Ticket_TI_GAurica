@@ -120,7 +120,7 @@ export default function Login() {
           </h2>
            <br />
           <p className="text-xl mb-8 text-center" style={{ color: "#345D9D" }}>
-            Sistema de Tickets
+            Sistema de tickets
           </p>
 
           {/* -------------------------------------------------------
