@@ -56,7 +56,7 @@ export default function SeguimientoTicket({ onVolver }) {
   // Se usa para mostrar el badge de estado en la card.
   // ----------------------------------------------------------
   const estadoConfig = {
-    abierto:    { label: "Abierto",     color: "#ef4444", bg: "#fee2e2" },
+    abierto:    { label: "Recepcionado",     color: "#ef4444", bg: "#fee2e2" },
     en_proceso: { label: "En proceso",  color: "#f59e0b", bg: "#fef3c7" },
     resuelto:   { label: "Resuelto",    color: "#22c55e", bg: "#dcfce7" },
   };
