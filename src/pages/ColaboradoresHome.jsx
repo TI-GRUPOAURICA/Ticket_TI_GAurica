@@ -27,6 +27,9 @@ export default function ColaboradorHome({
           >
             Hola {user?.name || "Colaborador"}
           </h1>
+          <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
+    Gestiona tus requerimientos de soporte de forma rápida y sencilla.
+  </p>
 
           {/* ✅ Eliminado: párrafo "¿Qué deseas hacer hoy?" */}
         </div>
@@ -100,18 +103,18 @@ export default function ColaboradorHome({
         </div>
 
         {/* ✅ BOTÓN: Cerrar sesión — color cambiado a #345d9d */}
-       <div className="text-center mt-6">
-  <button
-    onClick={onLogout}
-    className="px-8 py-3 rounded-xl text-sm font-medium transition text-white"
-    style={{
-      background: "#345d9d",
-      border: "none",
-    }}
-  >
-    Cerrar sesión
-  </button>
-</div>
+              <div className="text-center mt-6">
+                  <button
+                    onClick={onLogout}
+                    className="px-8 py-3 rounded-xl text-sm font-medium transition text-white"
+                    style={{
+                      background: "#345d9d",
+                      border: "none",
+                    }}
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
 
         {/* ✅ FOOTER eliminado */}
 
