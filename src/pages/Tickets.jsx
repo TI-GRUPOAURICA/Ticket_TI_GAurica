@@ -65,7 +65,8 @@ function GestionTicket({
       .single();
 
     const correo = colData?.correo || correoColaborador;
-
+// 🚫 EMAILJS DESACTIVADO (Comentado para evitar duplicación de correos)
+/*
  try {
   await emailjs.send(
     "service_wzdct0i",
@@ -123,6 +124,7 @@ link_encuesta_html: `
   } catch (e) {
   console.error("Error enviando correo de cierre:", e);
 }
+  */
 try {
   const brevoResult = await supabase.functions.invoke(
     "enviar-correo",

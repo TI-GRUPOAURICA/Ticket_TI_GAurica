@@ -180,6 +180,8 @@ setCargandoUsuario(false);
     </div>
   `,
 };
+// 🚫 EMAILJS DESACTIVADO (Comentado para evitar correos duplicados al registrar)
+    /*
 
   try {
   console.log("ESTO SE ESTA ENVIANDO:", emailParams.ticket_box_html);
@@ -201,7 +203,7 @@ setCargandoUsuario(false);
 } catch (e) {
   console.error("EmailJS falló:", e);
 }
-
+*/
 try {
 
   console.log("DESTINO:", colaborador.correo);

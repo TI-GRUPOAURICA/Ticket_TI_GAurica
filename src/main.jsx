@@ -6,6 +6,8 @@ import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { msalConfig } from './Config/authConfig'
 import "./assets/styles/font.css";
+
+
 const msalInstance = new PublicClientApplication(msalConfig)
 
 createRoot(document.getElementById('root')).render(
