@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Pencil, Trash2, Save } from "lucide-react";
+import {
+  Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
+  Package, User, RefreshCw, CircleCheck, CircleX,
+} from "lucide-react";
 
 // =============================================================
 // COMPONENTE: Inventario
@@ -35,6 +38,12 @@ export default function Inventario() {
     empresa: "",
     tipo: "",
   });
+
+  // ---- Estados para la card de detalle del equipo ----
+  const [hostSeleccionado, setHostSeleccionado] = useState(null); // hostname del equipo abierto en la card, null = cerrada
+  const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
+  const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
+  const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
 
   // ----------------------------------------------------------
   // EFECTO INICIAL
@@ -113,6 +122,52 @@ export default function Inventario() {
 
   obtenerEquipos();
 }
+
+  // ----------------------------------------------------------
+  // ABRIR DETALLE DE EQUIPO
+  // Consulta la tabla "equipos" (specs) y "software_instalado"
+  // (lista de programas) filtrando ambas por el mismo hostname.
+  // Se dispara al hacer clic sobre el nombre de host en la tabla.
+  // ----------------------------------------------------------
+  async function abrirDetalle(hostname) {
+    setHostSeleccionado(hostname);
+    setLoadingDetalle(true);
+    setDetalleEquipo(null);
+    setDetalleSoftware([]);
+
+    const [equipoRes, softwareRes] = await Promise.all([
+      supabase
+        .from("equipos")
+        .select("*")
+        .eq("hostname", hostname)
+        .maybeSingle(),
+      supabase
+        .from("software_instalado")
+        .select("*")
+        .eq("hostname", hostname)
+        .order("nombre"),
+    ]);
+
+    if (equipoRes.error) {
+      console.error("Error cargando specs del equipo:", equipoRes.error);
+    } else {
+      setDetalleEquipo(equipoRes.data);
+    }
+
+    if (softwareRes.error) {
+      console.error("Error cargando software instalado:", softwareRes.error);
+    } else {
+      setDetalleSoftware(softwareRes.data || []);
+    }
+
+    setLoadingDetalle(false);
+  }
+
+  function cerrarDetalle() {
+    setHostSeleccionado(null);
+    setDetalleEquipo(null);
+    setDetalleSoftware([]);
+  }
 
   // ----------------------------------------------------------
   // FILTRADO EN TIEMPO REAL
@@ -271,7 +326,14 @@ export default function Inventario() {
                         style={{ background: "#ffffff", color: "#1e293b", border: "1px solid #bfdbfe" }}
                       />
                     ) : (
-                      <span className="font-semibold" style={{ color: "#1e293b" }}>{item.host}</span>
+                      <span
+                        onClick={() => abrirDetalle(item.host)}
+                        className="font-semibold cursor-pointer hover:underline"
+                        style={{ color: "#345D9D" }}
+                        title="Ver detalle del equipo"
+                      >
+                        {item.host}
+                      </span>
                     )}
                   </td>
 
@@ -404,6 +466,210 @@ export default function Inventario() {
         </table>
       </div>
 
+      {/* --------------------------------------------------------
+          MODAL: DETALLE DEL EQUIPO
+          Se muestra al hacer clic en un hostname. Trae specs
+          desde "equipos" y programas desde "software_instalado",
+          ambos filtrados por el mismo hostname.
+      -------------------------------------------------------- */}
+      {hostSeleccionado && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ background: "rgba(15, 23, 42, 0.5)", zIndex: 50 }}
+          onClick={cerrarDetalle}
+        >
+          <div
+            className="w-full rounded-2xl shadow-lg overflow-hidden"
+            style={{ background: "#ffffff", maxWidth: "700px", maxHeight: "85vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Encabezado del modal */}
+            <div
+              className="flex justify-between items-center p-5"
+              style={{ background: "#345D9D" }}
+            >
+              <div>
+                <h2 className="text-xl font-bold text-white">{hostSeleccionado}</h2>
+                <p className="text-sm" style={{ color: "#dbeafe" }}>Detalle del equipo</p>
+              </div>
+              <button
+                onClick={cerrarDetalle}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:opacity-80"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#ffffff" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Cuerpo del modal (scrollable) */}
+            <div className="p-5 overflow-y-auto" style={{ maxHeight: "calc(85vh - 84px)" }}>
+
+              {loadingDetalle ? (
+                <p className="text-center py-10" style={{ color: "#64748b" }}>Cargando detalle...</p>
+
+              ) : !detalleEquipo ? (
+                <p className="text-center py-10" style={{ color: "#64748b" }}>
+                  No se encontraron especificaciones para este equipo en la tabla "equipos".
+                </p>
+
+              ) : (
+                <>
+                  {/* ---- SECCIÓN: DATOS BÁSICOS ---- */}
+                  <div className="mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User size={16} style={{ color: "#345D9D" }} />
+                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
+                      <DetalleItem label="Serial" valor={detalleEquipo.serial} />
+                      <DetalleItem label="Marca" valor={detalleEquipo.marca} />
+                      <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
+                      <DetalleItem
+                        label="Estado"
+                        valor={detalleEquipo.estado}
+                      />
+                      <DetalleItem
+                        label="Activo"
+                        valorNodo={
+                          detalleEquipo.activo ? (
+                            <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                              <CircleCheck size={14} /> Sí
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                              <CircleX size={14} /> No
+                            </span>
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* ---- SECCIÓN: ESPECIFICACIONES TÉCNICAS ---- */}
+                  <div className="mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Cpu size={16} style={{ color: "#345D9D" }} />
+                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
+                      <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                      <DetalleItem
+                        label="Disco total"
+                        valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
+                      />
+                      <DetalleItem
+                        label="Disco libre"
+                        valor={
+                          detalleEquipo.disco_libre_gb
+                            ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje ?? "?"}%)`
+                            : null
+                        }
+                      />
+                      <DetalleItem
+                        label="Windows"
+                        valor={
+                          detalleEquipo.windows
+                            ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
+                            : null
+                        }
+                      />
+                      <DetalleItem
+                        label="Último reinicio"
+                        valor={formatearFecha(detalleEquipo.ultimo_reinicio)}
+                      />
+                      <DetalleItem
+                        label="Última sincronización"
+                        valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ---- SECCIÓN: SOFTWARE INSTALADO ---- */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package size={16} style={{ color: "#345D9D" }} />
+                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>
+                        Software instalado ({detalleSoftware.length})
+                      </h3>
+                    </div>
+
+                    {detalleSoftware.length === 0 ? (
+                      <p className="text-sm" style={{ color: "#64748b" }}>
+                        No hay software registrado para este equipo.
+                      </p>
+                    ) : (
+                      <div
+                        className="rounded-xl overflow-hidden"
+                        style={{ border: "1px solid #dbeafe" }}
+                      >
+                        <table className="w-full text-sm">
+                          <thead style={{ background: "#eff6ff" }}>
+                            <tr>
+                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Programa</th>
+                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Versión</th>
+                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Fabricante</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detalleSoftware.map((sw) => (
+                              <tr key={sw.id} style={{ borderTop: "1px solid #eff6ff" }}>
+                                <td className="p-2" style={{ color: "#1e293b" }}>{sw.nombre}</td>
+                                <td className="p-2" style={{ color: "#475569" }}>{sw.version || "—"}</td>
+                                <td className="p-2" style={{ color: "#475569" }}>{sw.fabricante || "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
+}
+
+// =============================================================
+// COMPONENTE AUXILIAR: DetalleItem
+// Muestra un par etiqueta/valor dentro de la card de detalle.
+// Si el valor es null/vacío, muestra "—".
+// Se puede pasar "valorNodo" para renderizar un elemento
+// personalizado (ej. un ícono) en vez de texto plano.
+// =============================================================
+function DetalleItem({ label, valor, valorNodo }) {
+  return (
+    <div className="p-3 rounded-xl" style={{ background: "#f8fbff", border: "1px solid #eff6ff" }}>
+      <p className="text-xs mb-1" style={{ color: "#64748b" }}>{label}</p>
+      {valorNodo ? (
+        valorNodo
+      ) : (
+        <p className="text-sm font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
+      )}
+    </div>
+  );
+}
+
+// =============================================================
+// UTILIDAD: formatearFecha
+// Convierte un timestamp de Supabase a formato legible es-PE.
+// Devuelve null si la fecha no existe.
+// =============================================================
+function formatearFecha(fecha) {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  if (isNaN(d.getTime())) return fecha;
+  return d.toLocaleString("es-PE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
