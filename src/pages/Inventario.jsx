@@ -44,6 +44,7 @@ export default function Inventario() {
   const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
   const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
+  const [tabDetalle, setTabDetalle] = useState("basicos");        // pestaña activa: "basicos" | "programas"
 
   // ----------------------------------------------------------
   // EFECTO INICIAL
@@ -134,6 +135,7 @@ export default function Inventario() {
     setLoadingDetalle(true);
     setDetalleEquipo(null);
     setDetalleSoftware([]);
+    setTabDetalle("basicos");
 
     const [equipoRes, softwareRes] = await Promise.all([
       supabase
@@ -514,117 +516,139 @@ export default function Inventario() {
 
               ) : (
                 <>
-                  {/* ---- SECCIÓN: DATOS BÁSICOS ---- */}
-                  <div className="mb-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <User size={16} style={{ color: "#345D9D" }} />
-                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
-                      <DetalleItem label="Serial" valor={detalleEquipo.serial} />
-                      <DetalleItem label="Marca" valor={detalleEquipo.marca} />
-                      <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
-                      <DetalleItem
-                        label="Estado"
-                        valor={detalleEquipo.estado}
-                      />
-                      <DetalleItem
-                        label="Activo"
-                        valorNodo={
-                          detalleEquipo.activo ? (
-                            <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
-                              <CircleCheck size={14} /> Sí
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
-                              <CircleX size={14} /> No
-                            </span>
-                          )
-                        }
-                      />
-                    </div>
+                  {/* ---- PESTAÑAS (tipo pill, igual estilo que Prioridad/Categoría) ---- */}
+                  <div className="flex gap-2 mb-5">
+                    <button
+                      onClick={() => setTabDetalle("basicos")}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold transition"
+                      style={
+                        tabDetalle === "basicos"
+                          ? { background: "#345D9D", color: "#ffffff" }
+                          : { background: "#ffffff", color: "#345D9D", border: "1px solid #bfdbfe" }
+                      }
+                    >
+                      Especificaciones del equipo
+                    </button>
+                    <button
+                      onClick={() => setTabDetalle("programas")}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold transition"
+                      style={
+                        tabDetalle === "programas"
+                          ? { background: "#345D9D", color: "#ffffff" }
+                          : { background: "#ffffff", color: "#345D9D", border: "1px solid #bfdbfe" }
+                      }
+                    >
+                      Programas ({detalleSoftware.length})
+                    </button>
                   </div>
 
-                  {/* ---- SECCIÓN: ESPECIFICACIONES TÉCNICAS ---- */}
-                  <div className="mb-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Cpu size={16} style={{ color: "#345D9D" }} />
-                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
-                      <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
-                      <DetalleItem
-                        label="Disco total"
-                        valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
-                      />
-                      <DetalleItem
-                        label="Disco libre"
-                        valor={
-                          detalleEquipo.disco_libre_gb
-                            ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje ?? "?"}%)`
-                            : null
-                        }
-                      />
-                      <DetalleItem
-                        label="Windows"
-                        valor={
-                          detalleEquipo.windows
-                            ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
-                            : null
-                        }
-                      />
-                      <DetalleItem
-                        label="Último reinicio"
-                        valor={formatearFecha(detalleEquipo.ultimo_reinicio)}
-                      />
-                      <DetalleItem
-                        label="Última sincronización"
-                        valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* ---- SECCIÓN: SOFTWARE INSTALADO ---- */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Package size={16} style={{ color: "#345D9D" }} />
-                      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>
-                        Software instalado ({detalleSoftware.length})
-                      </h3>
-                    </div>
-
-                    {detalleSoftware.length === 0 ? (
-                      <p className="text-sm" style={{ color: "#64748b" }}>
-                        No hay software registrado para este equipo.
-                      </p>
-                    ) : (
-                      <div
-                        className="rounded-xl overflow-hidden"
-                        style={{ border: "1px solid #dbeafe" }}
-                      >
-                        <table className="w-full text-sm">
-                          <thead style={{ background: "#eff6ff" }}>
-                            <tr>
-                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Programa</th>
-                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Versión</th>
-                              <th className="p-2 text-left" style={{ color: "#345D9D" }}>Fabricante</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {detalleSoftware.map((sw) => (
-                              <tr key={sw.id} style={{ borderTop: "1px solid #eff6ff" }}>
-                                <td className="p-2" style={{ color: "#1e293b" }}>{sw.nombre}</td>
-                                <td className="p-2" style={{ color: "#475569" }}>{sw.version || "—"}</td>
-                                <td className="p-2" style={{ color: "#475569" }}>{sw.fabricante || "—"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                  {/* ---- PANTALLA 1: DATOS BÁSICOS + ESPECIFICACIONES ---- */}
+                  {tabDetalle === "basicos" && (
+                    <>
+                      <div className="mb-5">
+                        <div className="flex items-center gap-2 mb-3">
+                          <User size={16} style={{ color: "#345D9D" }} />
+                          <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
+                          <DetalleItem label="Serial" valor={detalleEquipo.serial} />
+                          <DetalleItem label="Marca" valor={detalleEquipo.marca} />
+                          <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
+                          <DetalleItem label="Estado" valor={detalleEquipo.estado} />
+                          <DetalleItem
+                            label="Activo"
+                            valorNodo={
+                              detalleEquipo.activo ? (
+                                <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                                  <CircleCheck size={14} /> Sí
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                                  <CircleX size={14} /> No
+                                </span>
+                              )
+                            }
+                          />
+                        </div>
                       </div>
-                    )}
-                  </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Cpu size={16} style={{ color: "#345D9D" }} />
+                          <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones técnicas</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
+                          <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                          <DetalleItem
+                            label="Disco total"
+                            valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
+                          />
+                          <DetalleItem
+                            label="Disco libre"
+                            valor={
+                              detalleEquipo.disco_libre_gb
+                                ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje ?? "?"}%)`
+                                : null
+                            }
+                          />
+                          <DetalleItem
+                            label="Windows"
+                            valor={
+                              detalleEquipo.windows
+                                ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
+                                : null
+                            }
+                          />
+                          <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
+                          <DetalleItem
+                            label="Última sincronización"
+                            valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ---- PANTALLA 2: SOFTWARE INSTALADO ---- */}
+                  {tabDetalle === "programas" && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Package size={16} style={{ color: "#345D9D" }} />
+                        <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>
+                          Software instalado ({detalleSoftware.length})
+                        </h3>
+                      </div>
+
+                      {detalleSoftware.length === 0 ? (
+                        <p className="text-sm" style={{ color: "#64748b" }}>
+                          No hay software registrado para este equipo.
+                        </p>
+                      ) : (
+                        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #dbeafe" }}>
+                          <table className="w-full text-sm">
+                            <thead style={{ background: "#eff6ff" }}>
+                              <tr>
+                                <th className="p-2 text-left" style={{ color: "#345D9D" }}>Programa</th>
+                                <th className="p-2 text-left" style={{ color: "#345D9D" }}>Versión</th>
+                                <th className="p-2 text-left" style={{ color: "#345D9D" }}>Fabricante</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {detalleSoftware.map((sw) => (
+                                <tr key={sw.id} style={{ borderTop: "1px solid #eff6ff" }}>
+                                  <td className="p-2" style={{ color: "#1e293b" }}>{sw.nombre}</td>
+                                  <td className="p-2" style={{ color: "#475569" }}>{sw.version || "—"}</td>
+                                  <td className="p-2" style={{ color: "#475569" }}>{sw.fabricante || "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
