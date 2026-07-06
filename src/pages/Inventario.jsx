@@ -197,7 +197,15 @@ export default function Inventario() {
   // RENDER
   // ----------------------------------------------------------
   return (
-    <div className="p-6" style={{ background: "#f0f3f8", minHeight: "100vh" }}>
+    <div className="p-6 flex gap-5" style={{ background: "#f0f3f8", minHeight: "100vh" }}>
+
+      {/* ============================================================
+          COLUMNA IZQUIERDA: listado de inventario
+          Ocupa todo el espacio disponible (flex-1). Cuando el panel
+          de detalle está abierto, esta columna se comprime en vez
+          de quedar tapada por un overlay.
+      ============================================================ */}
+      <div className="flex-1 min-w-0">
 
       {/* --------------------------------------------------------
           ENCABEZADO
@@ -468,24 +476,30 @@ export default function Inventario() {
         </table>
       </div>
 
-      {/* --------------------------------------------------------
-          MODAL: DETALLE DEL EQUIPO
-          Se muestra al hacer clic en un hostname. Trae specs
-          desde "equipos" y programas desde "software_instalado",
-          ambos filtrados por el mismo hostname.
-      -------------------------------------------------------- */}
+      </div>
+      {/* fin columna izquierda */}
+
+      {/* ============================================================
+          COLUMNA DERECHA: panel de detalle del equipo
+          Solo se renderiza cuando hay un host seleccionado. Es parte
+          del layout normal (no overlay), igual que el panel de un
+          ticket: la lista queda a la izquierda y el detalle a la
+          derecha, ambos visibles al mismo tiempo.
+      ============================================================ */}
       {hostSeleccionado && (
         <div
-          className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ background: "rgba(15, 23, 42, 0.5)", zIndex: 50 }}
-          onClick={cerrarDetalle}
+          className="rounded-2xl shadow-sm overflow-hidden flex flex-col"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #dbeafe",
+            width: "420px",
+            flexShrink: 0,
+            maxHeight: "calc(100vh - 48px)",
+            position: "sticky",
+            top: "24px",
+          }}
         >
-          <div
-            className="w-full rounded-2xl shadow-lg overflow-hidden"
-            style={{ background: "#ffffff", maxWidth: "700px", maxHeight: "85vh" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Encabezado del modal */}
+            {/* Encabezado del panel */}
             <div
               className="flex justify-between items-center p-5"
               style={{ background: "#345D9D" }}
@@ -503,8 +517,8 @@ export default function Inventario() {
               </button>
             </div>
 
-            {/* Cuerpo del modal (scrollable) */}
-            <div className="p-5 overflow-y-auto" style={{ maxHeight: "calc(85vh - 84px)" }}>
+            {/* Cuerpo del panel (scrollable) */}
+            <div className="p-5 overflow-y-auto flex-1">
 
               {loadingDetalle ? (
                 <p className="text-center py-10" style={{ color: "#64748b" }}>Cargando detalle...</p>
@@ -652,7 +666,6 @@ export default function Inventario() {
                 </>
               )}
             </div>
-          </div>
         </div>
       )}
 
