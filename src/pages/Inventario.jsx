@@ -139,7 +139,7 @@ export default function Inventario() {
 
     const [equipoRes, softwareRes] = await Promise.all([
       supabase
-        .from("equipos")
+        .from("equipos_estado")
         .select("*")
         .eq("hostname", hostname)
         .maybeSingle(),
