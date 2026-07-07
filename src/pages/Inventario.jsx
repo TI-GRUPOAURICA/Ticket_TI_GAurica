@@ -485,6 +485,10 @@ export default function Inventario() {
           del layout normal (no overlay), igual que el panel de un
           ticket: la lista queda a la izquierda y el detalle a la
           derecha, ambos visibles al mismo tiempo.
+
+          Ancho ampliado: antes era fijo en 420px, ahora usa clamp()
+          para escalar entre 420px y 620px según el ancho de la
+          ventana, dejando más espacio para agregar contenido futuro.
       ============================================================ */}
       {hostSeleccionado && (
         <div
@@ -492,7 +496,7 @@ export default function Inventario() {
           style={{
             background: "#ffffff",
             border: "1px solid #dbeafe",
-            width: "420px",
+            width: "clamp(420px, 34vw, 620px)",
             flexShrink: 0,
             maxHeight: "calc(100vh - 48px)",
             position: "sticky",
@@ -564,7 +568,7 @@ export default function Inventario() {
                           <User size={16} style={{ color: "#345D9D" }} />
                           <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
                           <DetalleItem label="Serial" valor={detalleEquipo.serial} />
                           <DetalleItem label="Marca" valor={detalleEquipo.marca} />
@@ -592,7 +596,7 @@ export default function Inventario() {
                           <Cpu size={16} style={{ color: "#345D9D" }} />
                           <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones técnicas</h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
                           <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
                           <DetalleItem
