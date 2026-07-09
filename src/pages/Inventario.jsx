@@ -199,6 +199,35 @@ export default function Inventario() {
   return (
     <div className="p-6 flex gap-5" style={{ background: "#f0f3f8", minHeight: "100vh" }}>
 
+      {/* --------------------------------------------------------
+          SCROLLBAR PERSONALIZADO
+          Hace el scroll más grueso y visible (tanto en la página
+          general como dentro del panel de detalle), usando los
+          colores de la paleta de la app.
+      -------------------------------------------------------- */}
+      <style>{`
+        * {
+          scrollbar-width: auto;
+          scrollbar-color: #93b4de #eff6ff;
+        }
+        *::-webkit-scrollbar {
+          width: 14px;
+          height: 14px;
+        }
+        *::-webkit-scrollbar-track {
+          background: #eff6ff;
+          border-radius: 10px;
+        }
+        *::-webkit-scrollbar-thumb {
+          background-color: #93b4de;
+          border-radius: 10px;
+          border: 3px solid #eff6ff;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+          background-color: #345D9D;
+        }
+      `}</style>
+
       {/* ============================================================
           COLUMNA IZQUIERDA: listado de inventario
           Ocupa todo el espacio disponible (flex-1). Cuando el panel
@@ -496,7 +525,7 @@ export default function Inventario() {
           style={{
             background: "#ffffff",
             border: "1px solid #dbeafe",
-            width: "clamp(420px, 34vw, 620px)",
+            width: "clamp(480px, 42vw, 760px)",
             flexShrink: 0,
             maxHeight: "calc(100vh - 48px)",
             position: "sticky",
@@ -568,7 +597,7 @@ export default function Inventario() {
                           <User size={16} style={{ color: "#345D9D" }} />
                           <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
                           <DetalleItem label="Serial" valor={detalleEquipo.serial} />
                           <DetalleItem label="Marca" valor={detalleEquipo.marca} />
@@ -596,7 +625,7 @@ export default function Inventario() {
                           <Cpu size={16} style={{ color: "#345D9D" }} />
                           <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones técnicas</h3>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
                           <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
                           <DetalleItem
@@ -686,12 +715,12 @@ export default function Inventario() {
 // =============================================================
 function DetalleItem({ label, valor, valorNodo }) {
   return (
-    <div className="p-3 rounded-xl" style={{ background: "#f8fbff", border: "1px solid #eff6ff" }}>
-      <p className="text-xs mb-1" style={{ color: "#64748b" }}>{label}</p>
+    <div className="p-4 rounded-xl" style={{ background: "#f8fbff", border: "1px solid #eff6ff" }}>
+      <p className="text-sm mb-1.5" style={{ color: "#64748b" }}>{label}</p>
       {valorNodo ? (
-        valorNodo
+        <div style={{ fontSize: "1rem" }}>{valorNodo}</div>
       ) : (
-        <p className="text-sm font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
+        <p className="text-base font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
       )}
     </div>
   );
