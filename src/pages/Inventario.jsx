@@ -308,13 +308,19 @@ export default function Inventario() {
           Solo una fila puede estar en edición a la vez (editandoId).
       -------------------------------------------------------- */}
       <div
-        className="rounded-2xl overflow-hidden shadow-sm"
-        style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        className="rounded-2xl shadow-sm"
+        style={{
+          background: "#ffffff",
+          border: "1px solid #dbeafe",
+          maxHeight: "calc(100vh - 260px)",
+          overflowY: "auto",
+        }}
       >
         <table className="w-full">
 
-          {/* Cabecera de la tabla */}
-          <thead style={{ background: "#eff6ff", borderBottom: "1px solid #dbeafe" }}>
+          {/* Cabecera de la tabla — sticky para que quede visible
+              mientras se hace scroll dentro de este contenedor */}
+          <thead style={{ background: "#eff6ff", borderBottom: "1px solid #dbeafe", position: "sticky", top: 0, zIndex: 1 }}>
             <tr>
               {["Host", "Colaborador", "Empresa", "Tipo", "Acción"].map((col) => (
                 <th key={col} className="p-4 text-left text-sm font-semibold" style={{ color: "#345D9D" }}>
