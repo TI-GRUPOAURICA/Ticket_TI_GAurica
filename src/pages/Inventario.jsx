@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
-  Package, User, RefreshCw, CircleCheck, CircleX,
+  Package, User, CircleCheck, CircleX,
+  Wifi, Server, Bot, History, ShieldAlert, Clock,
+  Info,
 } from "lucide-react";
 
 // =============================================================
@@ -19,6 +21,20 @@ const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU"];
 
 // Lista fija de tipos de equipo disponibles
 const TIPOS = ["Laptop", "PC"];
+
+// Pestañas del panel de detalle. Se definen como lista para poder
+// pintarlas dinámicamente y para que agregar una nueva pestaña en
+// el futuro sea solo cuestión de sumar un elemento aquí.
+const TABS_DETALLE = [
+  { id: "general",  label: "General",   icon: Info },
+  { id: "hardware", label: "Hardware",  icon: Cpu },
+  { id: "sistema",  label: "Sistema",   icon: Monitor },
+  { id: "red",      label: "Red",       icon: Wifi },
+  { id: "agente",   label: "Agente",    icon: Bot },
+  { id: "programas",label: "Programas", icon: Package },
+  { id: "historial",label: "Historial", icon: History },
+  { id: "alertas",  label: "Alertas",   icon: ShieldAlert },
+];
 
 export default function Inventario() {
 
@@ -44,7 +60,7 @@ export default function Inventario() {
   const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
   const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
-  const [tabDetalle, setTabDetalle] = useState("basicos");        // pestaña activa: "basicos" | "programas"
+  const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
 
   // ----------------------------------------------------------
   // EFECTO INICIAL
@@ -135,7 +151,7 @@ export default function Inventario() {
     setLoadingDetalle(true);
     setDetalleEquipo(null);
     setDetalleSoftware([]);
-    setTabDetalle("basicos");
+    setTabDetalle("general");
 
     const [equipoRes, softwareRes] = await Promise.all([
       supabase
@@ -521,9 +537,10 @@ export default function Inventario() {
           ticket: la lista queda a la izquierda y el detalle a la
           derecha, ambos visibles al mismo tiempo.
 
-          Ancho ampliado: antes era fijo en 420px, ahora usa clamp()
-          para escalar entre 420px y 620px según el ancho de la
-          ventana, dejando más espacio para agregar contenido futuro.
+          Ancho ampliado: ahora usa clamp() para escalar entre 620px
+          y 1040px según el ancho de la ventana, dejando bastante más
+          espacio para las nuevas secciones (Hardware, Sistema, Red,
+          Agente, Historial, Alertas).
       ============================================================ */}
       {hostSeleccionado && (
         <div
@@ -531,7 +548,7 @@ export default function Inventario() {
           style={{
             background: "#ffffff",
             border: "1px solid #dbeafe",
-            width: "clamp(480px, 42vw, 760px)",
+            width: "clamp(620px, 52vw, 1040px)",
             flexShrink: 0,
             maxHeight: "calc(100vh - 48px)",
             position: "sticky",
@@ -543,9 +560,17 @@ export default function Inventario() {
               className="flex justify-between items-center p-5"
               style={{ background: "#345D9D" }}
             >
-              <div>
-                <h2 className="text-xl font-bold text-white">{hostSeleccionado}</h2>
-                <p className="text-sm" style={{ color: "#dbeafe" }}>Detalle del equipo</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.15)" }}
+                >
+                  <Monitor size={22} color="#ffffff" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">{hostSeleccionado}</h2>
+                  <p className="text-sm" style={{ color: "#dbeafe" }}>Detalle del equipo</p>
+                </div>
               </div>
               <button
                 onClick={cerrarDetalle}
@@ -570,70 +595,69 @@ export default function Inventario() {
               ) : (
                 <>
                   {/* ---- PESTAÑAS (tipo pill, igual estilo que Prioridad/Categoría) ---- */}
-                  <div className="flex gap-2 mb-5">
-                    <button
-                      onClick={() => setTabDetalle("basicos")}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold transition"
-                      style={
-                        tabDetalle === "basicos"
-                          ? { background: "#345D9D", color: "#ffffff" }
-                          : { background: "#ffffff", color: "#345D9D", border: "1px solid #bfdbfe" }
-                      }
-                    >
-                      Especificaciones del equipo
-                    </button>
-                    <button
-                      onClick={() => setTabDetalle("programas")}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold transition"
-                      style={
-                        tabDetalle === "programas"
-                          ? { background: "#345D9D", color: "#ffffff" }
-                          : { background: "#ffffff", color: "#345D9D", border: "1px solid #bfdbfe" }
-                      }
-                    >
-                      Programas ({detalleSoftware.length})
-                    </button>
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {TABS_DETALLE.map(({ id, label, icon: Icon }) => (
+                      <button
+                        key={id}
+                        onClick={() => setTabDetalle(id)}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5"
+                        style={
+                          tabDetalle === id
+                            ? { background: "#345D9D", color: "#ffffff" }
+                            : { background: "#ffffff", color: "#345D9D", border: "1px solid #bfdbfe" }
+                        }
+                      >
+                        <Icon size={14} />
+                        {label}
+                        {id === "programas" && ` (${detalleSoftware.length})`}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* ---- PANTALLA 1: DATOS BÁSICOS + ESPECIFICACIONES ---- */}
-                  {tabDetalle === "basicos" && (
+                  {/* ---- PESTAÑA: GENERAL ---- */}
+                  {tabDetalle === "general" && (
+                    <div className="mb-5">
+                      <SeccionTitulo icon={User} texto="Datos básicos" />
+                      <div className="grid grid-cols-3 gap-4">
+                        <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
+                        <DetalleItem label="Serial" valor={detalleEquipo.serial} />
+                        <DetalleItem label="Marca" valor={detalleEquipo.marca} />
+                        <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
+                        <DetalleItem label="Estado" valor={detalleEquipo.estado} />
+                        <DetalleItem
+                          label="Activo"
+                          valorNodo={
+                            detalleEquipo.activo ? (
+                              <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                                <CircleCheck size={14} /> Sí
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                                <CircleX size={14} /> No
+                              </span>
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ---- PESTAÑA: HARDWARE ---- */}
+                  {tabDetalle === "hardware" && (
                     <>
                       <div className="mb-5">
-                        <div className="flex items-center gap-2 mb-3">
-                          <User size={16} style={{ color: "#345D9D" }} />
-                          <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Datos básicos</h3>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
-                          <DetalleItem label="Serial" valor={detalleEquipo.serial} />
-                          <DetalleItem label="Marca" valor={detalleEquipo.marca} />
-                          <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
-                          <DetalleItem label="Estado" valor={detalleEquipo.estado} />
-                          <DetalleItem
-                            label="Activo"
-                            valorNodo={
-                              detalleEquipo.activo ? (
-                                <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
-                                  <CircleCheck size={14} /> Sí
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
-                                  <CircleX size={14} /> No
-                                </span>
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Cpu size={16} style={{ color: "#345D9D" }} />
-                          <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>Especificaciones técnicas</h3>
-                        </div>
+                        <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
                         <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
                           <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                          <DetalleItem label="Tipo de RAM" pendiente />
+                          <DetalleItem label="Slots RAM" pendiente />
+                        </div>
+                      </div>
+
+                      <div className="mb-5">
+                        <SeccionTitulo icon={HardDrive} texto="Almacenamiento" />
+                        <div className="grid grid-cols-3 gap-4">
                           <DetalleItem
                             label="Disco total"
                             valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
@@ -646,33 +670,101 @@ export default function Inventario() {
                                 : null
                             }
                           />
-                          <DetalleItem
-                            label="Windows"
-                            valor={
-                              detalleEquipo.windows
-                                ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
-                                : null
-                            }
-                          />
-                          <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
-                          <DetalleItem
-                            label="Última sincronización"
-                            valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
-                          />
+                          <DetalleItem label="Tipo de disco" pendiente />
+                        </div>
+                      </div>
+
+                      <div>
+                        <SeccionTitulo icon={Server} texto="Placa base y BIOS" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem label="Motherboard" pendiente />
+                          <DetalleItem label="Versión BIOS" pendiente />
+                          <DetalleItem label="Fecha BIOS" pendiente />
+                          <DetalleItem label="Arquitectura" pendiente />
+                          <DetalleItem label="Secure Boot" pendiente />
+                          <DetalleItem label="TPM" pendiente />
                         </div>
                       </div>
                     </>
                   )}
 
-                  {/* ---- PANTALLA 2: SOFTWARE INSTALADO ---- */}
+                  {/* ---- PESTAÑA: SISTEMA OPERATIVO ---- */}
+                  {tabDetalle === "sistema" && (
+                    <div>
+                      <SeccionTitulo icon={Monitor} texto="Sistema operativo" />
+                      <div className="grid grid-cols-3 gap-4">
+                        <DetalleItem
+                          label="Windows"
+                          valor={
+                            detalleEquipo.windows
+                              ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
+                              : null
+                          }
+                        />
+                        <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
+                        <DetalleItem label="Compilación (Build)" pendiente />
+                        <DetalleItem label="Fecha de instalación" pendiente />
+                        <DetalleItem label="Idioma" pendiente />
+                        <DetalleItem label="Zona horaria" pendiente />
+                        <DetalleItem label="Última actualización de Windows" pendiente />
+                        <DetalleItem label="Windows activado" pendiente />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ---- PESTAÑA: RED ---- */}
+                  {tabDetalle === "red" && (
+                    <div>
+                      <SeccionTitulo icon={Wifi} texto="Conectividad" />
+                      <div className="grid grid-cols-3 gap-4">
+                        <DetalleItem label="IP local" pendiente />
+                        <DetalleItem label="IP pública" pendiente />
+                        <DetalleItem label="MAC" pendiente />
+                        <DetalleItem label="Gateway" pendiente />
+                        <DetalleItem label="DNS" pendiente />
+                        <DetalleItem label="Dominio" pendiente />
+                        <DetalleItem label="Adaptador" pendiente />
+                        <DetalleItem label="Velocidad de red" pendiente />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ---- PESTAÑA: AGENTE ----
+                      Preparada para el Aurica Inventory Agent: versión
+                      instalada, estado del servicio de Windows y las
+                      fechas de sincronización/actualización. Por ahora
+                      solo "Última sincronización" viene de la tabla
+                      equipos_estado; el resto queda listo para cuando
+                      el agente empiece a enviar esos campos. */}
+                  {tabDetalle === "agente" && (
+                    <>
+                      <div className="mb-5">
+                        <SeccionTitulo icon={Bot} texto="Estado del agente" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem label="Versión instalada" pendiente />
+                          <DetalleItem label="Última versión disponible" pendiente />
+                          <DetalleItem label="Estado de actualización" pendiente />
+                        </div>
+                      </div>
+
+                      <div>
+                        <SeccionTitulo icon={Clock} texto="Sincronización" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem
+                            label="Última sincronización"
+                            valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
+                          />
+                          <DetalleItem label="Servicio de Windows" pendiente />
+                          <DetalleItem label="Próxima revisión" pendiente />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ---- PESTAÑA: SOFTWARE INSTALADO ---- */}
                   {tabDetalle === "programas" && (
                     <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Package size={16} style={{ color: "#345D9D" }} />
-                        <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>
-                          Software instalado ({detalleSoftware.length})
-                        </h3>
-                      </div>
+                      <SeccionTitulo icon={Package} texto={`Software instalado (${detalleSoftware.length})`} />
 
                       {detalleSoftware.length === 0 ? (
                         <p className="text-sm" style={{ color: "#64748b" }}>
@@ -702,6 +794,24 @@ export default function Inventario() {
                       )}
                     </div>
                   )}
+
+                  {/* ---- PESTAÑA: HISTORIAL (preparada, sin datos aún) ---- */}
+                  {tabDetalle === "historial" && (
+                    <EstadoVacio
+                      icon={History}
+                      titulo="Todavía no hay historial"
+                      texto="Aquí aparecerán las actualizaciones del agente, sincronizaciones y eventos importantes de este equipo en cuanto el agente empiece a reportarlos."
+                    />
+                  )}
+
+                  {/* ---- PESTAÑA: ALERTAS (preparada, sin datos aún) ---- */}
+                  {tabDetalle === "alertas" && (
+                    <EstadoVacio
+                      icon={ShieldAlert}
+                      titulo="Sin alertas por ahora"
+                      texto="Cuando estén disponibles, aquí se mostrarán avisos como disco casi lleno, agente desactualizado o servicio detenido."
+                    />
+                  )}
                 </>
               )}
             </div>
@@ -713,21 +823,70 @@ export default function Inventario() {
 }
 
 // =============================================================
+// COMPONENTE AUXILIAR: SeccionTitulo
+// Encabezado pequeño con ícono, usado para separar bloques de
+// información dentro de cada pestaña del panel de detalle.
+// =============================================================
+function SeccionTitulo({ icon: Icon, texto }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <Icon size={16} style={{ color: "#345D9D" }} />
+      <h3 className="text-sm font-bold" style={{ color: "#345D9D" }}>{texto}</h3>
+    </div>
+  );
+}
+
+// =============================================================
 // COMPONENTE AUXILIAR: DetalleItem
 // Muestra un par etiqueta/valor dentro de la card de detalle.
 // Si el valor es null/vacío, muestra "—".
 // Se puede pasar "valorNodo" para renderizar un elemento
 // personalizado (ej. un ícono) en vez de texto plano.
+// Si se pasa "pendiente", se muestra como un campo preparado
+// para una funcionalidad futura (aún no enviada por el agente),
+// con una etiqueta discreta en vez del guion normal.
 // =============================================================
-function DetalleItem({ label, valor, valorNodo }) {
+function DetalleItem({ label, valor, valorNodo, pendiente }) {
   return (
-    <div className="p-4 rounded-xl" style={{ background: "#f8fbff", border: "1px solid #eff6ff" }}>
+    <div
+      className="p-4 rounded-xl"
+      style={{
+        background: pendiente ? "#fafbfd" : "#f8fbff",
+        border: pendiente ? "1px dashed #dbeafe" : "1px solid #eff6ff",
+      }}
+    >
       <p className="text-sm mb-1.5" style={{ color: "#64748b" }}>{label}</p>
-      {valorNodo ? (
+      {pendiente ? (
+        <p className="text-sm italic" style={{ color: "#94a3b8" }}>No disponible</p>
+      ) : valorNodo ? (
         <div style={{ fontSize: "1rem" }}>{valorNodo}</div>
       ) : (
         <p className="text-base font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
       )}
+    </div>
+  );
+}
+
+// =============================================================
+// COMPONENTE AUXILIAR: EstadoVacio
+// Estado vacío elegante para las pestañas que todavía no tienen
+// datos reales (Historial, Alertas). Deja el diseño listo para
+// cuando esa información empiece a llegar desde Supabase.
+// =============================================================
+function EstadoVacio({ icon: Icon, titulo, texto }) {
+  return (
+    <div
+      className="flex flex-col items-center text-center py-14 px-6 rounded-xl"
+      style={{ background: "#f8fbff", border: "1px dashed #dbeafe" }}
+    >
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+        style={{ background: "#eff6ff" }}
+      >
+        <Icon size={22} style={{ color: "#345D9D" }} />
+      </div>
+      <p className="text-sm font-semibold mb-1" style={{ color: "#1e293b" }}>{titulo}</p>
+      <p className="text-sm max-w-sm" style={{ color: "#64748b" }}>{texto}</p>
     </div>
   );
 }
