@@ -4,7 +4,7 @@ import {
   Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
   Package, User, CircleCheck, CircleX,
   Wifi, Server, Bot, Clock,
-  Info,
+  Info, Ticket,
 } from "lucide-react";
 
 // =============================================================
@@ -22,6 +22,25 @@ const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU"];
 // Lista fija de tipos de equipo disponibles
 const TIPOS = ["Laptop", "PC"];
 
+// Estilos de la pestaña "Tickets": colores según el estado y la
+// prioridad del ticket, tomados de los valores reales de la tabla
+// "tickets" (abierto / resuelto, y bajo / medio / alto / critico / emergencia).
+const ESTADOS_TICKET = {
+  abierto:  { label: "Abierto",  bg: "#fef9c3", color: "#a16207", border: "#fde68a" },
+  proceso:  { label: "En proceso", bg: "#dbeafe", color: "#345D9D", border: "#bfdbfe" },
+  resuelto: { label: "Resuelto", bg: "#dcfce7", color: "#16a34a", border: "#86efac" },
+  _default: { label: "Sin estado", bg: "#f1f5f9", color: "#64748b", border: "#e2e8f0" },
+};
+
+const PRIORIDADES_TICKET = {
+  bajo:       { label: "Bajo",       bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+  medio:      { label: "Medio",      bg: "#fefce8", color: "#a16207", border: "#fde68a" },
+  alto:       { label: "Alto",       bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
+  critico:    { label: "Crítico",    bg: "#fef2f2", color: "#dc2626", border: "#fecaca" },
+  emergencia: { label: "Emergencia", bg: "#fdf2f8", color: "#be185d", border: "#fbcfe8" },
+  _default:   { label: "—", bg: "#f1f5f9", color: "#64748b", border: "#e2e8f0" },
+};
+
 // Pestañas del panel de detalle. Se definen como lista para poder
 // pintarlas dinámicamente y para que agregar una nueva pestaña en
 // el futuro sea solo cuestión de sumar un elemento aquí.
@@ -32,6 +51,7 @@ const TABS_DETALLE = [
   { id: "red",      label: "Red",       icon: Wifi },
   { id: "agente",   label: "Agente",    icon: Bot },
   { id: "programas",label: "Programas", icon: Package },
+  { id: "tickets",  label: "Tickets",   icon: Ticket },
 ];
 
 export default function Inventario() {
@@ -56,8 +76,8 @@ export default function Inventario() {
   // ---- Estados para la card de detalle del equipo ----
   const [hostSeleccionado, setHostSeleccionado] = useState(null); // hostname del equipo abierto en la card, null = cerrada
   const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
-const [detalleSoftware, setDetalleSoftware] = useState([]);
-const [softwareInstalado, setSoftwareInstalado] = useState([]); // Agrega esta línea
+  const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
+  const [detalleTickets, setDetalleTickets] = useState([]);       // filas de "tickets" para ese hostname
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
   const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
 
@@ -145,40 +165,48 @@ const [softwareInstalado, setSoftwareInstalado] = useState([]); // Agrega esta l
   // (lista de programas) filtrando ambas por el mismo hostname.
   // Se dispara al hacer clic sobre el nombre de host en la tabla.
   // ----------------------------------------------------------
-async function abrirDetalle(hostname) {
+  async function abrirDetalle(hostname) {
     setHostSeleccionado(hostname);
     setLoadingDetalle(true);
     setDetalleEquipo(null);
     setDetalleSoftware([]);
     setTabDetalle("general");
 
-    const [equipoRes, softwareRes] = await Promise.all([
-      supabase.from("equipos").select("*").eq("hostname", hostname).maybeSingle(),
-      supabase.from("software_instalado").select("*").eq("hostname", hostname).order("nombre"),
+    const [equipoRes, softwareRes, ticketsRes] = await Promise.all([
+      supabase
+        .from("equipos_estado")
+        .select("*")
+        .eq("hostname", hostname)
+        .maybeSingle(),
+      supabase
+        .from("software_instalado")
+        .select("*")
+        .eq("hostname", hostname)
+        .order("nombre"),
+      supabase
+        .from("tickets")
+        .select("*")
+        .eq("hostname", hostname)
+        .order("created_at", { ascending: false }),
     ]);
 
-    // 1. Manejo de datos
-    let equipoData = equipoRes.data || {};
-    const softwareData = softwareRes.data || [];
-
-    // 2. Lógica de versión inteligente
-    const programaAgente = softwareData.find(p => 
-      p.nombre?.includes("Aurica Inventory Agent")
-    );
-
-    if (programaAgente) {
-      equipoData = { ...equipoData, version_agente: programaAgente.version };
+    if (equipoRes.error) {
+      console.error("Error cargando specs del equipo:", equipoRes.error);
+    } else {
+      setDetalleEquipo(equipoRes.data);
     }
 
-    // 3. Actualizar estados (aquí estaba el error si no existía setSoftwareInstalado)
-    setDetalleEquipo(equipoData);
-    setDetalleSoftware(softwareData); // Asegúrate de usar el set correcto
-    
-    // Si realmente necesitas dos estados para lo mismo, podrías hacer:
-    // setSoftwareInstalado(softwareData); 
+    if (softwareRes.error) {
+      console.error("Error cargando software instalado:", softwareRes.error);
+    } else {
+      setDetalleSoftware(softwareRes.data || []);
+    }
 
-    if (equipoRes.error) console.error("Error specs:", equipoRes.error);
-    if (softwareRes.error) console.error("Error software:", softwareRes.error);
+    if (ticketsRes.error) {
+      console.error("Error cargando tickets del equipo:", ticketsRes.error);
+    } else {
+      setDetalleTickets(ticketsRes.data || []);
+    }
 
     setLoadingDetalle(false);
   }
@@ -187,6 +215,7 @@ async function abrirDetalle(hostname) {
     setHostSeleccionado(null);
     setDetalleEquipo(null);
     setDetalleSoftware([]);
+    setDetalleTickets([]);
   }
 
   // ----------------------------------------------------------
@@ -611,6 +640,7 @@ async function abrirDetalle(hostname) {
                         <Icon size={14} />
                         {label}
                         {id === "programas" && ` (${detalleSoftware.length})`}
+                        {id === "tickets" && ` (${detalleTickets.length})`}
                       </button>
                     ))}
                   </div>
@@ -624,6 +654,7 @@ async function abrirDetalle(hostname) {
                         <DetalleItem label="Serial" valor={detalleEquipo.serial} />
                         <DetalleItem label="Marca" valor={detalleEquipo.marca} />
                         <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
+                        <DetalleItem label="Estado" valor={detalleEquipo.estado} />
                         <DetalleItem
                           label="Activo"
                           valorNodo={
@@ -642,55 +673,115 @@ async function abrirDetalle(hostname) {
                     </div>
                   )}
 
-                      {/* ---- PESTAÑA: HARDWARE ---- */}
-                      {tabDetalle === "hardware" && (
-                        <>
-                          <div className="mb-5">
-                            <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
-                            <div className="grid grid-cols-3 gap-4">
-                              <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
-                              <DetalleItem label="RAM total" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
-                              <DetalleItem label="Tipo de RAM" valor={detalleEquipo.ram_tipo} />
-                              <DetalleItem label="Velocidad RAM" valor={detalleEquipo.ram_velocidad_mhz ? `${detalleEquipo.ram_velocidad_mhz} MHz` : null} />
-                              <DetalleItem label="Slots RAM" valor={detalleEquipo.ram_slots ? `${detalleEquipo.ram_slots_ocupados || 0} / ${detalleEquipo.ram_slots}` : null} />
-                            </div>
-                          </div>
+                  {/* ---- PESTAÑA: HARDWARE ---- */}
+                  {tabDetalle === "hardware" && (
+                    <>
+                      <div className="mb-5">
+                        <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
+                          <DetalleItem label="RAM total" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                          <DetalleItem label="Tipo de RAM" valor={detalleEquipo.ram_tipo} />
+                          <DetalleItem
+                            label="Velocidad RAM"
+                            valor={detalleEquipo.ram_velocidad_mhz ? `${detalleEquipo.ram_velocidad_mhz} MHz` : null}
+                          />
+                          <DetalleItem
+                            label="Slots RAM"
+                            valor={
+                              detalleEquipo.ram_slots
+                                ? `${detalleEquipo.ram_slots_ocupados ?? "?"} / ${detalleEquipo.ram_slots} ocupados`
+                                : null
+                            }
+                          />
+                        </div>
+                      </div>
 
-                          <div className="mb-5">
-                            <SeccionTitulo icon={HardDrive} texto="Almacenamiento" />
-                            <div className="grid grid-cols-3 gap-4">
-                              <DetalleItem label="Disco Total" valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null} />
-                              <DetalleItem label="Disco Libre" valor={detalleEquipo.disco_libre_gb ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje || 0}%)` : null} />
-                              <DetalleItem label="Tipo" valor={detalleEquipo.disco_tipo} />
-                              <DetalleItem label="Modelo" valor={detalleEquipo.disco_modelo} />
-                              <DetalleItem label="Fabricante" valor={detalleEquipo.disco_fabricante} />
-                              <DetalleItem label="Serial" valor={detalleEquipo.disco_serial} />
-                            </div>
-                          </div>
+                      <div className="mb-5">
+                        <SeccionTitulo icon={HardDrive} texto="Almacenamiento" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem
+                            label="Disco total"
+                            valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
+                          />
+                          <DetalleItem
+                            label="Disco libre"
+                            valor={
+                              detalleEquipo.disco_libre_gb
+                                ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje ?? "?"}%)`
+                                : null
+                            }
+                          />
+                          <DetalleItem label="Tipo de disco" valor={detalleEquipo.disco_tipo} />
+                          <DetalleItem label="Modelo de disco" valor={detalleEquipo.disco_modelo} />
+                          <DetalleItem label="Fabricante de disco" valor={detalleEquipo.disco_fabricante} />
+                          <DetalleItem label="Serial de disco" valor={detalleEquipo.disco_serial} />
+                        </div>
+                      </div>
 
-                          <div>
-                            <SeccionTitulo icon={Server} texto="Placa base, BIOS y Seguridad" />
-                            <div className="grid grid-cols-3 gap-4">
-                              <DetalleItem label="Placa" valor={detalleEquipo.placa_modelo} />
-                              <DetalleItem label="Fabricante Placa" valor={detalleEquipo.placa_fabricante} />
-                              <DetalleItem label="BIOS" valor={detalleEquipo.bios_version} />
-                              <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <div>
+                        <SeccionTitulo icon={Server} texto="Placa base y BIOS" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem label="Fabricante de placa" valor={detalleEquipo.placa_fabricante} />
+                          <DetalleItem label="Modelo de placa" valor={detalleEquipo.placa_modelo} />
+                          <DetalleItem label="Serial de placa" valor={detalleEquipo.placa_serial} />
+                          <DetalleItem label="Fabricante BIOS" valor={detalleEquipo.fabricante_bios} />
+                          <DetalleItem label="Versión BIOS" valor={detalleEquipo.bios_version} />
+                          <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
+                          <DetalleItem
+                            label="Secure Boot"
+                            valorNodo={
+                              detalleEquipo.secure_boot === null || detalleEquipo.secure_boot === undefined ? undefined : (
+                                detalleEquipo.secure_boot ? (
+                                  <span className="flex items-center gap-1" style={{ color: "#16a34a" }}><CircleCheck size={14} /> Activado</span>
+                                ) : (
+                                  <span className="flex items-center gap-1" style={{ color: "#dc2626" }}><CircleX size={14} /> Desactivado</span>
+                                )
+                              )
+                            }
+                          />
+                          <DetalleItem
+                            label="TPM"
+                            valorNodo={
+                              detalleEquipo.tpm === null || detalleEquipo.tpm === undefined ? undefined : (
+                                detalleEquipo.tpm ? (
+                                  <span className="flex items-center gap-1" style={{ color: "#16a34a" }}><CircleCheck size={14} /> Presente</span>
+                                ) : (
+                                  <span className="flex items-center gap-1" style={{ color: "#dc2626" }}><CircleX size={14} /> No detectado</span>
+                                )
+                              )
+                            }
+                          />
+                          <DetalleItem label="BitLocker" valor={detalleEquipo.bitlocker ? "Activado" : null} />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* ---- PESTAÑA: SISTEMA OPERATIVO ---- */}
                   {tabDetalle === "sistema" && (
                     <div>
                       <SeccionTitulo icon={Monitor} texto="Sistema operativo" />
                       <div className="grid grid-cols-3 gap-4">
-                        <DetalleItem label="Windows" valor={detalleEquipo.windows} />
-                        <DetalleItem label="Versión" valor={detalleEquipo.windows_version} />
-                        <DetalleItem label="Build" valor={detalleEquipo.windows_build} />
+                        <DetalleItem
+                          label="Windows"
+                          valor={
+                            detalleEquipo.windows
+                              ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
+                              : null
+                          }
+                        />
+                        <DetalleItem label="Compilación (Build)" valor={detalleEquipo.windows_build} />
                         <DetalleItem label="Arquitectura" valor={detalleEquipo.windows_architecture} />
-                        <DetalleItem label="Instalación" valor={detalleEquipo.windows_install_date} />
-                        <DetalleItem label="Último reinicio" valor={detalleEquipo.ultimo_reinicio} />
+                        <DetalleItem label="Fecha de instalación" valor={detalleEquipo.windows_install_date} />
+                        <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
+                        <DetalleItem label="Último inicio" valor={formatearFecha(detalleEquipo.ultimo_inicio_windows)} />
+                        <DetalleItem label="Office" valor={detalleEquipo.office ? `${detalleEquipo.office}${detalleEquipo.office_version ? " · " + detalleEquipo.office_version : ""}` : null} />
+                        <DetalleItem label="Antivirus" valor={detalleEquipo.antivirus ? `${detalleEquipo.antivirus}${detalleEquipo.antivirus_version ? " · " + detalleEquipo.antivirus_version : ""}` : null} />
+                        <DetalleItem label="Clave de producto" pendiente />
+                        <DetalleItem label="Windows activado" pendiente />
+                        <DetalleItem label="Idioma" pendiente />
+                        <DetalleItem label="Zona horaria" pendiente />
                       </div>
                     </div>
                   )}
@@ -705,21 +796,24 @@ async function abrirDetalle(hostname) {
                         <DetalleItem label="DNS" valor={detalleEquipo.dns} />
                         <DetalleItem label="Dominio" valor={detalleEquipo.dominio} />
                         <DetalleItem label="Adaptador" valor={detalleEquipo.adaptador_red} />
+                        <DetalleItem label="MAC" valor={detalleEquipo.mac} />
+                        <DetalleItem label="IP pública" pendiente />
+                        <DetalleItem label="Velocidad de red" pendiente />
                       </div>
                     </div>
                   )}
 
                   {/* ---- PESTAÑA: AGENTE ----
-                      Aurica Inventory Agent: versión instalada y fecha
-                      de última sincronización. El resto queda listo
-                      para cuando el agente empiece a enviar esos
-                      campos adicionales. */}
+                      Aurica Inventory Agent: versión instalada, estado
+                      del servicio y fechas de sincronización. */}
                   {tabDetalle === "agente" && (
                     <>
                       <div className="mb-5">
                         <SeccionTitulo icon={Bot} texto="Estado del agente" />
                         <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="Versión instalada" valor={detalleEquipo.version_agente} />
+                          <DetalleItem label="Última versión disponible" valor={detalleEquipo.version_disponible} />
+                          <DetalleItem label="Estado de actualización" valor={detalleEquipo.estado_agente} />
                         </div>
                       </div>
 
@@ -729,6 +823,15 @@ async function abrirDetalle(hostname) {
                           <DetalleItem
                             label="Última sincronización"
                             valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
+                          />
+                          <DetalleItem label="Servicio de Windows" valor={detalleEquipo.estado_servicio} />
+                          <DetalleItem
+                            label="Última revisión de actualización"
+                            valor={formatearFecha(detalleEquipo.ultima_revision_actualizacion)}
+                          />
+                          <DetalleItem
+                            label="Última actualización del agente"
+                            valor={formatearFecha(detalleEquipo.ultima_actualizacion_agente)}
                           />
                         </div>
                       </div>
@@ -764,6 +867,86 @@ async function abrirDetalle(hostname) {
                               ))}
                             </tbody>
                           </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ---- PESTAÑA: TICKETS ----
+                      Muestra los tickets del Portal de soporte TI
+                      registrados para este mismo hostname, del más
+                      reciente al más antiguo. */}
+                  {tabDetalle === "tickets" && (
+                    <div>
+                      <SeccionTitulo icon={Ticket} texto={`Tickets (${detalleTickets.length})`} />
+
+                      {detalleTickets.length === 0 ? (
+                        <p className="text-sm" style={{ color: "#64748b" }}>
+                          No hay tickets registrados para este equipo.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          {detalleTickets.map((tk) => {
+                            const estadoStyle = ESTADOS_TICKET[tk.estado] || ESTADOS_TICKET._default;
+                            const prioridadStyle = PRIORIDADES_TICKET[tk.prioridad] || PRIORIDADES_TICKET._default;
+
+                            return (
+                              <div
+                                key={tk.id}
+                                className="p-4 rounded-xl"
+                                style={{ background: "#f8fbff", border: "1px solid #eff6ff" }}
+                              >
+                                <div className="flex justify-between items-start gap-3 mb-2">
+                                  <p className="text-sm font-semibold" style={{ color: "#1e293b" }}>
+                                    #{tk.id} · {tk.titulo}
+                                  </p>
+                                  <span
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold shrink-0"
+                                    style={{ background: estadoStyle.bg, color: estadoStyle.color, border: `1px solid ${estadoStyle.border}` }}
+                                  >
+                                    {estadoStyle.label}
+                                  </span>
+                                </div>
+
+                                {tk.descripcion && (
+                                  <p className="text-sm mb-3" style={{ color: "#475569" }}>{tk.descripcion}</p>
+                                )}
+
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  <span
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold"
+                                    style={{ background: prioridadStyle.bg, color: prioridadStyle.color, border: `1px solid ${prioridadStyle.border}` }}
+                                  >
+                                    Prioridad: {prioridadStyle.label}
+                                  </span>
+                                  {tk.nombre_colaborador && (
+                                    <span className="px-2 py-1 rounded-lg text-xs" style={{ background: "#eff6ff", color: "#345D9D", border: "1px solid #bfdbfe" }}>
+                                      {tk.nombre_colaborador}{tk.empresa ? ` · ${tk.empresa}` : ""}
+                                    </span>
+                                  )}
+                                  {tk.anydesk && (
+                                    <span className="px-2 py-1 rounded-lg text-xs" style={{ background: "#eff6ff", color: "#345D9D", border: "1px solid #bfdbfe" }}>
+                                      AnyDesk: {tk.anydesk}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {tk.solucion && (
+                                  <div className="p-3 rounded-lg mb-2" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                                    <p className="text-xs font-semibold mb-1" style={{ color: "#16a34a" }}>Solución</p>
+                                    <p className="text-sm" style={{ color: "#166534" }}>{tk.solucion}</p>
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-4 text-xs" style={{ color: "#94a3b8" }}>
+                                  <span>Creado: {formatearFecha(tk.created_at)}</span>
+                                  {tk.resuelto_at && <span>Resuelto: {formatearFecha(tk.resuelto_at)}</span>}
+                                  {tk.resuelto_por && <span>Por: {tk.resuelto_por}</span>}
+                                  {tk.valoracion_usuario && <span>Valoración: {tk.valoracion_usuario}/5</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
