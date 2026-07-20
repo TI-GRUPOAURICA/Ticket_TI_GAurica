@@ -4,7 +4,7 @@ import {
   Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
   Package, User, CircleCheck, CircleX,
   Wifi, Server, Bot, Clock,
-  Info, Ticket,
+  Info, Ticket, Mail, MapPin,
 } from "lucide-react";
 
 // =============================================================
@@ -21,6 +21,9 @@ const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU"];
 
 // Lista fija de tipos de equipo disponibles
 const TIPOS = ["Laptop", "PC"];
+
+// Lista fija de sedes disponibles (columna "sede" en colaboradores)
+const SEDES = ["LIMA", "AREQUIPA", "CHALA"];
 
 // Estilos de la pestaña "Tickets": colores según el estado y la
 // prioridad del ticket, tomados de los valores reales de la tabla
@@ -71,6 +74,9 @@ export default function Inventario() {
     colaborador: "",
     empresa: "",
     tipo: "",
+    correo: "",
+    anydesk: "",
+    sede: "",
   });
 
   // ---- Estados para la card de detalle del equipo ----
@@ -116,8 +122,13 @@ export default function Inventario() {
   // Actualiza en Supabase el registro cuyo id coincide con
   // editandoId usando los datos temporales de editData.
   // Al terminar, cierra el modo edición y recarga la tabla.
+  // Si el host editado es el que está abierto en la card de
+  // detalle, actualiza la card para que siga apuntando al
+  // hostname correcto (por si se le cambió el nombre).
   // ----------------------------------------------------------
   async function guardarCambios() {
+    const hostAnterior = equipos.find((e) => e.id === editandoId)?.host;
+
     const { error } = await supabase
       .from("colaboradores")
       .update({
@@ -125,6 +136,9 @@ export default function Inventario() {
         colaborador:  editData.colaborador,
         empresa:      editData.empresa,
         tipo:         editData.tipo,
+        correo:       editData.correo,
+        anydesk:      editData.anydesk,
+        sede:         editData.sede,
       })
       .eq("id", editandoId);
 
@@ -136,6 +150,10 @@ export default function Inventario() {
 
     setEditandoId(null);
     obtenerEquipos();
+
+    if (hostSeleccionado && hostAnterior === hostSeleccionado && editData.host !== hostAnterior) {
+      abrirDetalle(editData.host);
+    }
   }
 
   async function eliminarEquipo(id) {
@@ -144,6 +162,8 @@ export default function Inventario() {
   );
 
   if (!confirmar) return;
+
+  const hostEliminado = equipos.find((e) => e.id === id)?.host;
 
   const { error } = await supabase
     .from("colaboradores")
@@ -157,6 +177,10 @@ export default function Inventario() {
   }
 
   obtenerEquipos();
+
+  if (hostSeleccionado && hostEliminado === hostSeleccionado) {
+    cerrarDetalle();
+  }
 }
 
   // ----------------------------------------------------------
@@ -239,6 +263,14 @@ export default function Inventario() {
 
     return coincideBusqueda && coincideEmpresa && coincideTipo;
   });
+
+  // ----------------------------------------------------------
+  // COLABORADOR ACTUAL DE LA CARD ABIERTA
+  // Busca en "equipos" (tabla colaboradores) la fila que
+  // corresponde al hostname abierto en el panel de detalle.
+  // Se usa para editar/eliminar desde ahí en vez de la tabla.
+  // ----------------------------------------------------------
+  const colaboradorActual = equipos.find((e) => e.host === hostSeleccionado);
 
   // ----------------------------------------------------------
   // RENDER
@@ -349,10 +381,8 @@ export default function Inventario() {
           Muestra los equipos filtrados con 5 columnas:
           Host · Colaborador · Empresa · Tipo · Acción (Editar/Guardar)
 
-          Cada fila puede estar en dos modos:
-            - Modo lectura: muestra texto plano + botón "Editar"
-            - Modo edición: muestra inputs + botón "Guardar"
-          Solo una fila puede estar en edición a la vez (editandoId).
+          Cada fila muestra los datos en solo lectura; para editar o
+          eliminar un equipo, se abre su card de detalle (clic en el host).
       -------------------------------------------------------- */}
       <div
         className="rounded-2xl shadow-sm"
@@ -369,7 +399,7 @@ export default function Inventario() {
               mientras se hace scroll dentro de este contenedor */}
           <thead style={{ background: "#eff6ff", borderBottom: "1px solid #dbeafe", position: "sticky", top: 0, zIndex: 1 }}>
             <tr>
-              {["Host", "Colaborador", "Empresa", "Tipo", "Acción"].map((col) => (
+              {["Host", "Colaborador", "Empresa", "Tipo"].map((col) => (
                 <th key={col} className="p-4 text-left text-sm font-semibold" style={{ color: "#345D9D" }}>
                   {col}
                 </th>
@@ -382,7 +412,7 @@ export default function Inventario() {
             {/* Estado: cargando datos */}
             {loading ? (
               <tr>
-                <td colSpan="5" className="p-10 text-center text-slate-500">
+                <td colSpan="4" className="p-10 text-center text-slate-500">
                   Cargando inventario...
                 </td>
               </tr>
@@ -390,7 +420,7 @@ export default function Inventario() {
             /* Estado: sin resultados para el filtro actual */
             ) : filtrados.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-10 text-center text-slate-500">
+                <td colSpan="4" className="p-10 text-center text-slate-500">
                   No se encontraron registros
                 </td>
               </tr>
@@ -406,149 +436,42 @@ export default function Inventario() {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
 
-                  {/* CELDA: Host
-                      En modo edición muestra un input editable.
-                      En modo lectura muestra el valor en texto. */}
+                  {/* CELDA: Host — al hacer clic abre la card de detalle,
+                      donde ahora vive toda la edición del equipo. */}
                   <td className="p-4">
-                    {editandoId === item.id ? (
-                      <input
-                        value={editData.host}
-                        onChange={(e) => setEditData({ ...editData, host: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl outline-none"
-                        style={{ background: "#ffffff", color: "#1e293b", border: "1px solid #bfdbfe" }}
-                      />
-                    ) : (
-                      <span
-                        onClick={() => abrirDetalle(item.host)}
-                        className="font-semibold cursor-pointer hover:underline"
-                        style={{ color: "#345D9D" }}
-                        title="Ver detalle del equipo"
-                      >
-                        {item.host}
-                      </span>
-                    )}
+                    <span
+                      onClick={() => abrirDetalle(item.host)}
+                      className="font-semibold cursor-pointer hover:underline"
+                      style={{ color: "#345D9D" }}
+                      title="Ver detalle del equipo"
+                    >
+                      {item.host}
+                    </span>
                   </td>
 
-                  {/* CELDA: Colaborador — mismo patrón lectura/edición */}
+                  {/* CELDA: Colaborador */}
                   <td className="p-4">
-                    {editandoId === item.id ? (
-                      <input
-                        value={editData.colaborador}
-                        onChange={(e) => setEditData({ ...editData, colaborador: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl outline-none"
-                        style={{ background: "#ffffff", color: "#1e293b", border: "1px solid #bfdbfe" }}
-                      />
-                    ) : (
-                      <span style={{ color: "#475569" }}>{item.colaborador}</span>
-                    )}
+                    <span style={{ color: "#475569" }}>{item.colaborador}</span>
                   </td>
 
-                  {/* CELDA: Empresa
-                      En modo edición muestra un select con las empresas
-                      disponibles en lugar de un input libre. */}
+                  {/* CELDA: Empresa */}
                   <td className="p-4">
-                    {editandoId === item.id ? (
-                      <select
-                        value={editData.empresa}
-                        onChange={(e) => setEditData({ ...editData, empresa: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl outline-none"
-                        style={{ background: "#ffffff", color: "#1e293b", border: "1px solid #bfdbfe" }}
-                      >
-                        <option value="">Seleccionar...</option>
-                        {EMPRESAS.map((emp) => (
-                          <option key={emp} value={emp}>{emp}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span style={{ color: "#475569" }}>{item.empresa}</span>
-                    )}
+                    <span style={{ color: "#475569" }}>{item.empresa}</span>
                   </td>
 
-                  {/* CELDA: Tipo
-                      En modo edición muestra un select con Laptop / PC. */}
+                  {/* CELDA: Tipo */}
                   <td className="p-4">
-                    {editandoId === item.id ? (
-                      <select
-                        value={editData.tipo}
-                        onChange={(e) => setEditData({ ...editData, tipo: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl outline-none"
-                        style={{ background: "#ffffff", color: "#1e293b", border: "1px solid #bfdbfe" }}
-                      >
-                        <option value="">Seleccionar...</option>
-                        {TIPOS.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className="px-2 py-1 rounded-lg text-xs font-semibold"
-                        style={{
-                          background: item.tipo === "Laptop" ? "#eff6ff" : "#f3e8ff",
-                          color: item.tipo === "Laptop" ? "#345D9D" : "#7e22ce",
-                          border: `1px solid ${item.tipo === "Laptop" ? "#bfdbfe" : "#e9d5ff"}`,
-                        }}
-                      >
-                        {item.tipo || "—"}
-                      </span>
-                    )}
+                    <span
+                      className="px-2 py-1 rounded-lg text-xs font-semibold"
+                      style={{
+                        background: item.tipo === "Laptop" ? "#eff6ff" : "#f3e8ff",
+                        color: item.tipo === "Laptop" ? "#345D9D" : "#7e22ce",
+                        border: `1px solid ${item.tipo === "Laptop" ? "#bfdbfe" : "#e9d5ff"}`,
+                      }}
+                    >
+                      {item.tipo || "—"}
+                    </span>
                   </td>
-
-                  {/* CELDA: Acción
-                      En modo edición: botón verde "Guardar" que llama a guardarCambios().
-                      En modo lectura: botón azul "Editar" que activa el modo edición
-                      cargando los valores actuales del item en editData. */}
-                          <td className="p-4">
-                            {editandoId === item.id ? (
-                              <button
-                                onClick={guardarCambios}
-                                className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
-                                style={{
-                                  background: "#dcfce7",
-                                  color: "#16a34a",
-                                  border: "1px solid #86efac",
-                                }}
-                                title="Guardar"
-                              >
-                                <Save size={18} />
-                              </button>
-                            ) : (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => {
-                                    setEditandoId(item.id);
-                                    setEditData({
-                                      host: item.host,
-                                      colaborador: item.colaborador,
-                                      empresa: item.empresa,
-                                      tipo: item.tipo || "",
-                                    });
-                                  }}
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#345D9D",
-                                    border: "1px solid #bfdbfe",
-                                  }}
-                                  title="Editar"
-                                >
-                                  <Pencil size={18} />
-                                </button>
-
-                                <button
-                                  onClick={() => eliminarEquipo(item.id)}
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center transition hover:opacity-90"
-                                  style={{
-                                    background: "#fef2f2",
-                                    color: "#dc2626",
-                                    border: "1px solid #fecaca",
-                                  }}
-                                  title="Eliminar"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </div>
-                            )}
-                          </td>
 
                 </tr>
               ))
@@ -647,30 +570,205 @@ export default function Inventario() {
 
                   {/* ---- PESTAÑA: GENERAL ---- */}
                   {tabDetalle === "general" && (
-                    <div className="mb-5">
-                      <SeccionTitulo icon={User} texto="Datos básicos" />
-                      <div className="grid grid-cols-3 gap-4">
-                        <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
-                        <DetalleItem label="Serial" valor={detalleEquipo.serial} />
-                        <DetalleItem label="Marca" valor={detalleEquipo.marca} />
-                        <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
-                        <DetalleItem label="Estado" valor={detalleEquipo.estado} />
-                        <DetalleItem
-                          label="Activo"
-                          valorNodo={
-                            detalleEquipo.activo ? (
-                              <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
-                                <CircleCheck size={14} /> Sí
-                              </span>
+                    <>
+                      {/* ---- Colaborador asignado (tabla "colaboradores") ----
+                          Editable desde aquí: nombre, correo, empresa, tipo
+                          y anydesk. Reutiliza los mismos estados y funciones
+                          (editandoId, editData, guardarCambios, eliminarEquipo)
+                          que antes vivían en la tabla principal. */}
+                      <div className="mb-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <SeccionTitulo icon={User} texto="Colaborador asignado" />
+
+                          {colaboradorActual && (
+                            editandoId === colaboradorActual.id ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={guardarCambios}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+                                  style={{ background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac" }}
+                                >
+                                  <Save size={14} /> Guardar
+                                </button>
+                                <button
+                                  onClick={() => setEditandoId(null)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+                                  style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}
+                                >
+                                  <X size={14} /> Cancelar
+                                </button>
+                              </div>
                             ) : (
-                              <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
-                                <CircleX size={14} /> No
-                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditandoId(colaboradorActual.id);
+                                    setEditData({
+                                      host: colaboradorActual.host || "",
+                                      colaborador: colaboradorActual.colaborador || "",
+                                      empresa: colaboradorActual.empresa || "",
+                                      tipo: colaboradorActual.tipo || "",
+                                      correo: colaboradorActual.correo || "",
+                                      anydesk: colaboradorActual.anydesk || "",
+                                      sede: colaboradorActual.sede || "",
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+                                  style={{ background: "#eff6ff", color: "#345D9D", border: "1px solid #bfdbfe" }}
+                                >
+                                  <Pencil size={14} /> Editar
+                                </button>
+                                <button
+                                  onClick={() => eliminarEquipo(colaboradorActual.id)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+                                  style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
+                                >
+                                  <Trash2 size={14} /> Eliminar
+                                </button>
+                              </div>
                             )
-                          }
-                        />
+                          )}
+                        </div>
+
+                        {colaboradorActual && editandoId === colaboradorActual.id ? (
+                          /* ---- Modo edición ---- */
+                          <div className="grid grid-cols-3 gap-4">
+                            <CampoEditable label="Nombre">
+                              <input
+                                value={editData.colaborador}
+                                onChange={(e) => setEditData({ ...editData, colaborador: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Correo">
+                              <input
+                                type="email"
+                                value={editData.correo}
+                                onChange={(e) => setEditData({ ...editData, correo: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Empresa">
+                              <select
+                                value={editData.empresa}
+                                onChange={(e) => setEditData({ ...editData, empresa: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              >
+                                <option value="">Seleccionar...</option>
+                                {EMPRESAS.map((emp) => (
+                                  <option key={emp} value={emp}>{emp}</option>
+                                ))}
+                              </select>
+                            </CampoEditable>
+
+                            <CampoEditable label="Tipo de equipo">
+                              <select
+                                value={editData.tipo}
+                                onChange={(e) => setEditData({ ...editData, tipo: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              >
+                                <option value="">Seleccionar...</option>
+                                {TIPOS.map((t) => (
+                                  <option key={t} value={t}>{t}</option>
+                                ))}
+                              </select>
+                            </CampoEditable>
+
+                            <CampoEditable label="AnyDesk">
+                              <input
+                                value={editData.anydesk}
+                                onChange={(e) => setEditData({ ...editData, anydesk: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Sede / Ubicación">
+                              <select
+                                value={editData.sede}
+                                onChange={(e) => setEditData({ ...editData, sede: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              >
+                                <option value="">Seleccionar...</option>
+                                {SEDES.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                            </CampoEditable>
+
+                            <CampoEditable label="Host">
+                              <input
+                                value={editData.host}
+                                onChange={(e) => setEditData({ ...editData, host: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              />
+                            </CampoEditable>
+                          </div>
+                        ) : (
+                          /* ---- Modo lectura ---- */
+                          <div className="grid grid-cols-3 gap-4">
+                            <DetalleItem label="Nombre" valor={colaboradorActual?.colaborador} />
+                            <DetalleItem
+                              label="Correo"
+                              valorNodo={
+                                colaboradorActual?.correo ? (
+                                  <span className="flex items-center gap-1.5" style={{ color: "#1e293b" }}>
+                                    <Mail size={13} style={{ color: "#94a3b8" }} /> {colaboradorActual.correo}
+                                  </span>
+                                ) : undefined
+                              }
+                            />
+                            <DetalleItem label="Empresa" valor={colaboradorActual?.empresa} />
+                            <DetalleItem label="Tipo de equipo" valor={colaboradorActual?.tipo} />
+                            <DetalleItem label="AnyDesk" valor={colaboradorActual?.anydesk} />
+                            <DetalleItem
+                              label="Sede / Ubicación"
+                              valorNodo={
+                                colaboradorActual?.sede ? (
+                                  <span className="flex items-center gap-1.5" style={{ color: "#1e293b" }}>
+                                    <MapPin size={13} style={{ color: "#94a3b8" }} /> {colaboradorActual.sede}
+                                  </span>
+                                ) : undefined
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
-                    </div>
+
+                      {/* ---- Datos del equipo (tabla "equipos_estado") ---- */}
+                      <div className="mb-5">
+                        <SeccionTitulo icon={Monitor} texto="Datos básicos del equipo" />
+                        <div className="grid grid-cols-3 gap-4">
+                          <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
+                          <DetalleItem label="Serial" valor={detalleEquipo.serial} />
+                          <DetalleItem label="Marca" valor={detalleEquipo.marca} />
+                          <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
+                          <DetalleItem label="Estado" valor={detalleEquipo.estado} />
+                          <DetalleItem
+                            label="Activo"
+                            valorNodo={
+                              detalleEquipo.activo ? (
+                                <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                                  <CircleCheck size={14} /> Sí
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                                  <CircleX size={14} /> No
+                                </span>
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* ---- PESTAÑA: HARDWARE ---- */}
@@ -1005,6 +1103,24 @@ function DetalleItem({ label, valor, valorNodo, pendiente }) {
     </div>
   );
 }
+
+// =============================================================
+// COMPONENTE AUXILIAR: CampoEditable
+// Mismo look que DetalleItem pero envuelve un input/select en
+// modo edición dentro de la card de detalle (pestaña General).
+// =============================================================
+function CampoEditable({ label, children }) {
+  return (
+    <div
+      className="p-4 rounded-xl"
+      style={{ background: "#ffffff", border: "1px solid #93b4de" }}
+    >
+      <p className="text-sm mb-1.5" style={{ color: "#64748b" }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
 
 // =============================================================
 // UTILIDAD: formatearFecha
