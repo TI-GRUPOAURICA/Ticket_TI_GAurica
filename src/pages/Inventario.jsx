@@ -671,9 +671,6 @@ export default function Inventario() {
                               <DetalleItem label="Fabricante Placa" valor={detalleEquipo.placa_fabricante} />
                               <DetalleItem label="BIOS" valor={detalleEquipo.bios_version} />
                               <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
-                              <DetalleItem label="TPM" valor={detalleEquipo.tpm} />
-                              <DetalleItem label="Secure Boot" valor={detalleEquipo.secure_boot} />
-                              <DetalleItem label="Bitlocker" valor={detalleEquipo.bitlocker} />
                             </div>
                           </div>
                         </>
@@ -690,7 +687,6 @@ export default function Inventario() {
                         <DetalleItem label="Arquitectura" valor={detalleEquipo.windows_architecture} />
                         <DetalleItem label="Instalación" valor={detalleEquipo.windows_install_date} />
                         <DetalleItem label="Último reinicio" valor={detalleEquipo.ultimo_reinicio} />
-                        <DetalleItem label="Protección Tiempo Real" valor={detalleEquipo.proteccion_tiempo_real} />
                       </div>
                     </div>
                   )}
@@ -705,9 +701,6 @@ export default function Inventario() {
                         <DetalleItem label="DNS" valor={detalleEquipo.dns} />
                         <DetalleItem label="Dominio" valor={detalleEquipo.dominio} />
                         <DetalleItem label="Adaptador" valor={detalleEquipo.adaptador_red} />
-                        <DetalleItem label="IP pública" pendiente />
-                        <DetalleItem label="MAC" pendiente />
-                        <DetalleItem label="Velocidad de red" pendiente />
                       </div>
                     </div>
                   )}
@@ -723,8 +716,6 @@ export default function Inventario() {
                         <SeccionTitulo icon={Bot} texto="Estado del agente" />
                         <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="Versión instalada" valor={detalleEquipo.version_agente} />
-                          <DetalleItem label="Última versión disponible" pendiente />
-                          <DetalleItem label="Estado de actualización" pendiente />
                         </div>
                       </div>
 
@@ -735,8 +726,6 @@ export default function Inventario() {
                             label="Última sincronización"
                             valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
                           />
-                          <DetalleItem label="Servicio de Windows" pendiente />
-                          <DetalleItem label="Próxima revisión" pendiente />
                         </div>
                       </div>
                     </>
