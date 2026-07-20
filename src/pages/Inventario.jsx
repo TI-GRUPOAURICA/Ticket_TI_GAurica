@@ -56,7 +56,8 @@ export default function Inventario() {
   // ---- Estados para la card de detalle del equipo ----
   const [hostSeleccionado, setHostSeleccionado] = useState(null); // hostname del equipo abierto en la card, null = cerrada
   const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
-  const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
+const [detalleSoftware, setDetalleSoftware] = useState([]);
+const [softwareInstalado, setSoftwareInstalado] = useState([]); // Agrega esta línea
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
   const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
 
@@ -144,7 +145,7 @@ export default function Inventario() {
   // (lista de programas) filtrando ambas por el mismo hostname.
   // Se dispara al hacer clic sobre el nombre de host en la tabla.
   // ----------------------------------------------------------
-  async function abrirDetalle(hostname) {
+async function abrirDetalle(hostname) {
     setHostSeleccionado(hostname);
     setLoadingDetalle(true);
     setDetalleEquipo(null);
@@ -152,49 +153,32 @@ export default function Inventario() {
     setTabDetalle("general");
 
     const [equipoRes, softwareRes] = await Promise.all([
-      supabase
-        .from("equipos")
-        .select("*")
-        .eq("hostname", hostname)
-        .maybeSingle(),
-      supabase
-        .from("software_instalado")
-        .select("*")
-        .eq("hostname", hostname)
-        .order("nombre"),
+      supabase.from("equipos").select("*").eq("hostname", hostname).maybeSingle(),
+      supabase.from("software_instalado").select("*").eq("hostname", hostname).order("nombre"),
     ]);
-                  // 2. Extraes los datos de forma segura
-            let equipoData = equipoRes.data || {};
-            const softwareData = softwareRes.data || [];
 
-            // 3. Lógica para "sobreescribir" la versión del agente con la de programas
-            const programaAgente = softwareData.find(p => 
-                p.nombre?.includes("Aurica Inventory Agent")
-            );
+    // 1. Manejo de datos
+    let equipoData = equipoRes.data || {};
+    const softwareData = softwareRes.data || [];
 
-            if (programaAgente) {
-                // Si encontramos el agente en la lista de programas, actualizamos el dato
-                equipoData = {
-                    ...equipoData,
-                    version_agente: programaAgente.version
-                };
-            }
+    // 2. Lógica de versión inteligente
+    const programaAgente = softwareData.find(p => 
+      p.nombre?.includes("Aurica Inventory Agent")
+    );
 
-            // 4. Ahora usas 'equipoData' para actualizar tu estado
-            setDetalleEquipo(equipoData);
-            setSoftwareInstalado(softwareData);
-
-    if (equipoRes.error) {
-      console.error("Error cargando specs del equipo:", equipoRes.error);
-    } else {
-      setDetalleEquipo(equipoRes.data);
+    if (programaAgente) {
+      equipoData = { ...equipoData, version_agente: programaAgente.version };
     }
 
-    if (softwareRes.error) {
-      console.error("Error cargando software instalado:", softwareRes.error);
-    } else {
-      setDetalleSoftware(softwareRes.data || []);
-    }
+    // 3. Actualizar estados (aquí estaba el error si no existía setSoftwareInstalado)
+    setDetalleEquipo(equipoData);
+    setDetalleSoftware(softwareData); // Asegúrate de usar el set correcto
+    
+    // Si realmente necesitas dos estados para lo mismo, podrías hacer:
+    // setSoftwareInstalado(softwareData); 
+
+    if (equipoRes.error) console.error("Error specs:", equipoRes.error);
+    if (softwareRes.error) console.error("Error software:", softwareRes.error);
 
     setLoadingDetalle(false);
   }
