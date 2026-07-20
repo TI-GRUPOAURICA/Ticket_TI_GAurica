@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import {
   Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
   Package, User, CircleCheck, CircleX,
-  Wifi, Server, Bot, History, ShieldAlert, Clock,
+  Wifi, Server, Bot, Clock,
   Info,
 } from "lucide-react";
 
@@ -32,8 +32,6 @@ const TABS_DETALLE = [
   { id: "red",      label: "Red",       icon: Wifi },
   { id: "agente",   label: "Agente",    icon: Bot },
   { id: "programas",label: "Programas", icon: Package },
-  { id: "historial",label: "Historial", icon: History },
-  { id: "alertas",  label: "Alertas",   icon: ShieldAlert },
 ];
 
 export default function Inventario() {
@@ -539,8 +537,7 @@ export default function Inventario() {
 
           Ancho ampliado: ahora usa clamp() para escalar entre 620px
           y 1040px según el ancho de la ventana, dejando bastante más
-          espacio para las nuevas secciones (Hardware, Sistema, Red,
-          Agente, Historial, Alertas).
+          espacio para las secciones (Hardware, Sistema, Red, Agente).
       ============================================================ */}
       {hostSeleccionado && (
         <div
@@ -649,9 +646,20 @@ export default function Inventario() {
                         <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
                         <div className="grid grid-cols-3 gap-4">
                           <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
-                          <DetalleItem label="RAM" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
-                          <DetalleItem label="Tipo de RAM" pendiente />
-                          <DetalleItem label="Slots RAM" pendiente />
+                          <DetalleItem label="RAM total" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                          <DetalleItem label="Tipo de RAM" valor={detalleEquipo.ram_tipo} />
+                          <DetalleItem
+                            label="Velocidad RAM"
+                            valor={detalleEquipo.ram_velocidad_mhz ? `${detalleEquipo.ram_velocidad_mhz} MHz` : null}
+                          />
+                          <DetalleItem
+                            label="Slots RAM"
+                            valor={
+                              detalleEquipo.ram_slots
+                                ? `${detalleEquipo.ram_slots_ocupados ?? "?"} / ${detalleEquipo.ram_slots} ocupados`
+                                : null
+                            }
+                          />
                         </div>
                       </div>
 
@@ -670,17 +678,22 @@ export default function Inventario() {
                                 : null
                             }
                           />
-                          <DetalleItem label="Tipo de disco" pendiente />
+                          <DetalleItem label="Tipo de disco" valor={detalleEquipo.disco_tipo} />
+                          <DetalleItem label="Modelo de disco" valor={detalleEquipo.disco_modelo} />
+                          <DetalleItem label="Fabricante de disco" valor={detalleEquipo.disco_fabricante} />
+                          <DetalleItem label="Serial de disco" valor={detalleEquipo.disco_serial} />
                         </div>
                       </div>
 
                       <div>
                         <SeccionTitulo icon={Server} texto="Placa base y BIOS" />
                         <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Motherboard" pendiente />
-                          <DetalleItem label="Versión BIOS" pendiente />
-                          <DetalleItem label="Fecha BIOS" pendiente />
-                          <DetalleItem label="Arquitectura" pendiente />
+                          <DetalleItem label="Fabricante de placa" valor={detalleEquipo.placa_fabricante} />
+                          <DetalleItem label="Modelo de placa" valor={detalleEquipo.placa_modelo} />
+                          <DetalleItem label="Serial de placa" valor={detalleEquipo.placa_serial} />
+                          <DetalleItem label="Fabricante BIOS" valor={detalleEquipo.fabricante_bios} />
+                          <DetalleItem label="Versión BIOS" valor={detalleEquipo.bios_version} />
+                          <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
                           <DetalleItem label="Secure Boot" pendiente />
                           <DetalleItem label="TPM" pendiente />
                         </div>
@@ -701,13 +714,28 @@ export default function Inventario() {
                               : null
                           }
                         />
+                        <DetalleItem label="Compilación (Build)" valor={detalleEquipo.windows_build} />
+                        <DetalleItem label="Arquitectura" valor={detalleEquipo.windows_architecture} />
+                        <DetalleItem label="Fecha de instalación" valor={detalleEquipo.windows_install_date} />
+                        <DetalleItem label="Clave de producto" valor={detalleEquipo.windows_key} />
+                        <DetalleItem
+                          label="Windows activado"
+                          valorNodo={
+                            detalleEquipo.windows_activado ? (
+                              <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                                <CircleCheck size={14} /> Sí
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                                <CircleX size={14} /> No
+                              </span>
+                            )
+                          }
+                        />
                         <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
-                        <DetalleItem label="Compilación (Build)" pendiente />
-                        <DetalleItem label="Fecha de instalación" pendiente />
                         <DetalleItem label="Idioma" pendiente />
                         <DetalleItem label="Zona horaria" pendiente />
                         <DetalleItem label="Última actualización de Windows" pendiente />
-                        <DetalleItem label="Windows activado" pendiente />
                       </div>
                     </div>
                   )}
@@ -717,31 +745,29 @@ export default function Inventario() {
                     <div>
                       <SeccionTitulo icon={Wifi} texto="Conectividad" />
                       <div className="grid grid-cols-3 gap-4">
-                        <DetalleItem label="IP local" pendiente />
+                        <DetalleItem label="IP local" valor={detalleEquipo.ip} />
+                        <DetalleItem label="Gateway" valor={detalleEquipo.gateway} />
+                        <DetalleItem label="DNS" valor={detalleEquipo.dns} />
+                        <DetalleItem label="Dominio" valor={detalleEquipo.dominio} />
+                        <DetalleItem label="Adaptador" valor={detalleEquipo.adaptador_red} />
                         <DetalleItem label="IP pública" pendiente />
                         <DetalleItem label="MAC" pendiente />
-                        <DetalleItem label="Gateway" pendiente />
-                        <DetalleItem label="DNS" pendiente />
-                        <DetalleItem label="Dominio" pendiente />
-                        <DetalleItem label="Adaptador" pendiente />
                         <DetalleItem label="Velocidad de red" pendiente />
                       </div>
                     </div>
                   )}
 
                   {/* ---- PESTAÑA: AGENTE ----
-                      Preparada para el Aurica Inventory Agent: versión
-                      instalada, estado del servicio de Windows y las
-                      fechas de sincronización/actualización. Por ahora
-                      solo "Última sincronización" viene de la tabla
-                      equipos_estado; el resto queda listo para cuando
-                      el agente empiece a enviar esos campos. */}
+                      Aurica Inventory Agent: versión instalada y fecha
+                      de última sincronización. El resto queda listo
+                      para cuando el agente empiece a enviar esos
+                      campos adicionales. */}
                   {tabDetalle === "agente" && (
                     <>
                       <div className="mb-5">
                         <SeccionTitulo icon={Bot} texto="Estado del agente" />
                         <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Versión instalada" pendiente />
+                          <DetalleItem label="Versión instalada" valor={detalleEquipo.version_agente} />
                           <DetalleItem label="Última versión disponible" pendiente />
                           <DetalleItem label="Estado de actualización" pendiente />
                         </div>
@@ -794,24 +820,6 @@ export default function Inventario() {
                       )}
                     </div>
                   )}
-
-                  {/* ---- PESTAÑA: HISTORIAL (preparada, sin datos aún) ---- */}
-                  {tabDetalle === "historial" && (
-                    <EstadoVacio
-                      icon={History}
-                      titulo="Todavía no hay historial"
-                      texto="Aquí aparecerán las actualizaciones del agente, sincronizaciones y eventos importantes de este equipo en cuanto el agente empiece a reportarlos."
-                    />
-                  )}
-
-                  {/* ---- PESTAÑA: ALERTAS (preparada, sin datos aún) ---- */}
-                  {tabDetalle === "alertas" && (
-                    <EstadoVacio
-                      icon={ShieldAlert}
-                      titulo="Sin alertas por ahora"
-                      texto="Cuando estén disponibles, aquí se mostrarán avisos como disco casi lleno, agente desactualizado o servicio detenido."
-                    />
-                  )}
                 </>
               )}
             </div>
@@ -863,30 +871,6 @@ function DetalleItem({ label, valor, valorNodo, pendiente }) {
       ) : (
         <p className="text-base font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
       )}
-    </div>
-  );
-}
-
-// =============================================================
-// COMPONENTE AUXILIAR: EstadoVacio
-// Estado vacío elegante para las pestañas que todavía no tienen
-// datos reales (Historial, Alertas). Deja el diseño listo para
-// cuando esa información empiece a llegar desde Supabase.
-// =============================================================
-function EstadoVacio({ icon: Icon, titulo, texto }) {
-  return (
-    <div
-      className="flex flex-col items-center text-center py-14 px-6 rounded-xl"
-      style={{ background: "#f8fbff", border: "1px dashed #dbeafe" }}
-    >
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-        style={{ background: "#eff6ff" }}
-      >
-        <Icon size={22} style={{ color: "#345D9D" }} />
-      </div>
-      <p className="text-sm font-semibold mb-1" style={{ color: "#1e293b" }}>{titulo}</p>
-      <p className="text-sm max-w-sm" style={{ color: "#64748b" }}>{texto}</p>
     </div>
   );
 }
