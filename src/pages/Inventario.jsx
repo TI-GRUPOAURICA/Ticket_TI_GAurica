@@ -163,6 +163,26 @@ export default function Inventario() {
         .eq("hostname", hostname)
         .order("nombre"),
     ]);
+                  // 2. Extraes los datos de forma segura
+            let equipoData = equipoRes.data || {};
+            const softwareData = softwareRes.data || [];
+
+            // 3. Lógica para "sobreescribir" la versión del agente con la de programas
+            const programaAgente = softwareData.find(p => 
+                p.nombre?.includes("Aurica Inventory Agent")
+            );
+
+            if (programaAgente) {
+                // Si encontramos el agente en la lista de programas, actualizamos el dato
+                equipoData = {
+                    ...equipoData,
+                    version_agente: programaAgente.version
+                };
+            }
+
+            // 4. Ahora usas 'equipoData' para actualizar tu estado
+            setDetalleEquipo(equipoData);
+            setSoftwareInstalado(softwareData);
 
     if (equipoRes.error) {
       console.error("Error cargando specs del equipo:", equipoRes.error);
