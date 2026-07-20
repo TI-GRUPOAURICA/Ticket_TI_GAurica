@@ -196,9 +196,14 @@ export default function Inventario() {
     setDetalleSoftware([]);
     setTabDetalle("general");
 
-    const [equipoRes, softwareRes, ticketsRes] = await Promise.all([
+    const [estadoRes, equipoRes, softwareRes, ticketsRes] = await Promise.all([
       supabase
         .from("equipos_estado")
+        .select("*")
+        .eq("hostname", hostname)
+        .maybeSingle(),
+      supabase
+        .from("equipos")
         .select("*")
         .eq("hostname", hostname)
         .maybeSingle(),
@@ -214,10 +219,26 @@ export default function Inventario() {
         .order("created_at", { ascending: false }),
     ]);
 
+    if (estadoRes.error) {
+      console.error("Error cargando estado en vivo del equipo:", estadoRes.error);
+    }
+
     if (equipoRes.error) {
       console.error("Error cargando specs del equipo:", equipoRes.error);
+    }
+
+    if (!estadoRes.error && !equipoRes.error && !estadoRes.data && !equipoRes.data) {
+      setDetalleEquipo(null);
+    } else if (estadoRes.error && equipoRes.error) {
+      setDetalleEquipo(null);
     } else {
-      setDetalleEquipo(equipoRes.data);
+      // "equipos" trae las specs completas (hardware, red, bios, agente);
+      // "equipos_estado" trae el estado en vivo (online/offline, activo)
+      // y pisa esos campos si hay coincidencia entre ambas tablas.
+      setDetalleEquipo({
+        ...(equipoRes.data || {}),
+        ...(estadoRes.data || {}),
+      });
     }
 
     if (softwareRes.error) {
