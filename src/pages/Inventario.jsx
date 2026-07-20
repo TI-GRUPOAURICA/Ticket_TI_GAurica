@@ -620,7 +620,6 @@ export default function Inventario() {
                         <DetalleItem label="Serial" valor={detalleEquipo.serial} />
                         <DetalleItem label="Marca" valor={detalleEquipo.marca} />
                         <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
-                        <DetalleItem label="Estado" valor={detalleEquipo.estado} />
                         <DetalleItem
                           label="Activo"
                           valorNodo={
@@ -638,7 +637,6 @@ export default function Inventario() {
                       </div>
                     </div>
                   )}
-                      // --- Reemplaza el bloque de las pestañas en tu JSX por este esquema corregido ---
 
                       {/* ---- PESTAÑA: HARDWARE ---- */}
                       {tabDetalle === "hardware" && (
