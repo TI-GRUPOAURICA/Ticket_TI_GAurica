@@ -25,6 +25,17 @@ const TIPOS = ["Laptop", "PC"];
 // Lista fija de sedes disponibles (columna "sede" en colaboradores)
 const SEDES = ["LIMA", "AREQUIPA", "CHALA"];
 
+// Última versión publicada del Aurica Inventory Agent. Cuando saques
+// una versión nueva, solo actualiza este valor — la pestaña "Agente"
+// compara automáticamente contra esto en cada equipo, sin tocar
+// Supabase ni el resto del código.
+const ULTIMA_VERSION_AGENTE = "1.0.14";
+
+// Nombre (o parte del nombre) con el que el agente aparece en la
+// lista de "Programas instalados" de Windows. Se usa para detectar
+// automáticamente la versión realmente instalada en cada equipo.
+const NOMBRE_PROGRAMA_AGENTE = "aurica inventory agent";
+
 // Estilos de la pestaña "Tickets": colores según el estado y la
 // prioridad del ticket, tomados de los valores reales de la tabla
 // "tickets" (abierto / resuelto, y bajo / medio / alto / critico / emergencia).
@@ -292,6 +303,22 @@ export default function Inventario() {
   // Se usa para editar/eliminar desde ahí en vez de la tabla.
   // ----------------------------------------------------------
   const colaboradorActual = equipos.find((e) => e.host === hostSeleccionado);
+
+  // ----------------------------------------------------------
+  // VERSIÓN DEL AGENTE DETECTADA AUTOMÁTICAMENTE
+  // Busca en la lista de software instalado (detalleSoftware) el
+  // programa del Aurica Inventory Agent y toma su versión de ahí.
+  // Esto refleja lo que realmente está instalado en el equipo,
+  // sin depender de una columna aparte que el agente reporte y
+  // que se pueda quedar desactualizada.
+  // ----------------------------------------------------------
+  const programaAgente = detalleSoftware.find((sw) =>
+    sw.nombre?.toLowerCase().includes(NOMBRE_PROGRAMA_AGENTE)
+  );
+  const versionAgenteInstalada = programaAgente?.version || detalleEquipo?.version_agente || null;
+  const agenteActualizado = versionAgenteInstalada
+    ? versionAgenteInstalada === ULTIMA_VERSION_AGENTE
+    : null;
 
   // ----------------------------------------------------------
   // RENDER
@@ -923,16 +950,30 @@ export default function Inventario() {
                   )}
 
                   {/* ---- PESTAÑA: AGENTE ----
-                      Aurica Inventory Agent: versión instalada, estado
-                      del servicio y fechas de sincronización. */}
+                      Aurica Inventory Agent: versión instalada (detectada
+                      automáticamente desde Programas), estado del servicio
+                      y fechas de sincronización. */}
                   {tabDetalle === "agente" && (
                     <>
                       <div className="mb-5">
                         <SeccionTitulo icon={Bot} texto="Estado del agente" />
                         <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Versión instalada" valor={detalleEquipo.version_agente} />
-                          <DetalleItem label="Última versión disponible" valor={detalleEquipo.version_disponible} />
-                          <DetalleItem label="Estado de actualización" valor={detalleEquipo.estado_agente} />
+                          <DetalleItem label="Versión instalada" valor={versionAgenteInstalada} />
+                          <DetalleItem label="Última versión disponible" valor={ULTIMA_VERSION_AGENTE} />
+                          <DetalleItem
+                            label="Estado de actualización"
+                            valorNodo={
+                              agenteActualizado === null ? undefined : agenteActualizado ? (
+                                <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
+                                  <CircleCheck size={14} /> Actualizado
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
+                                  <CircleX size={14} /> Desactualizado
+                                </span>
+                              )
+                            }
+                          />
                         </div>
                       </div>
 
