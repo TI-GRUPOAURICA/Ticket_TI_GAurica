@@ -638,104 +638,61 @@ export default function Inventario() {
                       </div>
                     </div>
                   )}
+                      // --- Reemplaza el bloque de las pestañas en tu JSX por este esquema corregido ---
 
-                  {/* ---- PESTAÑA: HARDWARE ---- */}
-                  {tabDetalle === "hardware" && (
-                    <>
-                      <div className="mb-5">
-                        <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
-                        <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
-                          <DetalleItem label="RAM total" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
-                          <DetalleItem label="Tipo de RAM" valor={detalleEquipo.ram_tipo} />
-                          <DetalleItem
-                            label="Velocidad RAM"
-                            valor={detalleEquipo.ram_velocidad_mhz ? `${detalleEquipo.ram_velocidad_mhz} MHz` : null}
-                          />
-                          <DetalleItem
-                            label="Slots RAM"
-                            valor={
-                              detalleEquipo.ram_slots
-                                ? `${detalleEquipo.ram_slots_ocupados ?? "?"} / ${detalleEquipo.ram_slots} ocupados`
-                                : null
-                            }
-                          />
-                        </div>
-                      </div>
+                      {/* ---- PESTAÑA: HARDWARE ---- */}
+                      {tabDetalle === "hardware" && (
+                        <>
+                          <div className="mb-5">
+                            <SeccionTitulo icon={Cpu} texto="Procesador y memoria" />
+                            <div className="grid grid-cols-3 gap-4">
+                              <DetalleItem label="CPU" valor={detalleEquipo.cpu} />
+                              <DetalleItem label="RAM total" valor={detalleEquipo.ram_gb ? `${detalleEquipo.ram_gb} GB` : null} />
+                              <DetalleItem label="Tipo de RAM" valor={detalleEquipo.ram_tipo} />
+                              <DetalleItem label="Velocidad RAM" valor={detalleEquipo.ram_velocidad_mhz ? `${detalleEquipo.ram_velocidad_mhz} MHz` : null} />
+                              <DetalleItem label="Slots RAM" valor={detalleEquipo.ram_slots ? `${detalleEquipo.ram_slots_ocupados || 0} / ${detalleEquipo.ram_slots}` : null} />
+                            </div>
+                          </div>
 
-                      <div className="mb-5">
-                        <SeccionTitulo icon={HardDrive} texto="Almacenamiento" />
-                        <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem
-                            label="Disco total"
-                            valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null}
-                          />
-                          <DetalleItem
-                            label="Disco libre"
-                            valor={
-                              detalleEquipo.disco_libre_gb
-                                ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje ?? "?"}%)`
-                                : null
-                            }
-                          />
-                          <DetalleItem label="Tipo de disco" valor={detalleEquipo.disco_tipo} />
-                          <DetalleItem label="Modelo de disco" valor={detalleEquipo.disco_modelo} />
-                          <DetalleItem label="Fabricante de disco" valor={detalleEquipo.disco_fabricante} />
-                          <DetalleItem label="Serial de disco" valor={detalleEquipo.disco_serial} />
-                        </div>
-                      </div>
+                          <div className="mb-5">
+                            <SeccionTitulo icon={HardDrive} texto="Almacenamiento" />
+                            <div className="grid grid-cols-3 gap-4">
+                              <DetalleItem label="Disco Total" valor={detalleEquipo.disco_total_gb ? `${detalleEquipo.disco_total_gb} GB` : null} />
+                              <DetalleItem label="Disco Libre" valor={detalleEquipo.disco_libre_gb ? `${detalleEquipo.disco_libre_gb} GB (${detalleEquipo.disco_libre_porcentaje || 0}%)` : null} />
+                              <DetalleItem label="Tipo" valor={detalleEquipo.disco_tipo} />
+                              <DetalleItem label="Modelo" valor={detalleEquipo.disco_modelo} />
+                              <DetalleItem label="Fabricante" valor={detalleEquipo.disco_fabricante} />
+                              <DetalleItem label="Serial" valor={detalleEquipo.disco_serial} />
+                            </div>
+                          </div>
 
-                      <div>
-                        <SeccionTitulo icon={Server} texto="Placa base y BIOS" />
-                        <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Fabricante de placa" valor={detalleEquipo.placa_fabricante} />
-                          <DetalleItem label="Modelo de placa" valor={detalleEquipo.placa_modelo} />
-                          <DetalleItem label="Serial de placa" valor={detalleEquipo.placa_serial} />
-                          <DetalleItem label="Fabricante BIOS" valor={detalleEquipo.fabricante_bios} />
-                          <DetalleItem label="Versión BIOS" valor={detalleEquipo.bios_version} />
-                          <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
-                          <DetalleItem label="Secure Boot" pendiente />
-                          <DetalleItem label="TPM" pendiente />
-                        </div>
-                      </div>
-                    </>
-                  )}
+                          <div>
+                            <SeccionTitulo icon={Server} texto="Placa base, BIOS y Seguridad" />
+                            <div className="grid grid-cols-3 gap-4">
+                              <DetalleItem label="Placa" valor={detalleEquipo.placa_modelo} />
+                              <DetalleItem label="Fabricante Placa" valor={detalleEquipo.placa_fabricante} />
+                              <DetalleItem label="BIOS" valor={detalleEquipo.bios_version} />
+                              <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
+                              <DetalleItem label="TPM" valor={detalleEquipo.tpm} />
+                              <DetalleItem label="Secure Boot" valor={detalleEquipo.secure_boot} />
+                              <DetalleItem label="Bitlocker" valor={detalleEquipo.bitlocker} />
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                   {/* ---- PESTAÑA: SISTEMA OPERATIVO ---- */}
                   {tabDetalle === "sistema" && (
                     <div>
                       <SeccionTitulo icon={Monitor} texto="Sistema operativo" />
                       <div className="grid grid-cols-3 gap-4">
-                        <DetalleItem
-                          label="Windows"
-                          valor={
-                            detalleEquipo.windows
-                              ? `${detalleEquipo.windows}${detalleEquipo.windows_version ? " · " + detalleEquipo.windows_version : ""}`
-                              : null
-                          }
-                        />
-                        <DetalleItem label="Compilación (Build)" valor={detalleEquipo.windows_build} />
+                        <DetalleItem label="Windows" valor={detalleEquipo.windows} />
+                        <DetalleItem label="Versión" valor={detalleEquipo.windows_version} />
+                        <DetalleItem label="Build" valor={detalleEquipo.windows_build} />
                         <DetalleItem label="Arquitectura" valor={detalleEquipo.windows_architecture} />
-                        <DetalleItem label="Fecha de instalación" valor={detalleEquipo.windows_install_date} />
-                        <DetalleItem label="Clave de producto" valor={detalleEquipo.windows_key} />
-                        <DetalleItem
-                          label="Windows activado"
-                          valorNodo={
-                            detalleEquipo.windows_activado ? (
-                              <span className="flex items-center gap-1" style={{ color: "#16a34a" }}>
-                                <CircleCheck size={14} /> Sí
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1" style={{ color: "#dc2626" }}>
-                                <CircleX size={14} /> No
-                              </span>
-                            )
-                          }
-                        />
-                        <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
-                        <DetalleItem label="Idioma" pendiente />
-                        <DetalleItem label="Zona horaria" pendiente />
-                        <DetalleItem label="Última actualización de Windows" pendiente />
+                        <DetalleItem label="Instalación" valor={detalleEquipo.windows_install_date} />
+                        <DetalleItem label="Último reinicio" valor={detalleEquipo.ultimo_reinicio} />
+                        <DetalleItem label="Protección Tiempo Real" valor={detalleEquipo.proteccion_tiempo_real} />
                       </div>
                     </div>
                   )}
