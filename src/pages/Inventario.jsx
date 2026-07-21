@@ -88,6 +88,7 @@ export default function Inventario() {
     correo: "",
     anydesk: "",
     sede: "",
+    cargo: "",
   });
 
   // ---- Estados para la card de detalle del equipo ----
@@ -150,6 +151,7 @@ export default function Inventario() {
         correo:       editData.correo,
         anydesk:      editData.anydesk,
         sede:         editData.sede,
+        cargo:        editData.cargo,
       })
       .eq("id", editandoId);
 
@@ -659,6 +661,7 @@ export default function Inventario() {
                                       correo: colaboradorActual.correo || "",
                                       anydesk: colaboradorActual.anydesk || "",
                                       sede: colaboradorActual.sede || "",
+                                      cargo: colaboradorActual.cargo || "",
                                     });
                                   }}
                                   className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
@@ -685,6 +688,15 @@ export default function Inventario() {
                               <input
                                 value={editData.colaborador}
                                 onChange={(e) => setEditData({ ...editData, colaborador: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Puesto / Cargo">
+                              <input
+                                value={editData.cargo}
+                                onChange={(e) => setEditData({ ...editData, cargo: e.target.value })}
                                 className="w-full outline-none text-base font-semibold bg-transparent"
                                 style={{ color: "#1e293b" }}
                               />
@@ -764,6 +776,7 @@ export default function Inventario() {
                           /* ---- Modo lectura ---- */
                           <div className="grid grid-cols-3 gap-4">
                             <DetalleItem label="Nombre" valor={colaboradorActual?.colaborador} />
+                            <DetalleItem label="Puesto / Cargo" valor={colaboradorActual?.cargo} />
                             <DetalleItem
                               label="Correo"
                               valorNodo={
