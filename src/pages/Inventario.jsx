@@ -795,9 +795,12 @@ export default function Inventario() {
                       <div className="mb-5">
                         <SeccionTitulo icon={Monitor} texto="Datos básicos del equipo" />
                         <div className="grid grid-cols-3 gap-4">
-                          <DetalleItem label="Usuario" valor={detalleEquipo.usuario} />
+                          <DetalleItem label="Usuario" valor={detalleEquipo.usuario?.replace(/\$$/, "")} />
                           <DetalleItem label="Serial" valor={detalleEquipo.serial} />
-                          <DetalleItem label="Marca" valor={detalleEquipo.marca} />
+                          <DetalleItem
+                            label={colaboradorActual?.tipo === "PC" ? "Marca de placa madre" : "Marca"}
+                            valor={detalleEquipo.marca}
+                          />
                           <DetalleItem label="Modelo" valor={detalleEquipo.modelo} />
                           <DetalleItem label="Estado" valor={detalleEquipo.estado} />
                           <DetalleItem
@@ -922,12 +925,7 @@ export default function Inventario() {
                         <DetalleItem label="Fecha de instalación" valor={detalleEquipo.windows_install_date} />
                         <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
                         <DetalleItem label="Último inicio" valor={formatearFecha(detalleEquipo.ultimo_inicio_windows)} />
-                        <DetalleItem label="Office" valor={detalleEquipo.office ? `${detalleEquipo.office}${detalleEquipo.office_version ? " · " + detalleEquipo.office_version : ""}` : null} />
-                        <DetalleItem label="Antivirus" valor={detalleEquipo.antivirus ? `${detalleEquipo.antivirus}${detalleEquipo.antivirus_version ? " · " + detalleEquipo.antivirus_version : ""}` : null} />
-                        <DetalleItem label="Clave de producto" pendiente />
                         <DetalleItem label="Windows activado" pendiente />
-                        <DetalleItem label="Idioma" pendiente />
-                        <DetalleItem label="Zona horaria" pendiente />
                       </div>
                     </div>
                   )}
