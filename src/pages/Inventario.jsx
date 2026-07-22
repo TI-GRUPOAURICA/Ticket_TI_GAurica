@@ -150,7 +150,7 @@ export default function Inventario() {
         tipo:         editData.tipo,
         correo:       editData.correo,
         anydesk:      editData.anydesk,
-        sede:         editData.sede,
+        sede:         editData.sede || null,
         cargo:        editData.cargo,
       })
       .eq("id", editandoId);
@@ -889,32 +889,7 @@ export default function Inventario() {
                           <DetalleItem label="Serial de placa" valor={detalleEquipo.placa_serial} />
                           <DetalleItem label="Fabricante BIOS" valor={detalleEquipo.fabricante_bios} />
                           <DetalleItem label="Versión BIOS" valor={detalleEquipo.bios_version} />
-                          <DetalleItem label="Fecha BIOS" valor={detalleEquipo.bios_release_date} />
-                          <DetalleItem
-                            label="Secure Boot"
-                            valorNodo={
-                              detalleEquipo.secure_boot === null || detalleEquipo.secure_boot === undefined ? undefined : (
-                                detalleEquipo.secure_boot ? (
-                                  <span className="flex items-center gap-1" style={{ color: "#16a34a" }}><CircleCheck size={14} /> Activado</span>
-                                ) : (
-                                  <span className="flex items-center gap-1" style={{ color: "#dc2626" }}><CircleX size={14} /> Desactivado</span>
-                                )
-                              )
-                            }
-                          />
-                          <DetalleItem
-                            label="TPM"
-                            valorNodo={
-                              detalleEquipo.tpm === null || detalleEquipo.tpm === undefined ? undefined : (
-                                detalleEquipo.tpm ? (
-                                  <span className="flex items-center gap-1" style={{ color: "#16a34a" }}><CircleCheck size={14} /> Presente</span>
-                                ) : (
-                                  <span className="flex items-center gap-1" style={{ color: "#dc2626" }}><CircleX size={14} /> No detectado</span>
-                                )
-                              )
-                            }
-                          />
-                          <DetalleItem label="BitLocker" valor={detalleEquipo.bitlocker ? "Activado" : null} />
+                          <DetalleItem label="Fecha BIOS" valor={formatearFecha(detalleEquipo.bios_release_date)} />
                         </div>
                       </div>
                     </>
@@ -935,10 +910,8 @@ export default function Inventario() {
                         />
                         <DetalleItem label="Compilación (Build)" valor={detalleEquipo.windows_build} />
                         <DetalleItem label="Arquitectura" valor={detalleEquipo.windows_architecture} />
-                        <DetalleItem label="Fecha de instalación" valor={detalleEquipo.windows_install_date} />
+                        <DetalleItem label="Fecha de instalación" valor={formatearFecha(detalleEquipo.windows_install_date)} />
                         <DetalleItem label="Último reinicio" valor={formatearFecha(detalleEquipo.ultimo_reinicio)} />
-                        <DetalleItem label="Último inicio" valor={formatearFecha(detalleEquipo.ultimo_inicio_windows)} />
-                        <DetalleItem label="Windows activado" pendiente />
                       </div>
                     </div>
                   )}
@@ -953,9 +926,6 @@ export default function Inventario() {
                         <DetalleItem label="DNS" valor={detalleEquipo.dns} />
                         <DetalleItem label="Dominio" valor={detalleEquipo.dominio} />
                         <DetalleItem label="Adaptador" valor={detalleEquipo.adaptador_red} />
-                        <DetalleItem label="MAC" valor={detalleEquipo.mac} />
-                        <DetalleItem label="IP pública" pendiente />
-                        <DetalleItem label="Velocidad de red" pendiente />
                       </div>
                     </div>
                   )}
@@ -994,15 +964,6 @@ export default function Inventario() {
                           <DetalleItem
                             label="Última sincronización"
                             valor={formatearFecha(detalleEquipo.ultima_sincronizacion)}
-                          />
-                          <DetalleItem label="Servicio de Windows" valor={detalleEquipo.estado_servicio} />
-                          <DetalleItem
-                            label="Última revisión de actualización"
-                            valor={formatearFecha(detalleEquipo.ultima_revision_actualizacion)}
-                          />
-                          <DetalleItem
-                            label="Última actualización del agente"
-                            valor={formatearFecha(detalleEquipo.ultima_actualizacion_agente)}
                           />
                         </div>
                       </div>
