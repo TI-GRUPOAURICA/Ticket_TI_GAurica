@@ -60,6 +60,7 @@ const PRIORIDADES_TICKET = {
 // el futuro sea solo cuestión de sumar un elemento aquí.
 const TABS_DETALLE = [
   { id: "general",  label: "General",   icon: Info },
+  { id: "renovacion",label: "Renovación",icon: Clock },
   { id: "hardware", label: "Hardware",  icon: Cpu },
   { id: "sistema",  label: "Sistema",   icon: Monitor },
   { id: "red",      label: "Red",       icon: Wifi },
