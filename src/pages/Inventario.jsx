@@ -99,6 +99,78 @@ export default function Inventario() {
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
   const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
 
+function calcularAnosAntiguedad(fechaStr) {
+  if (!fechaStr) return 0;
+  const fecha = new Date(fechaStr);
+  if (isNaN(fecha.getTime())) return 0;
+  const diffMs = Date.now() - fecha.getTime();
+  const anos = diffMs / (1000 * 60 * 60 * 24 * 365.25);
+  return Math.max(0, parseFloat(anos.toFixed(1)));
+}
+
+function obtenerPuntosCargo(cargoStr) {
+  if (!cargoStr) return 5;
+  const c = cargoStr.toLowerCase();
+  if (c.includes("gerente") || c.includes("director") || c.includes("ceo")) return 10;
+  if (c.includes("jefe") || c.includes("coordinador") || c.includes("supervisor")) return 8;
+  if (c.includes("analista") || c.includes("especialista") || c.includes("ingeniero")) return 6;
+  if (c.includes("asistente") || c.includes("auxiliar") || c.includes("practicante")) return 4;
+  return 5;
+}
+
+function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFisico, rendimiento, cargo, numTickets }) {
+  const fechaReferencia = fechaCompra || fechaInstalacionWin;
+  const anos = calcularAnosAntiguedad(fechaReferencia);
+
+  let ptsAntiguedad = 0;
+  if (anos >= 5) ptsAntiguedad = 30;
+  else if (anos >= 4) ptsAntiguedad = 24;
+  else if (anos >= 3) ptsAntiguedad = 18;
+  else if (anos >= 2) ptsAntiguedad = 10;
+  else ptsAntiguedad = 4;
+
+  let ptsFisico = 5;
+  if (estadoFisico === "MALO") ptsFisico = 20;
+  else if (estadoFisico === "REGULAR") ptsFisico = 12;
+
+  let ptsRendimiento = 5;
+  if (rendimiento === "MALO") ptsRendimiento = 20;
+  else if (rendimiento === "REGULAR") ptsRendimiento = 12;
+
+  const ptsCargoRaw = obtenerPuntosCargo(cargo);
+  const ptsCargo = Math.round((ptsCargoRaw / 10) * 15);
+
+  let ptsFallas = 0;
+  if (numTickets >= 5) ptsFallas = 15;
+  else if (numTickets >= 3) ptsFallas = 10;
+  else if (numTickets >= 1) ptsFallas = 5;
+
+  const totalScore = ptsAntiguedad + ptsFisico + ptsRendimiento + ptsCargo + ptsFallas;
+
+  let accion = "Sin intervención necesaria";
+  let colorBadge = { bg: "#dcfce7", color: "#16a34a", border: "#86efac" };
+
+  if (totalScore >= 65 || ptsFisico === 20 || anos >= 5) {
+    accion = "Requiere Cambio Total de Equipo";
+    colorBadge = { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" };
+  } else if (totalScore >= 40 || ptsRendimiento >= 12) {
+    accion = "Recomendada Mejora de Hardware (RAM / SSD)";
+    colorBadge = { bg: "#fefce8", color: "#a16207", border: "#fde68a" };
+  }
+
+  return {
+    anos,
+    ptsAntiguedad,
+    ptsFisico,
+    ptsRendimiento,
+    ptsCargo,
+    ptsFallas,
+    totalScore,
+    accion,
+    colorBadge,
+    esFechaAproximada: !fechaCompra && Boolean(fechaInstalacionWin)
+  };
+}
   // ----------------------------------------------------------
   // EFECTO INICIAL
   // Carga los equipos desde Supabase al montar el componente.
@@ -834,6 +906,101 @@ export default function Inventario() {
                       </div>
                     </>
                   )}
+               {/* ---- PESTAÑA: RENOVACIÓN ---- */}
+                {tabDetalle === "renovacion" && (() => {
+                  const datosRenovacion = calcularPuntajeRenovacion({
+                    fechaCompra: colaboradorActual?.fecha_compra,
+                    fechaInstalacionWin: detalleEquipo?.fecha_instalacion,
+                    estadoFisico: colaboradorActual?.estado_fisico || "BUENO",
+                    rendimiento: colaboradorActual?.rendimiento_actual || "BUENO",
+                    cargo: colaboradorActual?.cargo,
+                    numTickets: detalleTickets.length,
+                  });
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Target de Dictamen */}
+                      <div
+                        className="p-4 rounded-xl flex justify-between items-center"
+                        style={{
+                          background: datosRenovacion.colorBadge.bg,
+                          color: datosRenovacion.colorBadge.color,
+                          border: `1px solid ${datosRenovacion.colorBadge.border}`,
+                        }}
+                      >
+                        <div>
+                          <span className="text-xs font-bold uppercase tracking-wider block opacity-80">
+                            Dictamen Sugerido
+                          </span>
+                          <span className="text-base font-extrabold">{datosRenovacion.accion}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold uppercase tracking-wider block opacity-80">
+                            Puntaje Global
+                          </span>
+                          <span className="text-xl font-black">{datosRenovacion.totalScore} / 100 pts</span>
+                        </div>
+                      </div>
+
+                      {/* Desglose en Tabla */}
+                      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden text-sm">
+                        <table className="w-full text-left">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold">
+                            <tr>
+                              <th className="p-3 text-xs uppercase">Criterio</th>
+                              <th className="p-3 text-xs uppercase">Valor</th>
+                              <th className="p-3 text-xs uppercase text-right">Puntos</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-600">
+                            <tr>
+                              <td className="p-3 font-medium">
+                                Antigüedad
+                                {datosRenovacion.esFechaAproximada && (
+                                  <span className="block text-xs text-amber-600 font-normal">
+                                    * Estimado según fecha de Win
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3">{datosRenovacion.anos} años</td>
+                              <td className="p-3 text-right font-bold text-slate-800">
+                                {datosRenovacion.ptsAntiguedad} / 30 pts
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-medium">Estado Físico</td>
+                              <td className="p-3">{colaboradorActual?.estado_fisico || "BUENO"}</td>
+                              <td className="p-3 text-right font-bold text-slate-800">
+                                {datosRenovacion.ptsFisico} / 20 pts
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-medium">Rendimiento Actual</td>
+                              <td className="p-3">{colaboradorActual?.rendimiento_actual || "BUENO"}</td>
+                              <td className="p-3 text-right font-bold text-slate-800">
+                                {datosRenovacion.ptsRendimiento} / 20 pts
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-medium">Criticidad del Cargo</td>
+                              <td className="p-3">{colaboradorActual?.cargo || "No asignado"}</td>
+                              <td className="p-3 text-right font-bold text-slate-800">
+                                {datosRenovacion.ptsCargo} / 15 pts
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-medium">Frecuencia de Tickets</td>
+                              <td className="p-3">{detalleTickets.length} tickets</td>
+                              <td className="p-3 text-right font-bold text-slate-800">
+                                {datosRenovacion.ptsFallas} / 15 pts
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                   {/* ---- PESTAÑA: HARDWARE ---- */}
                   {tabDetalle === "hardware" && (
