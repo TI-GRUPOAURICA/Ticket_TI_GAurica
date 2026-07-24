@@ -159,12 +159,14 @@ function calcularPuntajeRenovacion({
   criticidad,
   cargo,
   numTickets,
-}) {const anioCompra = Number(detalleEquipo?.anio_compra);
+}) {
+
+const anio = Number(anioCompra);
 
 let anos = 0;
 let esFechaAproximada = false;
 
-if (anioCompra) {
+if (anio) {
   anos = new Date().getFullYear() - anioCompra;
 } else {
   const fechaReferencia = fechaCompra || fechaInstalacionWin;
