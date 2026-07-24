@@ -150,9 +150,27 @@ function obtenerPuntosCargo(cargoStr) {
   return 5;
 }
 
-function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFisico, rendimiento, cargo, numTickets }) {
+function calcularPuntajeRenovacion({
+  anioCompra,
+  fechaCompra,
+  fechaInstalacionWin,
+  estadoFisico,
+  rendimiento,
+  criticidad,
+  cargo,
+  numTickets,
+}) {const anioCompra = Number(detalleEquipo?.anio_compra);
+
+let anos = 0;
+let esFechaAproximada = false;
+
+if (anioCompra) {
+  anos = new Date().getFullYear() - anioCompra;
+} else {
   const fechaReferencia = fechaCompra || fechaInstalacionWin;
-  const anos = calcularAnosAntiguedad(fechaReferencia);
+  anos = calcularAnosAntiguedad(fechaReferencia);
+  esFechaAproximada = !fechaCompra && Boolean(fechaInstalacionWin);
+}
 
   let ptsAntiguedad = 0;
   if (anos >= 5) ptsAntiguedad = 30;
@@ -160,17 +178,84 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
   else if (anos >= 3) ptsAntiguedad = 18;
   else if (anos >= 2) ptsAntiguedad = 10;
   else ptsAntiguedad = 4;
+// Estado físico (20 pts)
+let ptsFisico = 0;
 
-  let ptsFisico = 5;
-  if (estadoFisico === "MALO") ptsFisico = 20;
-  else if (estadoFisico === "REGULAR") ptsFisico = 12;
+switch (estadoFisico) {
+  case "Excelente":
+    ptsFisico = 0;
+    break;
 
-  let ptsRendimiento = 5;
-  if (rendimiento === "MALO") ptsRendimiento = 20;
-  else if (rendimiento === "REGULAR") ptsRendimiento = 12;
+  case "Bueno":
+    ptsFisico = 5;
+    break;
 
-  const ptsCargoRaw = obtenerPuntosCargo(cargo);
-  const ptsCargo = Math.round((ptsCargoRaw / 10) * 15);
+  case "Regular":
+    ptsFisico = 10;
+    break;
+
+  case "Usable":
+    ptsFisico = 15;
+    break;
+
+  case "Antiguo":
+    ptsFisico = 20;
+    break;
+
+  default:
+    ptsFisico = 5;
+}
+
+// Rendimiento (20 pts)
+let ptsRendimiento = 0;
+
+switch (rendimiento) {
+  case "Excelente":
+    ptsRendimiento = 0;
+    break;
+
+  case "Bueno":
+    ptsRendimiento = 5;
+    break;
+
+  case "Regular":
+    ptsRendimiento = 10;
+    break;
+
+  case "Malo":
+    ptsRendimiento = 15;
+    break;
+
+  case "Pésimo":
+    ptsRendimiento = 20;
+    break;
+
+  default:
+    ptsRendimiento = 5;
+}
+
+  let ptsCargo = 5;
+
+switch (criticidad) {
+  case "Crítica":
+    ptsCargo = 15;
+    break;
+
+  case "Alta":
+    ptsCargo = 12;
+    break;
+
+  case "Media":
+    ptsCargo = 8;
+    break;
+
+  case "Baja":
+    ptsCargo = 5;
+    break;
+
+  default:
+    ptsCargo = 5;
+}
 
   let ptsFallas = 0;
   if (numTickets >= 5) ptsFallas = 15;
@@ -185,8 +270,8 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
   if (totalScore >= 65 || ptsFisico === 20 || anos >= 5) {
     accion = "Requiere Cambio Total de Equipo";
     colorBadge = { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" };
-  } else if (totalScore >= 40 || ptsRendimiento >= 12) {
-    accion = "Recomendada Mejora de Hardware (RAM / SSD)";
+} else if (totalScore >= 40 || ptsRendimiento >= 15) {
+      accion = "Recomendada Mejora de Hardware (RAM / SSD)";
     colorBadge = { bg: "#fefce8", color: "#a16207", border: "#fde68a" };
   }
 
@@ -200,8 +285,7 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
     totalScore,
     accion,
     colorBadge,
-    esFechaAproximada: !fechaCompra && Boolean(fechaInstalacionWin)
-  };
+esFechaAproximada  };
 }
   // ----------------------------------------------------------
   // EFECTO INICIAL
@@ -979,18 +1063,81 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
                   )}
                {/* ---- PESTAÑA: RENOVACIÓN ---- */}
                 {tabDetalle === "renovacion" && (() => {
-                  const datosRenovacion = calcularPuntajeRenovacion({
-                    fechaCompra: colaboradorActual?.fecha_compra,
-                    fechaInstalacionWin: detalleEquipo?.fecha_instalacion,
-                    estadoFisico: colaboradorActual?.estado_fisico || "BUENO",
-                    rendimiento: colaboradorActual?.rendimiento_actual || "BUENO",
-                    cargo: colaboradorActual?.cargo,
-                    numTickets: detalleTickets.length,
-                  });
+                const datosRenovacion = calcularPuntajeRenovacion({
+                      anioCompra: renovacionData.anio_compra,
+                      fechaCompra: colaboradorActual?.fecha_compra,
+                      fechaInstalacionWin: detalleEquipo?.fecha_instalacion,
+
+                      estadoFisico: renovacionData.estado_fisico,
+                      rendimiento: renovacionData.rendimiento,
+                      criticidad: renovacionData.criticidad,
+
+                      cargo: colaboradorActual?.cargo,
+                      numTickets: detalleTickets.length,
+                    });
 
                   return (
+
                     <div className="space-y-4">
-                      {/* Target de Dictamen */}
+
+  <div className="flex justify-between items-center">
+    <h3 className="text-lg font-bold text-slate-800">
+      Evaluación de Renovación
+    </h3>
+
+    {editandoRenovacion ? (
+      <div className="flex gap-2">
+        <button
+          onClick={guardarRenovacion}
+          className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          style={{
+            background: "#dcfce7",
+            color: "#16a34a",
+            border: "1px solid #86efac",
+          }}
+        >
+          <Save size={14} />
+          Guardar
+        </button>
+
+        <button
+          onClick={() => {
+            setEditandoRenovacion(false);
+
+            setRenovacionData({
+              anio_compra: detalleEquipo?.anio_compra || "",
+              estado_fisico: detalleEquipo?.estado_fisico || "Bueno",
+              rendimiento: detalleEquipo?.rendimiento || "Bueno",
+              criticidad: detalleEquipo?.criticidad || "Media",
+              observaciones: detalleEquipo?.observaciones || "",
+            });
+          }}
+          className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          style={{
+            background: "#f1f5f9",
+            color: "#64748b",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <X size={14} />
+          Cancelar
+        </button>
+      </div>
+    ) : (
+      <button
+        onClick={() => setEditandoRenovacion(true)}
+        className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+        style={{
+          background: "#eff6ff",
+          color: "#345D9D",
+          border: "1px solid #bfdbfe",
+        }}
+      >
+        <Pencil size={14} />
+        Editar
+      </button>
+    )}
+  </div>                    {/* Target de Dictamen */}
                       <div
                         className="p-4 rounded-xl flex justify-between items-center"
                         style={{
@@ -1024,49 +1171,172 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-600">
-                            <tr>
-                              <td className="p-3 font-medium">
-                                Antigüedad
-                                {datosRenovacion.esFechaAproximada && (
-                                  <span className="block text-xs text-amber-600 font-normal">
-                                    * Estimado según fecha de Win
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-3">{datosRenovacion.anos} años</td>
-                              <td className="p-3 text-right font-bold text-slate-800">
-                                {datosRenovacion.ptsAntiguedad} / 30 pts
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-3 font-medium">Estado Físico</td>
-                              <td className="p-3">{colaboradorActual?.estado_fisico || "BUENO"}</td>
-                              <td className="p-3 text-right font-bold text-slate-800">
-                                {datosRenovacion.ptsFisico} / 20 pts
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-3 font-medium">Rendimiento Actual</td>
-                              <td className="p-3">{colaboradorActual?.rendimiento_actual || "BUENO"}</td>
-                              <td className="p-3 text-right font-bold text-slate-800">
-                                {datosRenovacion.ptsRendimiento} / 20 pts
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-3 font-medium">Criticidad del Cargo</td>
-                              <td className="p-3">{colaboradorActual?.cargo || "No asignado"}</td>
-                              <td className="p-3 text-right font-bold text-slate-800">
-                                {datosRenovacion.ptsCargo} / 15 pts
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-3 font-medium">Frecuencia de Tickets</td>
-                              <td className="p-3">{detalleTickets.length} tickets</td>
-                              <td className="p-3 text-right font-bold text-slate-800">
-                                {datosRenovacion.ptsFallas} / 15 pts
-                              </td>
-                            </tr>
-                          </tbody>
+
+  {/* Año de compra */}
+  <tr>
+    <td className="p-3 font-medium">Año de compra</td>
+
+    <td className="p-3">
+      {editandoRenovacion ? (
+        <input
+          type="number"
+          min="2000"
+          max={new Date().getFullYear()}
+          value={renovacionData.anio_compra}
+          onChange={(e) =>
+            setRenovacionData({
+              ...renovacionData,
+              anio_compra: e.target.value,
+            })
+          }
+          className="border rounded-lg px-2 py-1 w-24"
+        />
+      ) : (
+        detalleEquipo?.anio_compra || "No registrado"
+      )}
+    </td>
+
+    <td className="p-3 text-right text-slate-400">—</td>
+  </tr>
+
+  {/* Antigüedad */}
+  <tr>
+    <td className="p-3 font-medium">
+      Antigüedad
+      {datosRenovacion.esFechaAproximada && (
+        <span className="block text-xs text-amber-600">
+          * Estimada por Windows
+        </span>
+      )}
+    </td>
+
+    <td className="p-3">
+      {datosRenovacion.anos} años
+    </td>
+
+    <td className="p-3 text-right font-bold text-slate-800">
+      {datosRenovacion.ptsAntiguedad} / 30 pts
+    </td>
+  </tr>
+
+  {/* Estado físico */}
+  <tr>
+    <td className="p-3 font-medium">
+      Estado físico
+    </td>
+
+    <td className="p-3">
+      {editandoRenovacion ? (
+        <select
+          value={renovacionData.estado_fisico}
+          onChange={(e) =>
+            setRenovacionData({
+              ...renovacionData,
+              estado_fisico: e.target.value,
+            })
+          }
+          className="border rounded-lg px-2 py-1"
+        >
+          {ESTADOS_FISICOS.map((estado) => (
+            <option key={estado} value={estado}>
+              {estado}
+            </option>
+          ))}
+        </select>
+      ) : (
+        renovacionData.estado_fisico
+      )}
+    </td>
+
+    <td className="p-3 text-right font-bold text-slate-800">
+      {datosRenovacion.ptsFisico} / 20 pts
+    </td>
+  </tr>
+
+  {/* Rendimiento */}
+  <tr>
+    <td className="p-3 font-medium">
+      Rendimiento
+    </td>
+
+    <td className="p-3">
+      {editandoRenovacion ? (
+        <select
+          value={renovacionData.rendimiento}
+          onChange={(e) =>
+            setRenovacionData({
+              ...renovacionData,
+              rendimiento: e.target.value,
+            })
+          }
+          className="border rounded-lg px-2 py-1"
+        >
+          {RENDIMIENTOS.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      ) : (
+        renovacionData.rendimiento
+      )}
+    </td>
+
+    <td className="p-3 text-right font-bold text-slate-800">
+      {datosRenovacion.ptsRendimiento} / 20 pts
+    </td>
+  </tr>
+
+  {/* Criticidad */}
+  <tr>
+    <td className="p-3 font-medium">
+      Criticidad
+    </td>
+
+    <td className="p-3">
+      {editandoRenovacion ? (
+        <select
+          value={renovacionData.criticidad}
+          onChange={(e) =>
+            setRenovacionData({
+              ...renovacionData,
+              criticidad: e.target.value,
+            })
+          }
+          className="border rounded-lg px-2 py-1"
+        >
+          {CRITICIDADES.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      ) : (
+        renovacionData.criticidad
+      )}
+    </td>
+
+    <td className="p-3 text-right font-bold text-slate-800">
+      {datosRenovacion.ptsCargo} / 15 pts
+    </td>
+  </tr>
+
+  {/* Tickets */}
+  <tr>
+    <td className="p-3 font-medium">
+      Frecuencia de Tickets
+    </td>
+
+    <td className="p-3">
+      {detalleTickets.length} tickets
+    </td>
+
+    <td className="p-3 text-right font-bold text-slate-800">
+      {datosRenovacion.ptsFallas} / 15 pts
+    </td>
+  </tr>
+
+</tbody>
                         </table>
                       </div>
                     </div>
