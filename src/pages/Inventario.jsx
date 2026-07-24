@@ -24,6 +24,28 @@ const TIPOS = ["Laptop", "PC"];
 
 // Lista fija de sedes disponibles (columna "sede" en colaboradores)
 const SEDES = ["LIMA", "AREQUIPA", "CHALA"];
+const ESTADOS_FISICOS = [
+  "Excelente",
+  "Bueno",
+  "Regular",
+  "Usable",
+  "Antiguo",
+];
+
+const RENDIMIENTOS = [
+  "Excelente",
+  "Bueno",
+  "Regular",
+  "Malo",
+  "Pésimo",
+];
+
+const CRITICIDADES = [
+  "Baja",
+  "Media",
+  "Alta",
+  "Crítica",
+];
 
 // Última versión publicada del Aurica Inventory Agent. Cuando saques
 // una versión nueva, solo actualiza este valor — la pestaña "Agente"
@@ -81,6 +103,15 @@ export default function Inventario() {
   const [loading, setLoading] = useState(true);     // Controla el estado de carga inicial
 
   const [editandoId, setEditandoId] = useState(null); // ID del equipo actualmente en modo edición
+  const [editandoRenovacion, setEditandoRenovacion] = useState(false);
+
+const [renovacionData, setRenovacionData] = useState({
+  anio_compra: "",
+  estado_fisico: "Bueno",
+  rendimiento: "Bueno",
+  criticidad: "Media",
+  observaciones: "",
+});
   const [editData, setEditData] = useState({           // Datos temporales del equipo que se está editando
     host: "",
     colaborador: "",
@@ -241,6 +272,38 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
       abrirDetalle(editData.host);
     }
   }
+  async function guardarRenovacion() {
+  const { error } = await supabase
+    .from("equipos")
+    .update({
+      anio_compra: renovacionData.anio_compra || null,
+      estado_fisico: renovacionData.estado_fisico,
+      rendimiento: renovacionData.rendimiento,
+      criticidad: renovacionData.criticidad,
+      observaciones: renovacionData.observaciones || null,
+      fecha_revision: new Date().toISOString().split("T")[0],
+    })
+    .eq("hostname", hostSeleccionado);
+
+  if (error) {
+    console.error(error);
+    alert("Error actualizando la información de renovación.");
+    return;
+  }
+
+  // Actualizar el detalle que ya está cargado en memoria
+  setDetalleEquipo((prev) => ({
+    ...prev,
+    anio_compra: renovacionData.anio_compra,
+    estado_fisico: renovacionData.estado_fisico,
+    rendimiento: renovacionData.rendimiento,
+    criticidad: renovacionData.criticidad,
+    observaciones: renovacionData.observaciones,
+    fecha_revision: new Date().toISOString().split("T")[0],
+  }));
+
+  setEditandoRenovacion(false);
+}
 
   async function eliminarEquipo(id) {
   const confirmar = window.confirm(
@@ -325,6 +388,13 @@ function calcularPuntajeRenovacion({ fechaCompra, fechaInstalacionWin, estadoFis
         ...(equipoRes.data || {}),
         ...(estadoRes.data || {}),
       });
+      setRenovacionData({
+    anio_compra: equipoRes.data?.anio_compra || "",
+    estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
+    rendimiento: equipoRes.data?.rendimiento || "Bueno",
+    criticidad: equipoRes.data?.criticidad || "Media",
+    observaciones: equipoRes.data?.observaciones || "",
+});
     }
 
     if (softwareRes.error) {
