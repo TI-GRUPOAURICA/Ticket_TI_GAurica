@@ -362,13 +362,13 @@ esFechaAproximada  };
   const { error } = await supabase
     .from("equipos")
     .update({
-      anio_compra: renovacionData.anio_compra || null,
-      estado_fisico: renovacionData.estado_fisico,
-      rendimiento: renovacionData.rendimiento,
-      criticidad: renovacionData.criticidad,
-      observaciones: renovacionData.observaciones || null,
-      fecha_revision: new Date().toISOString().split("T")[0],
-    })
+  anio_compra: renovacionData.anio_compra || null,
+  estado_fisico: renovacionData.estado_fisico,
+  rendimiento_actual: renovacionData.rendimiento,
+  criticidad: renovacionData.criticidad,
+  observaciones: renovacionData.observaciones || null,
+  fecha_revision: new Date().toISOString().split("T")[0],
+})
     .eq("hostname", hostSeleccionado);
 
   if (error) {
@@ -382,7 +382,7 @@ esFechaAproximada  };
     ...prev,
     anio_compra: renovacionData.anio_compra,
     estado_fisico: renovacionData.estado_fisico,
-    rendimiento: renovacionData.rendimiento,
+rendimiento_actual: renovacionData.rendimiento,
     criticidad: renovacionData.criticidad,
     observaciones: renovacionData.observaciones,
     fecha_revision: new Date().toISOString().split("T")[0],
@@ -477,7 +477,7 @@ esFechaAproximada  };
       setRenovacionData({
     anio_compra: equipoRes.data?.anio_compra || "",
     estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
-    rendimiento: equipoRes.data?.rendimiento || "Bueno",
+rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
     criticidad: equipoRes.data?.criticidad || "Media",
     observaciones: equipoRes.data?.observaciones || "",
 });
