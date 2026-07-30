@@ -6,7 +6,7 @@ import {
   Wifi, Server, Bot, Clock,
   Info, Ticket, Mail, MapPin,
 } from "lucide-react";
-
+ 
 // =============================================================
 // COMPONENTE: Inventario
 // Tabla de gestión de equipos registrados en el sistema.
@@ -128,6 +128,9 @@ const [renovacionData, setRenovacionData] = useState({
   const [detalleEquipo, setDetalleEquipo] = useState(null);       // fila de la tabla "equipos" para ese hostname
   const [detalleSoftware, setDetalleSoftware] = useState([]);     // filas de "software_instalado" para ese hostname
   const [detalleTickets, setDetalleTickets] = useState([]);       // filas de "tickets" para ese hostname
+  const [analisisIA, setAnalisisIA] = useState(null);
+const [analizandoIA, setAnalizandoIA] = useState(false);
+  
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
   const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
 
@@ -498,6 +501,40 @@ rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
     setLoadingDetalle(false);
   }
 
+  async function analizarEquipoIA() {
+
+  setAnalizandoIA(true);
+
+  const { data, error } = await supabase.functions.invoke(
+    "analizar-equipo",
+    {
+      body: {
+        procesador: detalleEquipo.cpu,
+        nucleos: detalleEquipo.cpu_nucleos,
+        hilos: detalleEquipo.cpu_hilos,
+        ram: detalleEquipo.ram_gb,
+        tipo_ram: detalleEquipo.ram_tipo,
+        slots_ram: detalleEquipo.ram_slots,
+        almacenamiento: detalleEquipo.disco_tipo,
+        capacidad: detalleEquipo.disco_total_gb,
+        espacio_libre: detalleEquipo.disco_libre_gb,
+        gpu: detalleEquipo.gpu
+      }
+    }
+  );
+
+  setAnalizandoIA(false);
+
+  if (error) {
+    console.error(error);
+    alert("Error analizando el equipo.");
+    return;
+  }
+
+  console.log(data);
+
+setAnalisisIA(data.resultado);
+}
   function cerrarDetalle() {
     setHostSeleccionado(null);
     setDetalleEquipo(null);
@@ -1086,6 +1123,19 @@ rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
     <h3 className="text-lg font-bold text-slate-800">
       Evaluación de Renovación
     </h3>
+    <button
+  onClick={analizarEquipoIA}
+  disabled={analizandoIA}
+  className="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"
+  style={{
+    background: "#345D9D",
+    color: "#ffffff",
+    opacity: analizandoIA ? 0.6 : 1,
+  }}
+>
+  {analizandoIA ? "Analizando..." : "🤖 Analizar con IA"}
+</button>
+
 
     {editandoRenovacion ? (
       <div className="flex gap-2">
@@ -1139,7 +1189,11 @@ rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
         Editar
       </button>
     )}
-  </div>                    {/* Target de Dictamen */}
+
+
+  </div>                   
+  
+   {/* Target de Dictamen */}
                       <div
                         className="p-4 rounded-xl flex justify-between items-center"
                         style={{
@@ -1161,6 +1215,31 @@ rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
                           <span className="text-xl font-black">{datosRenovacion.totalScore} / 100 pts</span>
                         </div>
                       </div>
+                      {analisisIA && (
+  <div
+    className="mt-4 p-4 rounded-xl"
+    style={{
+      background: "#f8fafc",
+      border: "1px solid #dbeafe",
+    }}
+  >
+    <h4
+      className="font-bold mb-3"
+      style={{ color: "#345D9D" }}
+    >
+      🤖 Resultado del análisis IA
+    </h4>
+
+    <pre
+      style={{
+        whiteSpace: "pre-wrap",
+        fontSize: "13px",
+      }}
+    >
+      {JSON.stringify(analisisIA, null, 2)}
+    </pre>
+  </div>
+)}
 
                       {/* Desglose en Tabla */}
                       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden text-sm">
