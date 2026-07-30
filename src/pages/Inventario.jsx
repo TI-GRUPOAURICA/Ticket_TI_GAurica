@@ -434,6 +434,8 @@ rendimiento_actual: renovacionData.rendimiento,
     setDetalleSoftware([]);
     setTabDetalle("general");
 
+    const infoColaborador = equipos.find((e) => e.host === hostname);
+
     const [estadoRes, equipoRes, softwareRes, ticketsRes] = await Promise.all([
       supabase
         .from("equipos_estado")
@@ -477,13 +479,19 @@ rendimiento_actual: renovacionData.rendimiento,
         ...(equipoRes.data || {}),
         ...(estadoRes.data || {}),
       });
+      
       setRenovacionData({
-    anio_compra: equipoRes.data?.anio_compra || "",
-    estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
-rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
-criticidad: infoColaborador?.cargo || "Media",
-    observaciones: equipoRes.data?.observaciones || "",
-});
+        anio_compra: equipoRes.data?.anio_compra || "",
+        estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
+        rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
+        criticidad: infoColaborador?.cargo || "Media", 
+        observaciones: equipoRes.data?.observaciones || "",
+    });
+
+    // ... (asegúrate de mantener el resto igual)
+    setLoadingDetalle(false);
+  }
+
     }
 
     if (softwareRes.error) {
@@ -497,6 +505,7 @@ criticidad: infoColaborador?.cargo || "Media",
     } else {
       setDetalleTickets(ticketsRes.data || []);
     }
+    
 
     setLoadingDetalle(false);
   }
@@ -1160,7 +1169,7 @@ setAnalisisIA(data.resultado);
               anio_compra: detalleEquipo?.anio_compra || "",
               estado_fisico: detalleEquipo?.estado_fisico || "Bueno",
               rendimiento: detalleEquipo?.rendimiento || "Bueno",
-criticidad: calcularCriticidad(infoColaborador?.cargo),
+              criticidad: detalleEquipo?.criticidad || "Media",
               observaciones: detalleEquipo?.observaciones || "",
             });
           }}
