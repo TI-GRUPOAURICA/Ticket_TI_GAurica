@@ -427,7 +427,7 @@ rendimiento_actual: renovacionData.rendimiento,
   // (lista de programas) filtrando ambas por el mismo hostname.
   // Se dispara al hacer clic sobre el nombre de host en la tabla.
   // ----------------------------------------------------------
-  async function abrirDetalle(hostname) {
+async function abrirDetalle(hostname) {
     setHostSeleccionado(hostname);
     setLoadingDetalle(true);
     setDetalleEquipo(null);
@@ -437,65 +437,47 @@ rendimiento_actual: renovacionData.rendimiento,
     const infoColaborador = equipos.find((e) => e.host === hostname);
 
     const [estadoRes, equipoRes, softwareRes, ticketsRes] = await Promise.all([
-      supabase
-        .from("equipos_estado")
-        .select("*")
-        .eq("hostname", hostname)
-        .maybeSingle(),
-      supabase
-        .from("equipos")
-        .select("*")
-        .eq("hostname", hostname)
-        .maybeSingle(),
-      supabase
-        .from("software_instalado")
-        .select("*")
-        .eq("hostname", hostname)
-        .order("nombre"),
-      supabase
-        .from("tickets")
-        .select("*")
-        .eq("hostname", hostname)
-        .order("created_at", { ascending: false }),
+      supabase.from("equipos_estado").select("*").eq("hostname", hostname).maybeSingle(),
+      supabase.from("equipos").select("*").eq("hostname", hostname).maybeSingle(),
+      supabase.from("software_instalado").select("*").eq("hostname", hostname).order("nombre"),
+      supabase.from("tickets").select("*").eq("hostname", hostname).order("created_at", { ascending: false }),
     ]);
 
-    if (estadoRes.error) {
-      console.error("Error cargando estado en vivo del equipo:", estadoRes.error);
-    }
-
-    if (equipoRes.error) {
-      console.error("Error cargando specs del equipo:", equipoRes.error);
-    }
+    if (estadoRes.error) console.error("Error estado:", estadoRes.error);
+    if (equipoRes.error) console.error("Error specs:", equipoRes.error);
 
     if (!estadoRes.error && !equipoRes.error && !estadoRes.data && !equipoRes.data) {
       setDetalleEquipo(null);
-    } else if (estadoRes.error && equipoRes.error) {
-      setDetalleEquipo(null);
     } else {
-      // "equipos" trae las specs completas (hardware, red, bios, agente);
-      // "equipos_estado" trae el estado en vivo (online/offline, activo)
-      // y pisa esos campos si hay coincidencia entre ambas tablas.
       setDetalleEquipo({
         ...(equipoRes.data || {}),
         ...(estadoRes.data || {}),
       });
-      
+
       setRenovacionData({
         anio_compra: equipoRes.data?.anio_compra || "",
         estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
         rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
-        criticidad: infoColaborador?.cargo || "Media", 
+        criticidad: infoColaborador?.cargo || "Media",
         observaciones: equipoRes.data?.observaciones || "",
-    });
+      });
     }
-    // ... (asegúrate de mantener el resto igual)
-    if (softwareRes.error) console.error("Error software:", softwareRes.error);
-    else setDetalleSoftware(softwareRes.data || []);
 
-    if (ticketsRes.error) console.error("Error tickets:", ticketsRes.error);
-    else setDetalleTickets(ticketsRes.data || []);
+    if (softwareRes.error) {
+      console.error("Error cargando software:", softwareRes.error);
+    } else {
+      setDetalleSoftware(softwareRes.data || []);
+    }
+
+    if (ticketsRes.error) {
+      console.error("Error cargando tickets:", ticketsRes.error);
+    } else {
+      setDetalleTickets(ticketsRes.data || []);
+    }
+
     setLoadingDetalle(false);
   }
+
 
     }
 
