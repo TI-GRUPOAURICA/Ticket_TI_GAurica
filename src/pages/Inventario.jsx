@@ -1160,7 +1160,7 @@ setAnalisisIA(data.resultado);
               anio_compra: detalleEquipo?.anio_compra || "",
               estado_fisico: detalleEquipo?.estado_fisico || "Bueno",
               rendimiento: detalleEquipo?.rendimiento || "Bueno",
-              criticidad: detalleEquipo?.criticidad || "Media",
+criticidad: calcularCriticidad(infoColaborador?.cargo),
               observaciones: detalleEquipo?.observaciones || "",
             });
           }}
