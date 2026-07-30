@@ -479,22 +479,7 @@ async function abrirDetalle(hostname) {
   }
 
 
-    }
-
-    if (softwareRes.error) {
-      console.error("Error cargando software instalado:", softwareRes.error);
-    } else {
-      setDetalleSoftware(softwareRes.data || []);
-    }
-
-    if (ticketsRes.error) {
-      console.error("Error cargando tickets del equipo:", ticketsRes.error);
-    } else {
-      setDetalleTickets(ticketsRes.data || []);
-    }
-    
-
-    setLoadingDetalle(false);
+   
   
 
   async function analizarEquipoIA() {
@@ -1757,4 +1742,5 @@ function formatearFecha(fecha) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
+ }
+  }
