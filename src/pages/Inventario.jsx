@@ -481,7 +481,7 @@ rendimiento_actual: renovacionData.rendimiento,
     anio_compra: equipoRes.data?.anio_compra || "",
     estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
 rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
-    criticidad: equipoRes.data?.criticidad || "Media",
+criticidad: infoColaborador?.cargo || "Media",
     observaciones: equipoRes.data?.observaciones || "",
 });
     }

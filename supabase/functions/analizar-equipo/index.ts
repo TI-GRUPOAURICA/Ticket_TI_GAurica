@@ -10,6 +10,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Modelo de Gemini a usar. "gemini-2.5-flash" está dentro del free tier.
+   const GEMINI_MODEL = "gemini-3.5-flash";
+
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -48,47 +53,30 @@ serve(async (req) => {
     console.log(JSON.stringify(hardware, null, 2));
 
     const response = await fetch(
-      "https://api.openai.com/v1/responses",
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+          "x-goog-api-key": Deno.env.get("GEMINI_API_KEY") ?? "",
         },
         body: JSON.stringify({
-          model: "gpt-5",
-          input: [
-            {
-              role: "system",
-              content: [
-                {
-                  type: "input_text",
-                  text: SYSTEM_PROMPT,
-                },
-              ],
-            },
+          system_instruction: {
+            parts: [{ text: SYSTEM_PROMPT }],
+          },
+          contents: [
             {
               role: "user",
-              content: [
+              parts: [
                 {
-                  type: "input_text",
-                  text: `
-Analiza el siguiente equipo:
-
-${JSON.stringify(hardware, null, 2)}
-
-Devuelve únicamente un JSON siguiendo este esquema:
-
-${JSON.stringify(RESPONSE_SCHEMA, null, 2)}
-                  `,
+                  text: `Analiza el siguiente equipo:\n\n${JSON.stringify(hardware, null, 2)}`,
                 },
               ],
             },
           ],
-          text: {
-            format: {
-              type: "json_object",
-            },
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: RESPONSE_SCHEMA,
           },
         }),
       }
@@ -96,18 +84,18 @@ ${JSON.stringify(RESPONSE_SCHEMA, null, 2)}
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Error OpenAI (${response.status}): ${error}`);
+      throw new Error(`Error Gemini (${response.status}): ${error}`);
     }
 
     const aiResult = await response.json();
 
-    console.log("===== RESPUESTA OPENAI =====");
+    console.log("===== RESPUESTA GEMINI =====");
     console.log(JSON.stringify(aiResult, null, 2));
 
-    const contenido = aiResult.output?.[0]?.content?.[0]?.text;
+    const contenido = aiResult.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!contenido) {
-      throw new Error("OpenAI no devolvió contenido.");
+      throw new Error("Gemini no devolvió contenido.");
     }
 
     return new Response(
