@@ -1689,7 +1689,7 @@ setAnalisisIA(data.resultado);
 
     </div>
   );
-}
+
 
 // =============================================================
 // COMPONENTE AUXILIAR: SeccionTitulo
