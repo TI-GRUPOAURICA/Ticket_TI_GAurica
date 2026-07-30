@@ -487,8 +487,13 @@ rendimiento_actual: renovacionData.rendimiento,
         criticidad: infoColaborador?.cargo || "Media", 
         observaciones: equipoRes.data?.observaciones || "",
     });
-
+    }
     // ... (asegúrate de mantener el resto igual)
+    if (softwareRes.error) console.error("Error software:", softwareRes.error);
+    else setDetalleSoftware(softwareRes.data || []);
+
+    if (ticketsRes.error) console.error("Error tickets:", ticketsRes.error);
+    else setDetalleTickets(ticketsRes.data || []);
     setLoadingDetalle(false);
   }
 
@@ -508,7 +513,7 @@ rendimiento_actual: renovacionData.rendimiento,
     
 
     setLoadingDetalle(false);
-  }
+  
 
   async function analizarEquipoIA() {
 
