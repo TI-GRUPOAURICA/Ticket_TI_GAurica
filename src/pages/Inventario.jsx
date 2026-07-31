@@ -19,7 +19,6 @@ const ESTADOS_FISICOS = ["Excelente", "Bueno", "Regular", "Usable", "Antiguo"];
 const RENDIMIENTOS = ["Excelente", "Bueno", "Regular", "Malo", "Pésimo"];
 const CRITICIDADES = ["Alta", "Media", "Baja"];
 
-// Última versión publicada del Aurica Inventory Agent.
 const ULTIMA_VERSION_AGENTE = "1.0.0";
 const NOMBRE_AGENTE_REGISTRY = "Aurica Inventory Agent";
 
@@ -955,6 +954,45 @@ function DetalleItem({ label, valor, valorNodo, pendiente }) {
         <p className="text-base font-semibold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
       )}
     </div>
+  );
+}
+
+function CampoEditable({ label, children }) {
+  return (
+    <div
+      className="p-4 rounded-xl"
+      style={{ background: "#ffffff", border: "1px solid #93b4de" }}
+    >
+      <p className="text-sm mb-1.5" style={{ color: "#64748b" }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function MiniCard({ label, valor, valorNodo }) {
+  return (
+    <div className="p-3 rounded-xl" style={{ background: "#ffffff", border: "1px solid #eff6ff" }}>
+      <p className="text-xs mb-1" style={{ color: "#94a3b8" }}>{label}</p>
+      {valorNodo ? valorNodo : (
+        <p className="text-sm font-bold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
+      )}
+    </div>
+  );
+}
+
+function BadgeBool({ label, valor }) {
+  return (
+    <span
+      className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+      style={
+        valor
+          ? { background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }
+          : { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }
+      }
+    >
+      {valor ? <CircleX size={14} /> : <CircleCheck size={14} />}
+      {valor ? `${label}: Sí` : `${label}: No`}
+    </span>
   );
 }
 
