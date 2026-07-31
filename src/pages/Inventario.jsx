@@ -1797,10 +1797,12 @@ function BadgeBool({ label, valor }) {
       }
     >
       {valor ? <CircleX size={14} /> : <CircleCheck size={14} />}
-      {label}
+      {valor ? `${label}: Sí` : `${label}: No`}
     </span>
   );
 }
+
+
 function colorSalud(salud) {
   if (salud >= 80) return "#16a34a";
   if (salud >= 50) return "#a16207";
