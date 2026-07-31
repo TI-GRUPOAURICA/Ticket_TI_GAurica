@@ -1198,27 +1198,77 @@ setAnalisisIA(data.resultado);
                       </div>
                       {analisisIA && (
   <div
-    className="mt-4 p-4 rounded-xl"
-    style={{
-      background: "#f8fafc",
-      border: "1px solid #dbeafe",
-    }}
+    className="mt-4 p-5 rounded-xl"
+    style={{ background: "#f8fafc", border: "1px solid #dbeafe" }}
   >
-    <h4
-      className="font-bold mb-3"
-      style={{ color: "#345D9D" }}
-    >
+    <h4 className="font-bold mb-4 flex items-center gap-2" style={{ color: "#345D9D" }}>
       🤖 Resultado del análisis IA
     </h4>
 
-    <pre
-      style={{
-        whiteSpace: "pre-wrap",
-        fontSize: "13px",
-      }}
-    >
-      {JSON.stringify(analisisIA, null, 2)}
-    </pre>
+    {/* ---- Badges de resumen: estado, salud, vida útil, criticidad ---- */}
+    <div className="grid grid-cols-4 gap-3 mb-4">
+      <MiniCard label="Estado" valor={analisisIA.estado} />
+      <MiniCard
+        label="Salud"
+        valorNodo={
+          <span className="font-bold" style={{ color: colorSalud(analisisIA.salud) }}>
+            {analisisIA.salud}/100
+          </span>
+        }
+      />
+      <MiniCard label="Vida útil" valor={analisisIA.vida_util} />
+      <MiniCard label="Criticidad" valor={analisisIA.criticidad} />
+    </div>
+
+    {/* ---- Reemplazo / Upgrade ---- */}
+    <div className="flex gap-3 mb-4">
+      <BadgeBool label="Requiere reemplazo" valor={analisisIA.requiere_reemplazo} />
+      <BadgeBool label="Requiere upgrade" valor={analisisIA.requiere_upgrade} />
+    </div>
+
+    {/* ---- Resumen ---- */}
+    {analisisIA.resumen && (
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "#64748b" }}>
+          Resumen
+        </p>
+        <p className="text-sm" style={{ color: "#334155" }}>{analisisIA.resumen}</p>
+      </div>
+    )}
+
+    {/* ---- Justificación de criticidad ---- */}
+    {analisisIA.justificacion_criticidad && (
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "#64748b" }}>
+          Justificación de criticidad
+        </p>
+        <p className="text-sm" style={{ color: "#334155" }}>{analisisIA.justificacion_criticidad}</p>
+      </div>
+    )}
+
+    {/* ---- Recomendaciones ---- */}
+    {analisisIA.recomendaciones?.length > 0 && (
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#64748b" }}>
+          Recomendaciones
+        </p>
+        <div className="flex flex-col gap-2">
+          {analisisIA.recomendaciones.map((rec, i) => (
+            <div key={i} className="flex items-start gap-2 text-sm" style={{ color: "#334155" }}>
+              <CircleCheck size={15} style={{ color: "#16a34a", marginTop: "2px", flexShrink: 0 }} />
+              {rec}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* ---- Análisis de tickets ---- */}
+    {analisisIA.analisis_tickets && (
+      <div className="p-3 rounded-lg text-sm" style={{ background: "#eff6ff", color: "#345D9D", border: "1px solid #bfdbfe" }}>
+        {analisisIA.analisis_tickets}
+      </div>
+    )}
   </div>
 )}
 
@@ -1661,7 +1711,7 @@ setAnalisisIA(data.resultado);
 
     </div>
   );
-
+} 
 
 // =============================================================
 // COMPONENTE AUXILIAR: SeccionTitulo
@@ -1726,6 +1776,37 @@ function CampoEditable({ label, children }) {
 }
 
 
+function MiniCard({ label, valor, valorNodo }) {
+  return (
+    <div className="p-3 rounded-xl" style={{ background: "#ffffff", border: "1px solid #eff6ff" }}>
+      <p className="text-xs mb-1" style={{ color: "#94a3b8" }}>{label}</p>
+      {valorNodo ? valorNodo : (
+        <p className="text-sm font-bold" style={{ color: "#1e293b" }}>{valor || "—"}</p>
+      )}
+    </div>
+  );
+}
+function BadgeBool({ label, valor }) {
+  return (
+    <span
+      className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+      style={
+        valor
+          ? { background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }
+          : { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }
+      }
+    >
+      {valor ? <CircleX size={14} /> : <CircleCheck size={14} />}
+      {label}
+    </span>
+  );
+}
+function colorSalud(salud) {
+  if (salud >= 80) return "#16a34a";
+  if (salud >= 50) return "#a16207";
+  return "#dc2626";
+}
+
 // =============================================================
 // UTILIDAD: formatearFecha
 // Convierte un timestamp de Supabase a formato legible es-PE.
@@ -1743,4 +1824,4 @@ function formatearFecha(fecha) {
     minute: "2-digit",
   });
  }
-  }
+  
