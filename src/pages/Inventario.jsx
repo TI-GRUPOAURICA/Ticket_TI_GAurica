@@ -143,155 +143,6 @@ function calcularAnosAntiguedad(fechaStr) {
   return Math.max(0, parseFloat(anos.toFixed(1)));
 }
 
-function obtenerPuntosCargo(cargoStr) {
-  if (!cargoStr) return 5;
-  const c = cargoStr.toLowerCase();
-  if (c.includes("gerente") || c.includes("director") || c.includes("ceo")) return 10;
-  if (c.includes("jefe") || c.includes("coordinador") || c.includes("supervisor")) return 8;
-  if (c.includes("analista") || c.includes("especialista") || c.includes("ingeniero")) return 6;
-  if (c.includes("asistente") || c.includes("auxiliar") || c.includes("practicante")) return 4;
-  return 5;
-}
-
-function calcularPuntajeRenovacion({
-  anioCompra,
-  fechaCompra,
-  fechaInstalacionWin,
-  estadoFisico,
-  rendimiento,
-  criticidad,
-  cargo,
-  numTickets,
-}) {
-
-const anio = Number(anioCompra);
-
-let anos = 0;
-let esFechaAproximada = false;
-
-if (anio) {
-  anos = new Date().getFullYear() - anioCompra;
-} else {
-  const fechaReferencia = fechaCompra || fechaInstalacionWin;
-  anos = calcularAnosAntiguedad(fechaReferencia);
-  esFechaAproximada = !fechaCompra && Boolean(fechaInstalacionWin);
-}
-
-  let ptsAntiguedad = 0;
-  if (anos >= 5) ptsAntiguedad = 30;
-  else if (anos >= 4) ptsAntiguedad = 24;
-  else if (anos >= 3) ptsAntiguedad = 18;
-  else if (anos >= 2) ptsAntiguedad = 10;
-  else ptsAntiguedad = 4;
-// Estado físico (20 pts)
-let ptsFisico = 0;
-
-switch (estadoFisico) {
-  case "Excelente":
-    ptsFisico = 0;
-    break;
-
-  case "Bueno":
-    ptsFisico = 5;
-    break;
-
-  case "Regular":
-    ptsFisico = 10;
-    break;
-
-  case "Usable":
-    ptsFisico = 15;
-    break;
-
-  case "Antiguo":
-    ptsFisico = 20;
-    break;
-
-  default:
-    ptsFisico = 5;
-}
-
-// Rendimiento (20 pts)
-let ptsRendimiento = 0;
-
-switch (rendimiento) {
-  case "Excelente":
-    ptsRendimiento = 0;
-    break;
-
-  case "Bueno":
-    ptsRendimiento = 5;
-    break;
-
-  case "Regular":
-    ptsRendimiento = 10;
-    break;
-
-  case "Malo":
-    ptsRendimiento = 15;
-    break;
-
-  case "Pésimo":
-    ptsRendimiento = 20;
-    break;
-
-  default:
-    ptsRendimiento = 5;
-}
-
-  let ptsCargo = 5;
-
-switch (criticidad) {
-  case "Crítica":
-    ptsCargo = 15;
-    break;
-
-  case "Alta":
-    ptsCargo = 12;
-    break;
-
-  case "Media":
-    ptsCargo = 8;
-    break;
-
-  case "Baja":
-    ptsCargo = 5;
-    break;
-
-  default:
-    ptsCargo = 5;
-}
-
-  let ptsFallas = 0;
-  if (numTickets >= 5) ptsFallas = 15;
-  else if (numTickets >= 3) ptsFallas = 10;
-  else if (numTickets >= 1) ptsFallas = 5;
-
-  const totalScore = ptsAntiguedad + ptsFisico + ptsRendimiento + ptsCargo + ptsFallas;
-
-  let accion = "Sin intervención necesaria";
-  let colorBadge = { bg: "#dcfce7", color: "#16a34a", border: "#86efac" };
-
-  if (totalScore >= 65 || ptsFisico === 20 || anos >= 5) {
-    accion = "Requiere Cambio Total de Equipo";
-    colorBadge = { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" };
-} else if (totalScore >= 40 || ptsRendimiento >= 15) {
-      accion = "Recomendada Mejora de Hardware (RAM / SSD)";
-    colorBadge = { bg: "#fefce8", color: "#a16207", border: "#fde68a" };
-  }
-
-  return {
-    anos,
-    ptsAntiguedad,
-    ptsFisico,
-    ptsRendimiento,
-    ptsCargo,
-    ptsFallas,
-    totalScore,
-    accion,
-    colorBadge,
-esFechaAproximada  };
-}
   // ----------------------------------------------------------
   // EFECTO INICIAL
   // Carga los equipos desde Supabase al montar el componente.
@@ -1190,10 +1041,7 @@ setAnalisisIA(data.resultado);
                           <span className="text-base font-extrabold">{datosRenovacion.accion}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-bold uppercase tracking-wider block opacity-80">
-                            Puntaje Global
-                          </span>
-                          <span className="text-xl font-black">{datosRenovacion.totalScore} / 100 pts</span>
+                        
                         </div>
                       </div>
                       {analisisIA && (
@@ -1279,7 +1127,6 @@ setAnalisisIA(data.resultado);
                             <tr>
                               <th className="p-3 text-xs uppercase">Criterio</th>
                               <th className="p-3 text-xs uppercase">Valor</th>
-                              <th className="p-3 text-xs uppercase text-right">Puntos</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-600">
