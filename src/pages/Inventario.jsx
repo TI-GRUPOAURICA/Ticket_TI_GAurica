@@ -866,7 +866,7 @@ export default function Inventario() {
                     </div>
                   )}
 
-                  {/* ---- PESTAÑA: TICKETS ---- */}
+                {/* ---- PESTAÑA: TICKETS ---- */}
                   {tabDetalle === "tickets" && (
                     <div>
                       <SeccionTitulo icon={Ticket} texto={`Tickets (${detalleTickets.length})`} />
