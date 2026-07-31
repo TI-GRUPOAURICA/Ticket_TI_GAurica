@@ -1303,8 +1303,6 @@ setAnalisisIA(data.resultado);
         detalleEquipo?.anio_compra || "No registrado"
       )}
     </td>
-
-    <td className="p-3 text-right text-slate-400">—</td>
   </tr>
 
   {/* Antigüedad */}
@@ -1320,10 +1318,6 @@ setAnalisisIA(data.resultado);
 
     <td className="p-3">
       {datosRenovacion.anos} años
-    </td>
-
-    <td className="p-3 text-right font-bold text-slate-800">
-      {datosRenovacion.ptsAntiguedad} / 30 pts
     </td>
   </tr>
 
@@ -1355,10 +1349,6 @@ setAnalisisIA(data.resultado);
         renovacionData.estado_fisico
       )}
     </td>
-
-    <td className="p-3 text-right font-bold text-slate-800">
-      {datosRenovacion.ptsFisico} / 20 pts
-    </td>
   </tr>
 
   {/* Rendimiento */}
@@ -1388,10 +1378,6 @@ setAnalisisIA(data.resultado);
       ) : (
         renovacionData.rendimiento
       )}
-    </td>
-
-    <td className="p-3 text-right font-bold text-slate-800">
-      {datosRenovacion.ptsRendimiento} / 20 pts
     </td>
   </tr>
 
@@ -1423,10 +1409,6 @@ setAnalisisIA(data.resultado);
         renovacionData.criticidad
       )}
     </td>
-
-    <td className="p-3 text-right font-bold text-slate-800">
-      {datosRenovacion.ptsCargo} / 15 pts
-    </td>
   </tr>
 
   {/* Tickets */}
@@ -1437,10 +1419,6 @@ setAnalisisIA(data.resultado);
 
     <td className="p-3">
       {detalleTickets.length} tickets
-    </td>
-
-    <td className="p-3 text-right font-bold text-slate-800">
-      {datosRenovacion.ptsFallas} / 15 pts
     </td>
   </tr>
 
