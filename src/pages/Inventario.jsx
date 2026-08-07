@@ -432,15 +432,17 @@ async function abrirDetalle(hostname) {
     setLoadingDetalle(true);
     setDetalleEquipo(null);
     setDetalleSoftware([]);
+    setAnalisisIA(null);
     setTabDetalle("general");
 
     const infoColaborador = equipos.find((e) => e.host === hostname);
 
-    const [estadoRes, equipoRes, softwareRes, ticketsRes] = await Promise.all([
+    const [estadoRes, equipoRes, softwareRes, ticketsRes, analisisRes] = await Promise.all([
       supabase.from("equipos_estado").select("*").eq("hostname", hostname).maybeSingle(),
       supabase.from("equipos").select("*").eq("hostname", hostname).maybeSingle(),
       supabase.from("software_instalado").select("*").eq("hostname", hostname).order("nombre"),
       supabase.from("tickets").select("*").eq("hostname", hostname).order("created_at", { ascending: false }),
+      supabase.from("analisis_ia").select("*").eq("hostname", hostname).maybeSingle(),
     ]);
 
     if (estadoRes.error) console.error("Error estado:", estadoRes.error);
@@ -473,6 +475,12 @@ async function abrirDetalle(hostname) {
       console.error("Error cargando tickets:", ticketsRes.error);
     } else {
       setDetalleTickets(ticketsRes.data || []);
+    }
+
+    if (analisisRes.error) {
+      console.error("Error cargando análisis IA:", analisisRes.error);
+    } else if (analisisRes.data) {
+      setAnalisisIA(analisisRes.data);
     }
 
     setLoadingDetalle(false);
@@ -514,7 +522,25 @@ async function abrirDetalle(hostname) {
 
   console.log(data);
 
-setAnalisisIA(data.resultado);
+  const resultado = data.resultado;
+  setAnalisisIA(resultado);
+
+  const { error: saveError } = await supabase.from("analisis_ia").upsert({
+    hostname: hostSeleccionado,
+    estado: resultado.estado,
+    salud: resultado.salud,
+    vida_util: resultado.vida_util,
+    criticidad: resultado.criticidad,
+    requiere_reemplazo: resultado.requiere_reemplazo,
+    requiere_upgrade: resultado.requiere_upgrade,
+    resumen: resultado.resumen,
+    justificacion_criticidad: resultado.justificacion_criticidad,
+    recomendaciones: resultado.recomendaciones,
+    analisis_tickets: resultado.analisis_tickets,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (saveError) console.error("Error guardando análisis IA:", saveError);
 }
   function cerrarDetalle() {
     setHostSeleccionado(null);
