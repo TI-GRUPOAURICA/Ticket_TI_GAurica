@@ -460,7 +460,7 @@ async function abrirDetalle(hostname) {
         anio_compra: equipoRes.data?.anio_compra || "",
         estado_fisico: equipoRes.data?.estado_fisico || "Bueno",
         rendimiento: equipoRes.data?.rendimiento_actual || "Bueno",
-        criticidad: infoColaborador?.cargo || "Media",
+        criticidad: equipoRes.data?.criticidad || "Media",
         observaciones: equipoRes.data?.observaciones || "",
       });
     }
@@ -490,7 +490,7 @@ async function abrirDetalle(hostname) {
    
   
 
-  async function analizarEquipoIA() {
+async function analizarEquipoIA() {
 
   setAnalizandoIA(true);
 
@@ -498,6 +498,7 @@ async function abrirDetalle(hostname) {
     "analizar-equipo",
     {
       body: {
+        // Hardware
         procesador: detalleEquipo.cpu,
         nucleos: detalleEquipo.cpu_nucleos,
         hilos: detalleEquipo.cpu_hilos,
@@ -507,7 +508,20 @@ async function abrirDetalle(hostname) {
         almacenamiento: detalleEquipo.disco_tipo,
         capacidad: detalleEquipo.disco_total_gb,
         espacio_libre: detalleEquipo.disco_libre_gb,
-        gpu: detalleEquipo.gpu
+        gpu: detalleEquipo.gpu,
+
+        // Renovación
+        fecha_compra: detalleEquipo.anio_compra
+          ? `${detalleEquipo.anio_compra}-01-01`
+          : null,
+
+        antiguedad: datosRenovacion.anos,
+
+        // Usuario
+        cargo: colaboradorActual?.cargo || null,
+
+        // Tickets reales del equipo
+        tickets: detalleTickets
       }
     }
   );
