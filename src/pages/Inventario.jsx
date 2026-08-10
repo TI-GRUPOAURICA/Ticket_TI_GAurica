@@ -1214,25 +1214,7 @@ async function analizarEquipoIA() {
 
   </div>                   
   
-   {/* Target de Dictamen */}
-                      <div
-                        className="p-4 rounded-xl flex justify-between items-center"
-                        style={{
-                          background: datosRenovacion.colorBadge.bg,
-                          color: datosRenovacion.colorBadge.color,
-                          border: `1px solid ${datosRenovacion.colorBadge.border}`,
-                        }}
-                      >
-                        <div>
-                          <span className="text-xs font-bold uppercase tracking-wider block opacity-80">
-                            Dictamen Sugerido
-                          </span>
-                          <span className="text-base font-extrabold">{datosRenovacion.accion}</span>
-                        </div>
-                        <div className="text-right">
-                        
-                        </div>
-                      </div>
+  
                       {analisisIA && (
   <div
     className="mt-4 p-5 rounded-xl"
