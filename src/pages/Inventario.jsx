@@ -487,75 +487,96 @@ async function abrirDetalle(hostname) {
   }
 
 
-   
-  
-
 async function analizarEquipoIA() {
-
   setAnalizandoIA(true);
 
-  const { data, error } = await supabase.functions.invoke(
-    "analizar-equipo",
-    {
-      body: {
-        // Hardware
-        procesador: detalleEquipo.cpu,
-        nucleos: detalleEquipo.cpu_nucleos,
-        hilos: detalleEquipo.cpu_hilos,
-        ram: detalleEquipo.ram_gb,
-        tipo_ram: detalleEquipo.ram_tipo,
-        slots_ram: detalleEquipo.ram_slots,
-        almacenamiento: detalleEquipo.disco_tipo,
-        capacidad: detalleEquipo.disco_total_gb,
-        espacio_libre: detalleEquipo.disco_libre_gb,
-        gpu: detalleEquipo.gpu,
+  try {
+    const { data, error } = await supabase.functions.invoke(
+      "analizar-equipo",
+      {
+        body: {
+          // =========================
+          // HARDWARE
+          // =========================
+          procesador: detalleEquipo.cpu,
+          nucleos: detalleEquipo.cpu_nucleos,
+          hilos: detalleEquipo.cpu_hilos,
+          ram: detalleEquipo.ram_gb,
+          tipo_ram: detalleEquipo.ram_tipo,
+          slots_ram: detalleEquipo.ram_slots,
+          almacenamiento: detalleEquipo.disco_tipo,
+          capacidad: detalleEquipo.disco_total_gb,
+          espacio_libre: detalleEquipo.disco_libre_gb,
+          gpu: detalleEquipo.gpu,
 
-        // Renovación
-        fecha_compra: detalleEquipo.anio_compra
-          ? `${detalleEquipo.anio_compra}-01-01`
-          : null,
+          // =========================
+          // RENOVACIÓN
+          // =========================
+          fecha_compra: detalleEquipo.anio_compra
+            ? `${detalleEquipo.anio_compra}-01-01`
+            : null,
 
-        antiguedad: datosRenovacion.anos,
+          antiguedad: calcularAnosAntiguedad(
+            detalleEquipo.anio_compra
+              ? `${detalleEquipo.anio_compra}-01-01`
+              : detalleEquipo.fecha_instalacion
+          ),
 
-        // Usuario
-        cargo: colaboradorActual?.cargo || null,
+          // =========================
+          // USUARIO
+          // =========================
+          cargo: colaboradorActual?.cargo || null,
 
-        // Tickets reales del equipo
-        tickets: detalleTickets
+          // =========================
+          // TICKETS REALES
+          // =========================
+          tickets: detalleTickets
+        }
       }
+    );
+
+    if (error) {
+      console.error("Error analizando equipo:", error);
+      alert("Error analizando el equipo.");
+      return;
     }
-  );
 
-  setAnalizandoIA(false);
+    console.log("Respuesta IA:", data);
 
-  if (error) {
-    console.error(error);
-    alert("Error analizando el equipo.");
-    return;
+    const resultado = data.resultado;
+
+    setAnalisisIA(resultado);
+
+    const { error: saveError } = await supabase
+      .from("analisis_ia")
+      .upsert({
+        hostname: hostSeleccionado,
+        estado: resultado.estado,
+        salud: resultado.salud,
+        vida_util: resultado.vida_util,
+        criticidad: resultado.criticidad,
+        requiere_reemplazo: resultado.requiere_reemplazo,
+        requiere_upgrade: resultado.requiere_upgrade,
+        resumen: resultado.resumen,
+        justificacion_criticidad: resultado.justificacion_criticidad,
+        recomendaciones: resultado.recomendaciones,
+        analisis_tickets: resultado.analisis_tickets,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (saveError) {
+      console.error("Error guardando análisis IA:", saveError);
+    }
+
+  } finally {
+    setAnalizandoIA(false);
   }
+}   
+  
 
-  console.log(data);
 
-  const resultado = data.resultado;
-  setAnalisisIA(resultado);
 
-  const { error: saveError } = await supabase.from("analisis_ia").upsert({
-    hostname: hostSeleccionado,
-    estado: resultado.estado,
-    salud: resultado.salud,
-    vida_util: resultado.vida_util,
-    criticidad: resultado.criticidad,
-    requiere_reemplazo: resultado.requiere_reemplazo,
-    requiere_upgrade: resultado.requiere_upgrade,
-    resumen: resultado.resumen,
-    justificacion_criticidad: resultado.justificacion_criticidad,
-    recomendaciones: resultado.recomendaciones,
-    analisis_tickets: resultado.analisis_tickets,
-    updated_at: new Date().toISOString(),
-  });
 
-  if (saveError) console.error("Error guardando análisis IA:", saveError);
-}
   function cerrarDetalle() {
     setHostSeleccionado(null);
     setDetalleEquipo(null);
