@@ -5,6 +5,8 @@ import {
   Building2,
   MapPin,
   BriefcaseBusiness,
+  Mail,
+  Pencil,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
@@ -36,16 +38,57 @@ export default function CuentasCorreo() {
     setCargando(false);
   };
 
+  // Obtener iniciales para el perfil
+  const obtenerIniciales = (nombre) => {
+    if (!nombre) return "?";
+
+    const palabras = nombre.trim().split(/\s+/);
+
+    if (palabras.length === 1) {
+      return palabras[0].substring(0, 2).toUpperCase();
+    }
+
+    return (
+      palabras[0].charAt(0) +
+      palabras[1].charAt(0)
+    ).toUpperCase();
+  };
+
+  // Filtrado
   const usuariosFiltrados = usuarios.filter((usuario) => {
     const texto = busqueda.toLowerCase();
 
     return (
-      (usuario.EMPRESA || "").toLowerCase().includes(texto) ||
-      (usuario.UBICACION || "").toLowerCase().includes(texto) ||
-      (usuario.USUARIO || "").toLowerCase().includes(texto) ||
-      (usuario.PUESTO || "").toLowerCase().includes(texto)
+      (usuario.EMPRESA || "")
+        .toLowerCase()
+        .includes(texto) ||
+      (usuario.UBICACION || "")
+        .toLowerCase()
+        .includes(texto) ||
+      (usuario.USUARIO || "")
+        .toLowerCase()
+        .includes(texto) ||
+      (usuario.PUESTO || "")
+        .toLowerCase()
+        .includes(texto) ||
+      (usuario.CORREO || "")
+        .toLowerCase()
+        .includes(texto)
     );
   });
+
+  // Estado del correo
+  const obtenerEstado = (usuario) => {
+    if (usuario.ESTADO_CORREO) {
+      return usuario.ESTADO_CORREO;
+    }
+
+    if (usuario.CORREO) {
+      return "Activa";
+    }
+
+    return "Pendiente";
+  };
 
   return (
     <div className="space-y-6">
@@ -57,7 +100,7 @@ export default function CuentasCorreo() {
         </h1>
 
         <p className="text-sm text-slate-500 mt-1">
-          Gestión de usuarios y cuentas corporativas
+          Gestión de usuarios y cuentas de correo corporativas
         </p>
       </div>
 
@@ -88,60 +131,56 @@ export default function CuentasCorreo() {
           </div>
         </div>
 
-        {/* EMPRESAS */}
+        {/* CON CORREO */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between">
 
             <div>
               <p className="text-sm text-slate-500">
-                Empresas
+                Con correo asignado
               </p>
 
-              <p className="text-2xl font-bold text-slate-800 mt-1">
+              <p className="text-2xl font-bold text-green-600 mt-1">
                 {
-                  new Set(
-                    usuarios
-                      .map((u) => u.EMPRESA)
-                      .filter(Boolean)
-                  ).size
+                  usuarios.filter(
+                    (usuario) => usuario.CORREO
+                  ).length
                 }
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-indigo-50">
-              <Building2
+            <div className="p-3 rounded-xl bg-green-50">
+              <Mail
                 size={22}
-                className="text-indigo-600"
+                className="text-green-600"
               />
             </div>
 
           </div>
         </div>
 
-        {/* UBICACIONES */}
+        {/* SIN CORREO */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between">
 
             <div>
               <p className="text-sm text-slate-500">
-                Ubicaciones
+                Sin correo
               </p>
 
-              <p className="text-2xl font-bold text-slate-800 mt-1">
+              <p className="text-2xl font-bold text-orange-500 mt-1">
                 {
-                  new Set(
-                    usuarios
-                      .map((u) => u.UBICACION)
-                      .filter(Boolean)
-                  ).size
+                  usuarios.filter(
+                    (usuario) => !usuario.CORREO
+                  ).length
                 }
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-green-50">
-              <MapPin
+            <div className="p-3 rounded-xl bg-orange-50">
+              <Mail
                 size={22}
-                className="text-green-600"
+                className="text-orange-500"
               />
             </div>
 
@@ -156,7 +195,7 @@ export default function CuentasCorreo() {
         {/* BUSCADOR */}
         <div className="p-4 border-b border-slate-200">
 
-          <div className="relative max-w-md">
+          <div className="relative max-w-lg">
 
             <Search
               size={18}
@@ -167,7 +206,7 @@ export default function CuentasCorreo() {
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar usuario, empresa, ubicación..."
+              placeholder="Buscar nombre, empresa, puesto o correo..."
               className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
 
@@ -184,20 +223,39 @@ export default function CuentasCorreo() {
 
               <tr>
 
+                {/* PERFIL */}
+                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
+                  Perfil
+                </th>
+
+                {/* EMPRESA */}
                 <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
                   Empresa
                 </th>
 
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
-                  Ubicación
-                </th>
-
+                {/* USUARIO */}
                 <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
                   Usuario
                 </th>
 
+                {/* PUESTO */}
                 <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
                   Puesto
+                </th>
+
+                {/* CORREO */}
+                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
+                  Correo
+                </th>
+
+                {/* ESTADO */}
+                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
+                  Estado
+                </th>
+
+                {/* ACCIONES */}
+                <th className="text-center px-5 py-3 text-xs font-semibold text-slate-500 uppercase">
+                  Acción
                 </th>
 
               </tr>
@@ -210,7 +268,7 @@ export default function CuentasCorreo() {
 
                 <tr>
                   <td
-                    colSpan="4"
+                    colSpan="7"
                     className="text-center py-12 text-slate-500"
                   >
                     Cargando usuarios...
@@ -221,7 +279,7 @@ export default function CuentasCorreo() {
 
                 <tr>
                   <td
-                    colSpan="4"
+                    colSpan="7"
                     className="text-center py-12"
                   >
 
@@ -239,86 +297,153 @@ export default function CuentasCorreo() {
 
               ) : (
 
-                usuariosFiltrados.map((usuario) => (
+                usuariosFiltrados.map((usuario) => {
 
-                  <tr
-                    key={usuario.id}
-                    className="border-t border-slate-100 hover:bg-slate-50 transition"
-                  >
+                  const estado = obtenerEstado(usuario);
 
-                    {/* EMPRESA */}
-                    <td className="px-5 py-4">
+                  return (
+                    <tr
+                      key={usuario.id}
+                      className="border-t border-slate-100 hover:bg-slate-50 transition"
+                    >
 
-                      <div className="flex items-center gap-3">
+                      {/* PERFIL */}
+                      <td className="px-5 py-4">
 
-                        <div className="p-2 rounded-lg bg-blue-50">
-                          <Building2
-                            size={17}
-                            className="text-blue-600"
-                          />
+                        <div className="flex items-center">
+
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
+                            style={{
+                              background: "#dbeafe",
+                              color: "#345D9D"
+                            }}
+                          >
+                            {obtenerIniciales(
+                              usuario.USUARIO
+                            )}
+                          </div>
+
                         </div>
 
-                        <span className="text-sm font-medium text-slate-700">
-                          {usuario.EMPRESA || "-"}
+                      </td>
+
+                      {/* EMPRESA */}
+                      <td className="px-5 py-4">
+
+                        <div className="flex items-center gap-2">
+
+                          <Building2
+                            size={16}
+                            className="text-blue-500"
+                          />
+
+                          <span className="text-sm font-medium text-slate-700">
+                            {usuario.EMPRESA || "-"}
+                          </span>
+
+                        </div>
+
+                      </td>
+
+                      {/* USUARIO */}
+                      <td className="px-5 py-4">
+
+                        <div className="flex flex-col">
+
+                          <span className="text-sm font-semibold text-slate-700">
+                            {usuario.USUARIO || "-"}
+                          </span>
+
+                          {usuario.UBICACION && (
+                            <span className="flex items-center gap-1 text-xs text-slate-400 mt-1">
+                              <MapPin size={12} />
+                              {usuario.UBICACION}
+                            </span>
+                          )}
+
+                        </div>
+
+                      </td>
+
+                      {/* PUESTO */}
+                      <td className="px-5 py-4">
+
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+
+                          <BriefcaseBusiness
+                            size={15}
+                            className="text-slate-400"
+                          />
+
+                          <span>
+                            {usuario.PUESTO || "-"}
+                          </span>
+
+                        </div>
+
+                      </td>
+
+                      {/* CORREO */}
+                      <td className="px-5 py-4">
+
+                        {usuario.CORREO ? (
+
+                          <div className="flex items-center gap-2">
+
+                            <Mail
+                              size={16}
+                              className="text-blue-500"
+                            />
+
+                            <span className="text-sm text-slate-700 whitespace-nowrap">
+                              {usuario.CORREO}
+                            </span>
+
+                          </div>
+
+                        ) : (
+
+                          <span className="text-sm text-slate-400 italic">
+                            Sin asignar
+                          </span>
+
+                        )}
+
+                      </td>
+
+                      {/* ESTADO */}
+                      <td className="px-5 py-4">
+
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                            estado === "Activa"
+                              ? "bg-green-100 text-green-700"
+                              : estado === "Bloqueada"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-orange-100 text-orange-700"
+                          }`}
+                        >
+                          {estado}
                         </span>
 
-                      </div>
+                      </td>
 
-                    </td>
+                      {/* EDITAR */}
+                      <td className="px-5 py-4 text-center">
 
-                    {/* UBICACION */}
-                    <td className="px-5 py-4">
+                        <button
+                          className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
+                          title="Editar cuenta"
+                        >
+                          <Pencil size={17} />
+                        </button>
 
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                      </td>
 
-                        <MapPin
-                          size={16}
-                          className="text-slate-400"
-                        />
-
-                        {usuario.UBICACION || "-"}
-
-                      </div>
-
-                    </td>
-
-                    {/* USUARIO */}
-                    <td className="px-5 py-4">
-
-                      <div className="flex items-center gap-2">
-
-                        <Users
-                          size={16}
-                          className="text-slate-400"
-                        />
-
-                        <span className="text-sm font-medium text-slate-700">
-                          {usuario.USUARIO || "-"}
-                        </span>
-
-                      </div>
-
-                    </td>
-
-                    {/* PUESTO */}
-                    <td className="px-5 py-4">
-
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-
-                        <BriefcaseBusiness
-                          size={16}
-                          className="text-slate-400"
-                        />
-
-                        {usuario.PUESTO || "-"}
-
-                      </div>
-
-                    </td>
-
-                  </tr>
-
-                ))
+                    </tr>
+                  );
+                })
 
               )}
 
