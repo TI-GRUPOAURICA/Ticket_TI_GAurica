@@ -1,189 +1,103 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Search,
-  Users,
-  Building2,
   Mail,
-  Pencil,
+  Search,
+  Plus,
+  Edit3,
   X,
-  Save,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
+  Clock,
+  UserRound,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
 
 export default function CuentasCorreo() {
   const [cuentas, setCuentas] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const [cuentaEditando, setCuentaEditando] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCuenta, setEditingCuenta] = useState(null);
 
-  const [formulario, setFormulario] = useState({
+  const [form, setForm] = useState({
     empresa: "",
     nombre: "",
     correo: "",
     activo: true,
+    tipo_licencia: "",
+    fecha_compra: "",
+    fecha_expira: "",
   });
 
-  const [guardando, setGuardando] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  // =========================================================
+  // CARGAR CUENTAS + LICENCIAS
+  // =========================================================
 
-  // =========================================================
-  // CARGAR CUENTAS
-  // =========================================================
+  const cargarCuentas = async () => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("cuentas_correo")
+        .select(`
+          id,
+          empresa,
+          nombre,
+          correo,
+          activo,
+          created_at,
+          updated_at,
+          licencias_correo (
+            id,
+            tipo_licencia,
+            fecha_compra,
+            fecha_expira
+          )
+        `)
+        .order("nombre", { ascending: true });
+
+      if (error) {
+        console.error("Error cargando cuentas:", error);
+        alert("No se pudieron cargar las cuentas.");
+        return;
+      }
+
+      setCuentas(data || []);
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error al cargar las cuentas.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     cargarCuentas();
   }, []);
 
-  const cargarCuentas = async () => {
-    setCargando(true);
-    setMensaje("");
-
-    const { data, error } = await supabase
-      .from("cuentas_correo")
-      .select("*")
-      .order("empresa", { ascending: true })
-      .order("nombre", { ascending: true });
-
-    if (error) {
-      console.error("Error cargando cuentas:", error);
-      setMensaje(`Error al cargar las cuentas: ${error.message}`);
-      setCuentas([]);
-    } else {
-      setCuentas(data || []);
-    }
-
-    setCargando(false);
-  };
-
   // =========================================================
-  // ABRIR EDITAR
+  // FILTRAR
   // =========================================================
 
-  const abrirEditar = (cuenta) => {
-    setCuentaEditando(cuenta);
+  const cuentasFiltradas = useMemo(() => {
+    const texto = search.toLowerCase().trim();
 
-    setFormulario({
-      empresa: cuenta.empresa || "",
-      nombre: cuenta.nombre || "",
-      correo: cuenta.correo || "",
-      activo: cuenta.activo ?? true,
+    if (!texto) return cuentas;
+
+    return cuentas.filter((cuenta) => {
+      return (
+        cuenta.empresa?.toLowerCase().includes(texto) ||
+        cuenta.nombre?.toLowerCase().includes(texto) ||
+        cuenta.correo?.toLowerCase().includes(texto)
+      );
     });
-
-    setMensaje("");
-  };
+  }, [cuentas, search]);
 
   // =========================================================
-  // CERRAR EDITAR
-  // =========================================================
-
-  const cerrarEditar = () => {
-    if (guardando) return;
-
-    setCuentaEditando(null);
-
-    setFormulario({
-      empresa: "",
-      nombre: "",
-      correo: "",
-      activo: true,
-    });
-
-    setMensaje("");
-  };
-
-  // =========================================================
-  // CAMBIAR CAMPO
-  // =========================================================
-
-  const cambiarCampo = (campo, valor) => {
-    setFormulario((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  };
-
-  // =========================================================
-  // GUARDAR CAMBIOS
-  // =========================================================
-
-  const guardarCambios = async () => {
-    if (!cuentaEditando) return;
-
-    if (!formulario.correo.trim()) {
-      setMensaje("El correo electrónico es obligatorio.");
-      return;
-    }
-
-    setGuardando(true);
-    setMensaje("");
-
-    const datosActualizar = {
-      empresa: formulario.empresa.trim(),
-      nombre: formulario.nombre.trim(),
-      correo: formulario.correo.trim().toLowerCase(),
-      activo: formulario.activo,
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log("Actualizando cuenta:", cuentaEditando.id);
-    console.log("Datos:", datosActualizar);
-
-    const { data, error } = await supabase
-      .from("cuentas_correo")
-      .update(datosActualizar)
-      .eq("id", cuentaEditando.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("ERROR SUPABASE:", error);
-
-      setMensaje(`Error al guardar: ${error.message}`);
-      setGuardando(false);
-
-      return;
-    }
-
-    console.log("Cuenta actualizada:", data);
-
-    setCuentas((actuales) =>
-      actuales.map((cuenta) =>
-        cuenta.id === cuentaEditando.id ? data : cuenta
-      )
-    );
-
-    setGuardando(false);
-    cerrarEditar();
-  };
-
-  // =========================================================
-  // FILTRO
-  // =========================================================
-
-  const cuentasFiltradas = cuentas.filter((cuenta) => {
-    const texto = busqueda.toLowerCase().trim();
-
-    if (!texto) return true;
-
-    return (
-      String(cuenta.empresa || "")
-        .toLowerCase()
-        .includes(texto) ||
-      String(cuenta.nombre || "")
-        .toLowerCase()
-        .includes(texto) ||
-      String(cuenta.correo || "")
-        .toLowerCase()
-        .includes(texto)
-    );
-  });
-
-  // =========================================================
-  // CONTADORES
+  // ESTADÍSTICAS
   // =========================================================
 
   const totalCuentas = cuentas.length;
@@ -197,35 +111,368 @@ export default function CuentasCorreo() {
   ).length;
 
   // =========================================================
+  // OBTENER LICENCIA
+  // =========================================================
+
+  const obtenerLicencia = (cuenta) => {
+    if (
+      !cuenta.licencias_correo ||
+      cuenta.licencias_correo.length === 0
+    ) {
+      return null;
+    }
+
+    return cuenta.licencias_correo[0];
+  };
+
+  // =========================================================
+  // ESTADO DE LICENCIA
+  // =========================================================
+
+  const estadoLicencia = (licencia) => {
+    if (!licencia) {
+      return {
+        texto: "Sin licencia",
+        clase: "bg-gray-100 text-gray-600",
+        icono: <AlertCircle size={14} />,
+      };
+    }
+
+    if (!licencia.fecha_expira) {
+      return {
+        texto: "Sin vencimiento",
+        clase: "bg-gray-100 text-gray-600",
+        icono: <Clock size={14} />,
+      };
+    }
+
+    const hoy = new Date();
+
+    const fechaExpira = new Date(
+      `${licencia.fecha_expira}T23:59:59`
+    );
+
+    const diferencia =
+      fechaExpira.getTime() - hoy.getTime();
+
+    const dias = Math.ceil(
+      diferencia / (1000 * 60 * 60 * 24)
+    );
+
+    if (dias < 0) {
+      return {
+        texto: "Vencida",
+        clase: "bg-red-100 text-red-700",
+        icono: <AlertCircle size={14} />,
+      };
+    }
+
+    if (dias <= 30) {
+      return {
+        texto: `Vence en ${dias} días`,
+        clase: "bg-yellow-100 text-yellow-700",
+        icono: <Clock size={14} />,
+      };
+    }
+
+    return {
+      texto: "Vigente",
+      clase: "bg-green-100 text-green-700",
+      icono: <CheckCircle size={14} />,
+    };
+  };
+
+  // =========================================================
+  // ABRIR MODAL NUEVO
+  // =========================================================
+
+  const abrirNuevo = () => {
+    setEditingCuenta(null);
+
+    setForm({
+      empresa: "",
+      nombre: "",
+      correo: "",
+      activo: true,
+      tipo_licencia: "",
+      fecha_compra: "",
+      fecha_expira: "",
+    });
+
+    setModalOpen(true);
+  };
+
+  // =========================================================
+  // ABRIR MODAL EDITAR
+  // =========================================================
+
+  const abrirEditar = (cuenta) => {
+    const licencia = obtenerLicencia(cuenta);
+
+    setEditingCuenta(cuenta);
+
+    setForm({
+      empresa: cuenta.empresa || "",
+      nombre: cuenta.nombre || "",
+      correo: cuenta.correo || "",
+      activo: cuenta.activo ?? true,
+
+      tipo_licencia: licencia?.tipo_licencia || "",
+      fecha_compra: licencia?.fecha_compra || "",
+      fecha_expira: licencia?.fecha_expira || "",
+    });
+
+    setModalOpen(true);
+  };
+
+  // =========================================================
+  // CERRAR MODAL
+  // =========================================================
+
+  const cerrarModal = () => {
+    if (saving) return;
+
+    setModalOpen(false);
+    setEditingCuenta(null);
+  };
+
+  // =========================================================
+  // CAMBIAR FORMULARIO
+  // =========================================================
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // =========================================================
+  // GUARDAR
+  // =========================================================
+
+  const guardar = async (e) => {
+    e.preventDefault();
+
+    if (!form.empresa.trim()) {
+      alert("Ingresa la empresa.");
+      return;
+    }
+
+    if (!form.nombre.trim()) {
+      alert("Ingresa el nombre.");
+      return;
+    }
+
+    if (!form.correo.trim()) {
+      alert("Ingresa el correo.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      let cuentaId;
+
+      // =====================================================
+      // CREAR CUENTA
+      // =====================================================
+
+      if (!editingCuenta) {
+        const { data, error } = await supabase
+          .from("cuentas_correo")
+          .insert({
+            empresa: form.empresa.trim(),
+            nombre: form.nombre.trim(),
+            correo: form.correo.trim(),
+            activo: form.activo,
+          })
+          .select("id")
+          .single();
+
+        if (error) {
+          console.error(error);
+          alert(`Error creando cuenta: ${error.message}`);
+          return;
+        }
+
+        cuentaId = data.id;
+      }
+
+      // =====================================================
+      // EDITAR CUENTA
+      // =====================================================
+
+      else {
+        cuentaId = editingCuenta.id;
+
+        const { error } = await supabase
+          .from("cuentas_correo")
+          .update({
+            empresa: form.empresa.trim(),
+            nombre: form.nombre.trim(),
+            correo: form.correo.trim(),
+            activo: form.activo,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", cuentaId);
+
+        if (error) {
+          console.error(error);
+          alert(`Error actualizando cuenta: ${error.message}`);
+          return;
+        }
+      }
+
+      // =====================================================
+      // LICENCIA
+      // =====================================================
+
+      const licenciaExistente = editingCuenta
+        ? obtenerLicencia(editingCuenta)
+        : null;
+
+      const tieneDatosLicencia =
+        form.tipo_licencia.trim() ||
+        form.fecha_compra ||
+        form.fecha_expira;
+
+      if (tieneDatosLicencia) {
+        // ---------------------------------------------------
+        // EDITAR LICENCIA EXISTENTE
+        // ---------------------------------------------------
+
+        if (licenciaExistente) {
+          const { error } = await supabase
+            .from("licencias_correo")
+            .update({
+              tipo_licencia:
+                form.tipo_licencia.trim() || null,
+
+              fecha_compra:
+                form.fecha_compra || null,
+
+              fecha_expira:
+                form.fecha_expira || null,
+
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", licenciaExistente.id);
+
+          if (error) {
+            console.error(error);
+            alert(
+              `La cuenta se guardó, pero hubo un error actualizando la licencia: ${error.message}`
+            );
+            return;
+          }
+        }
+
+        // ---------------------------------------------------
+        // CREAR LICENCIA
+        // ---------------------------------------------------
+
+        else {
+          const { error } = await supabase
+            .from("licencias_correo")
+            .insert({
+              cuenta_id: cuentaId,
+              tipo_licencia:
+                form.tipo_licencia.trim() || null,
+
+              fecha_compra:
+                form.fecha_compra || null,
+
+              fecha_expira:
+                form.fecha_expira || null,
+            });
+
+          if (error) {
+            console.error(error);
+            alert(
+              `La cuenta se guardó, pero hubo un error creando la licencia: ${error.message}`
+            );
+            return;
+          }
+        }
+      }
+
+      alert(
+        editingCuenta
+          ? "Cuenta actualizada correctamente."
+          : "Cuenta creada correctamente."
+      );
+
+      cerrarModal();
+
+      await cargarCuentas();
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =========================================================
+  // FORMATO FECHA
+  // =========================================================
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "—";
+
+    const partes = fecha.split("-");
+
+    if (partes.length !== 3) {
+      return fecha;
+    }
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  };
+
+  // =========================================================
   // RENDER
   // =========================================================
 
   return (
     <div className="space-y-6">
 
-      {/* =====================================================
-          TITULO
-      ===================================================== */}
+      {/* ===================================================
+          ENCABEZADO
+      =================================================== */}
 
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Cuentas de correo
-        </h1>
+      <div className="flex items-center justify-between">
 
-        <p className="text-sm text-slate-500 mt-1">
-          Gestión de cuentas de correo corporativas y sus licencias
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Cuentas de correo
+          </h1>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Gestión de cuentas de correo corporativas y sus licencias
+          </p>
+        </div>
+
+        <button
+          onClick={abrirNuevo}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
+        >
+          <Plus size={18} />
+          Nueva cuenta
+        </button>
+
       </div>
 
-      {/* =====================================================
-          RESUMEN
-      ===================================================== */}
+
+      {/* ===================================================
+          TARJETAS
+      =================================================== */}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        {/* TOTAL */}
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between">
 
             <div>
@@ -233,24 +480,20 @@ export default function CuentasCorreo() {
                 Total de cuentas
               </p>
 
-              <p className="text-2xl font-bold text-slate-800 mt-1">
+              <p className="text-3xl font-bold text-slate-800 mt-1">
                 {totalCuentas}
               </p>
             </div>
 
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Users
-                size={23}
-                className="text-blue-600"
-              />
+            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+              <UserRound size={24} />
             </div>
 
           </div>
         </div>
 
-        {/* ACTIVAS */}
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between">
 
             <div>
@@ -258,24 +501,20 @@ export default function CuentasCorreo() {
                 Cuentas activas
               </p>
 
-              <p className="text-2xl font-bold text-green-600 mt-1">
+              <p className="text-3xl font-bold text-green-600 mt-1">
                 {cuentasActivas}
               </p>
             </div>
 
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-              <CheckCircle2
-                size={23}
-                className="text-green-600"
-              />
+            <div className="p-3 rounded-xl bg-green-50 text-green-600">
+              <CheckCircle size={24} />
             </div>
 
           </div>
         </div>
 
-        {/* INACTIVAS */}
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between">
 
             <div>
@@ -283,16 +522,13 @@ export default function CuentasCorreo() {
                 Cuentas inactivas
               </p>
 
-              <p className="text-2xl font-bold text-orange-500 mt-1">
+              <p className="text-3xl font-bold text-orange-600 mt-1">
                 {cuentasInactivas}
               </p>
             </div>
 
-            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
-              <AlertCircle
-                size={23}
-                className="text-orange-500"
-              />
+            <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
+              <AlertCircle size={24} />
             </div>
 
           </div>
@@ -300,59 +536,42 @@ export default function CuentasCorreo() {
 
       </div>
 
-      {/* =====================================================
+
+      {/* ===================================================
           BUSCADOR
-      ===================================================== */}
+      =================================================== */}
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
 
-        <div className="relative max-w-xl">
+        <div className="relative">
 
           <Search
-            size={18}
-            className="
-              absolute
-              left-3
-              top-1/2
-              -translate-y-1/2
-              text-slate-400
-            "
+            size={19}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
 
           <input
             type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar empresa, nombre o correo..."
-            className="
-              w-full
-              pl-10
-              pr-4
-              py-3
-              border
-              border-slate-200
-              rounded-xl
-              text-sm
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-              focus:border-blue-400
-            "
+            className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
           />
 
         </div>
 
       </div>
 
-      {/* =====================================================
+
+      {/* ===================================================
           TABLA
-      ===================================================== */}
+      =================================================== */}
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
 
-        {cargando ? (
+        {loading ? (
 
-          <div className="p-12 text-center text-slate-500">
+          <div className="p-10 text-center text-slate-500">
             Cargando cuentas...
           </div>
 
@@ -381,23 +600,31 @@ export default function CuentasCorreo() {
 
                 <tr>
 
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
                     Empresa
                   </th>
 
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
-                    Nombre
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
+                    Usuario
                   </th>
 
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
                     Correo
                   </th>
 
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
+                    Licencia
+                  </th>
+
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
+                    Vencimiento
+                  </th>
+
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
                     Estado
                   </th>
 
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
+                  <th className="text-right px-5 py-4 text-xs font-semibold text-slate-500 uppercase">
                     Acción
                   </th>
 
@@ -407,51 +634,37 @@ export default function CuentasCorreo() {
 
               <tbody className="divide-y divide-slate-100">
 
-                {cuentasFiltradas.map((cuenta) => (
+                {cuentasFiltradas.map((cuenta) => {
 
-                  <tr
-                    key={cuenta.id}
-                    className="hover:bg-slate-50 transition"
-                  >
+                  const licencia = obtenerLicencia(cuenta);
+                  const estado = estadoLicencia(licencia);
 
-                    {/* EMPRESA */}
+                  return (
 
-                    <td className="px-6 py-4">
+                    <tr
+                      key={cuenta.id}
+                      className="hover:bg-slate-50 transition"
+                    >
 
-                      <div className="flex items-center gap-3">
+                      <td className="px-5 py-4">
 
-                        <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-
-                          <Building2
-                            size={17}
-                            className="text-blue-600"
-                          />
-
-                        </div>
-
-                        <span className="font-medium text-slate-700">
-                          {cuenta.empresa || "-"}
+                        <span className="font-medium text-slate-800">
+                          {cuenta.empresa}
                         </span>
 
-                      </div>
+                      </td>
 
-                    </td>
 
-                    {/* NOMBRE */}
+                      <td className="px-5 py-4">
 
-                    <td className="px-6 py-4">
+                        <span className="text-slate-700">
+                          {cuenta.nombre}
+                        </span>
 
-                      <span className="font-semibold text-slate-800">
-                        {cuenta.nombre || "-"}
-                      </span>
+                      </td>
 
-                    </td>
 
-                    {/* CORREO */}
-
-                    <td className="px-6 py-4">
-
-                      {cuenta.correo ? (
+                      <td className="px-5 py-4">
 
                         <div className="flex items-center gap-2">
 
@@ -466,93 +679,83 @@ export default function CuentasCorreo() {
 
                         </div>
 
-                      ) : (
+                      </td>
 
-                        <span className="text-sm italic text-orange-500">
-                          Sin correo
+
+                      <td className="px-5 py-4">
+
+                        {licencia ? (
+
+                          <div>
+
+                            <p className="text-sm font-medium text-slate-700">
+                              {licencia.tipo_licencia || "Sin especificar"}
+                            </p>
+
+                            {licencia.fecha_compra && (
+
+                              <p className="text-xs text-slate-400 mt-1">
+                                Compra:{" "}
+                                {formatearFecha(
+                                  licencia.fecha_compra
+                                )}
+                              </p>
+
+                            )}
+
+                          </div>
+
+                        ) : (
+
+                          <span className="text-sm text-slate-400">
+                            Sin licencia
+                          </span>
+
+                        )}
+
+                      </td>
+
+
+                      <td className="px-5 py-4">
+
+                        <span className="text-sm text-slate-600">
+                          {formatearFecha(
+                            licencia?.fecha_expira
+                          )}
                         </span>
 
-                      )}
+                      </td>
 
-                    </td>
 
-                    {/* ESTADO */}
+                      <td className="px-5 py-4">
 
-                    <td className="px-6 py-4">
+                        <div
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${estado.clase}`}
+                        >
+                          {estado.icono}
+                          {estado.texto}
+                        </div>
 
-                      {cuenta.activo ? (
+                      </td>
 
-                        <span className="
-                          inline-flex
-                          items-center
-                          gap-1.5
-                          px-3
-                          py-1.5
-                          rounded-full
-                          text-xs
-                          font-medium
-                          bg-green-100
-                          text-green-700
-                        ">
-                          <span>●</span>
-                          Activa
-                        </span>
 
-                      ) : (
+                      <td className="px-5 py-4 text-right">
 
-                        <span className="
-                          inline-flex
-                          items-center
-                          gap-1.5
-                          px-3
-                          py-1.5
-                          rounded-full
-                          text-xs
-                          font-medium
-                          bg-slate-100
-                          text-slate-600
-                        ">
-                          <span>●</span>
-                          Inactiva
-                        </span>
+                        <button
+                          onClick={() => abrirEditar(cuenta)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition"
+                        >
+                          <Edit3 size={15} />
+                          Editar
+                        </button>
 
-                      )}
+                      </td>
 
-                    </td>
+                    </tr>
 
-                    {/* ACCION */}
+                  );
 
-                    <td className="px-6 py-4 text-right">
-
-                      <button
-                        type="button"
-                        onClick={() => abrirEditar(cuenta)}
-                        className="
-                          inline-flex
-                          items-center
-                          gap-2
-                          px-3
-                          py-2
-                          rounded-lg
-                          text-sm
-                          font-medium
-                          text-blue-600
-                          hover:bg-blue-50
-                          transition
-                        "
-                      >
-
-                        <Pencil size={16} />
-
-                        Editar
-
-                      </button>
-
-                    </td>
-
-                  </tr>
-
-                ))}
+                })}
 
               </tbody>
 
@@ -564,374 +767,235 @@ export default function CuentasCorreo() {
 
       </div>
 
-      {/* =====================================================
-          MODAL EDITAR
-      ===================================================== */}
 
-      {cuentaEditando && (
+      {/* ===================================================
+          MODAL
+      =================================================== */}
 
-        <div
-          className="
-            fixed
-            inset-0
-            z-[100]
-            flex
-            items-center
-            justify-center
-            p-4
-          "
-          style={{
-            background: "rgba(15, 23, 42, 0.60)",
-          }}
-          onMouseDown={(e) => {
+      {modalOpen && (
 
-            if (
-              e.target === e.currentTarget &&
-              !guardando
-            ) {
-              cerrarEditar();
-            }
-
-          }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 
           <div
-            className="
-              bg-white
-              w-full
-              max-w-lg
-              rounded-2xl
-              shadow-2xl
-              overflow-hidden
-            "
-            onMouseDown={(e) => e.stopPropagation()}
-          >
+            className="absolute inset-0 bg-black/40"
+            onClick={cerrarModal}
+          />
+
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
             {/* HEADER */}
 
-            <div
-              className="
-                px-6
-                py-5
-                flex
-                items-center
-                justify-between
-              "
-              style={{
-                background: "#345D9D",
-              }}
-            >
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
 
               <div>
 
-                <h2 className="
-                  text-lg
-                  font-bold
-                  text-white
-                ">
-                  Editar cuenta
+                <h2 className="text-xl font-bold text-slate-800">
+
+                  {editingCuenta
+                    ? "Editar cuenta de correo"
+                    : "Nueva cuenta de correo"}
+
                 </h2>
 
-                <p className="
-                  text-sm
-                  text-blue-100
-                  mt-1
-                ">
-                  {cuentaEditando.nombre}
+                <p className="text-sm text-slate-500 mt-1">
+                  Datos de la cuenta y su licencia
                 </p>
 
               </div>
 
               <button
-                type="button"
-                onClick={cerrarEditar}
-                disabled={guardando}
-                className="
-                  w-9
-                  h-9
-                  rounded-lg
-                  flex
-                  items-center
-                  justify-center
-                  text-white
-                  hover:bg-white/10
-                "
+                onClick={cerrarModal}
+                className="p-2 rounded-lg hover:bg-slate-100"
               >
-
                 <X size={20} />
-
               </button>
 
             </div>
 
-            {/* CUERPO */}
 
-            <div className="p-6 space-y-5">
+            {/* FORMULARIO */}
 
-              {/* EMPRESA */}
+            <form
+              onSubmit={guardar}
+              className="p-6 space-y-5"
+            >
 
-              <div>
-
-                <label className="
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  mb-2
-                ">
-                  Empresa
-                </label>
-
-                <input
-                  type="text"
-                  value={formulario.empresa}
-                  onChange={(e) =>
-                    cambiarCampo(
-                      "empresa",
-                      e.target.value
-                    )
-                  }
-                  className="
-                    w-full
-                    px-4
-                    py-3
-                    border
-                    border-slate-200
-                    rounded-xl
-                    outline-none
-                    text-sm
-                    focus:ring-2
-                    focus:ring-blue-500
-                  "
-                />
-
-              </div>
-
-              {/* NOMBRE */}
+              {/* CUENTA */}
 
               <div>
 
-                <label className="
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  mb-2
-                ">
-                  Nombre
-                </label>
+                <h3 className="font-semibold text-slate-800 mb-3">
+                  Datos de la cuenta
+                </h3>
 
-                <input
-                  type="text"
-                  value={formulario.nombre}
-                  onChange={(e) =>
-                    cambiarCampo(
-                      "nombre",
-                      e.target.value
-                    )
-                  }
-                  className="
-                    w-full
-                    px-4
-                    py-3
-                    border
-                    border-slate-200
-                    rounded-xl
-                    outline-none
-                    text-sm
-                    focus:ring-2
-                    focus:ring-blue-500
-                  "
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              </div>
+                  <div>
 
-              {/* CORREO */}
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Empresa
+                    </label>
 
-              <div>
+                    <input
+                      name="empresa"
+                      value={form.empresa}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="AURICASAC"
+                    />
 
-                <label className="
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  mb-2
-                ">
-                  Correo electrónico
-                </label>
+                  </div>
 
-                <div className="relative">
 
-                  <Mail
-                    size={17}
-                    className="
-                      absolute
-                      left-3
-                      top-1/2
-                      -translate-y-1/2
-                      text-slate-400
-                    "
-                  />
+                  <div>
+
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Nombre
+                    </label>
+
+                    <input
+                      name="nombre"
+                      value={form.nombre}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Nombre del usuario"
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <div className="mt-4">
+
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    Correo
+                  </label>
 
                   <input
                     type="email"
-                    value={formulario.correo}
-                    onChange={(e) =>
-                      cambiarCampo(
-                        "correo",
-                        e.target.value
-                      )
-                    }
-                    placeholder="correo@empresa.com"
-                    className="
-                      w-full
-                      pl-10
-                      pr-4
-                      py-3
-                      border
-                      border-slate-200
-                      rounded-xl
-                      outline-none
-                      text-sm
-                      focus:ring-2
-                      focus:ring-blue-500
-                    "
+                    name="correo"
+                    value={form.correo}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="usuario@auricasac.com"
                   />
 
                 </div>
 
-              </div>
 
-              {/* ESTADO */}
+                <label className="flex items-center gap-2 mt-4 cursor-pointer">
 
-              <div>
+                  <input
+                    type="checkbox"
+                    name="activo"
+                    checked={form.activo}
+                    onChange={handleChange}
+                    className="w-4 h-4"
+                  />
 
-                <label className="
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  mb-2
-                ">
-                  Estado
+                  <span className="text-sm text-slate-600">
+                    Cuenta activa
+                  </span>
+
                 </label>
 
-                <select
-                  value={formulario.activo ? "true" : "false"}
-                  onChange={(e) =>
-                    cambiarCampo(
-                      "activo",
-                      e.target.value === "true"
-                    )
-                  }
-                  className="
-                    w-full
-                    px-4
-                    py-3
-                    border
-                    border-slate-200
-                    rounded-xl
-                    outline-none
-                    text-sm
-                    bg-white
-                    focus:ring-2
-                    focus:ring-blue-500
-                  "
-                >
+              </div>
 
-                  <option value="true">
-                    Activa
-                  </option>
 
-                  <option value="false">
-                    Inactiva
-                  </option>
+              {/* LICENCIA */}
 
-                </select>
+              <div className="border-t border-slate-200 pt-5">
+
+                <h3 className="font-semibold text-slate-800 mb-3">
+                  Licencia
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div className="md:col-span-2">
+
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Tipo de licencia
+                    </label>
+
+                    <input
+                      name="tipo_licencia"
+                      value={form.tipo_licencia}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Microsoft 365 Business Standard"
+                    />
+
+                  </div>
+
+
+                  <div>
+
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Fecha de compra
+                    </label>
+
+                    <input
+                      type="date"
+                      name="fecha_compra"
+                      value={form.fecha_compra}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                  </div>
+
+
+                  <div>
+
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Fecha de expiración
+                    </label>
+
+                    <input
+                      type="date"
+                      name="fecha_expira"
+                      value={form.fecha_expira}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                  </div>
+
+                </div>
 
               </div>
 
-              {/* MENSAJE */}
 
-              {mensaje && (
+              {/* BOTONES */}
 
-                <div className="
-                  bg-red-50
-                  border
-                  border-red-200
-                  text-red-700
-                  text-sm
-                  rounded-xl
-                  p-3
-                ">
-                  {mensaje}
-                </div>
+              <div className="flex justify-end gap-3 pt-3">
 
-              )}
+                <button
+                  type="button"
+                  onClick={cerrarModal}
+                  disabled={saving}
+                  className="px-4 py-2.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
 
-            </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  {saving
+                    ? "Guardando..."
+                    : editingCuenta
+                    ? "Guardar cambios"
+                    : "Crear cuenta"}
+                </button>
 
-            {/* FOOTER */}
+              </div>
 
-            <div className="
-              px-6
-              py-4
-              bg-slate-50
-              border-t
-              border-slate-200
-              flex
-              justify-end
-              gap-3
-            ">
-
-              <button
-                type="button"
-                onClick={cerrarEditar}
-                disabled={guardando}
-                className="
-                  px-4
-                  py-2.5
-                  rounded-xl
-                  text-sm
-                  font-medium
-                  text-slate-600
-                  hover:bg-slate-200
-                "
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={guardarCambios}
-                disabled={guardando}
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  px-5
-                  py-2.5
-                  rounded-xl
-                  text-sm
-                  font-medium
-                  text-white
-                "
-                style={{
-                  background: guardando
-                    ? "#94a3b8"
-                    : "#345D9D",
-                }}
-              >
-
-                <Save size={17} />
-
-                {guardando
-                  ? "Guardando..."
-                  : "Guardar cambios"}
-
-              </button>
-
-            </div>
+            </form>
 
           </div>
 
