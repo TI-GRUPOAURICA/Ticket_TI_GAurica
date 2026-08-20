@@ -299,14 +299,14 @@ export default function CuentasCorreo() {
                         <div className="flex items-center">
 
                           <div
-  className="w-12 h-12 rounded-full flex items-center justify-center"
-  style={{
-    background: "#eef4ff",
-    color: "#345D9D",
-  }}
->
-  <Users size={23} strokeWidth={1.8} />
-</div>
+                            className="w-12 h-12 rounded-full flex items-center justify-center"
+                            style={{
+                                background: "#eef4ff",
+                                color: "#345D9D",
+                            }}
+                            >
+                            <Users size={23} strokeWidth={1.8} />
+                            </div>
 
                         </div>
 
