@@ -39,20 +39,6 @@ export default function CuentasCorreo() {
   };
 
   // Obtener iniciales para el perfil
-  const obtenerIniciales = (nombre) => {
-    if (!nombre) return "?";
-
-    const palabras = nombre.trim().split(/\s+/);
-
-    if (palabras.length === 1) {
-      return palabras[0].substring(0, 2).toUpperCase();
-    }
-
-    return (
-      palabras[0].charAt(0) +
-      palabras[1].charAt(0)
-    ).toUpperCase();
-  };
 
   // Filtrado
   const usuariosFiltrados = usuarios.filter((usuario) => {
@@ -313,16 +299,14 @@ export default function CuentasCorreo() {
                         <div className="flex items-center">
 
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
-                            style={{
-                              background: "#dbeafe",
-                              color: "#345D9D"
-                            }}
-                          >
-                            {obtenerIniciales(
-                              usuario.USUARIO
-                            )}
-                          </div>
+  className="w-12 h-12 rounded-full flex items-center justify-center"
+  style={{
+    background: "#eef4ff",
+    color: "#345D9D",
+  }}
+>
+  <Users size={23} strokeWidth={1.8} />
+</div>
 
                         </div>
 
