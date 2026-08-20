@@ -65,9 +65,9 @@ export default function Reportes() {
     }
     setGenerando(true);
 
-    let query = supabase
+        let query = supabase
       .from("tickets")
-      .select(`*, categorias(nombre)`)
+      .select(`*, categorias:categoria_id(nombre)`)
       .eq("estado", "resuelto")
       .gte("created_at", `${fechaInicio}T00:00:00`)
       .lte("created_at", `${fechaFin}T23:59:59`)
@@ -121,8 +121,8 @@ export default function Reportes() {
         "Colaborador":      t.nombre_colaborador || "—",
         "Empresa":          t.empresa || "—",
         "Hostname":         t.hostname || "—",
-        "Categoría":        t.categorias?.nombre || "—",
-        "Descripción":      t.descripcion,
+        "Categoría":        getCategoria(t),
+                "Descripción":      t.descripcion,
         "Prioridad":        t.prioridad,
         "Estado":           t.estado.replace("_", " "),
         "Solución":         t.solucion || "—",
@@ -168,6 +168,12 @@ export default function Reportes() {
     alto:       "#f97316",
     critico:    "#ef4444",
     emergencia: "#a855f7",
+  };
+
+  const getCategoria = (t) => {
+    const cat = t.categorias;
+    if (!cat) return "—";
+    return Array.isArray(cat) ? (cat[0]?.nombre || "—") : (cat.nombre || "—");
   };
 
   // ----------------------------------------------------------
@@ -373,7 +379,7 @@ export default function Reportes() {
 
                       {/* Categoría del ticket */}
                       <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-500">
-                        {t.categorias?.nombre || "—"}
+                        {getCategoria(t)}
                       </td>
 
                       {/* Prioridad con color según nivel */}
