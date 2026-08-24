@@ -12,6 +12,7 @@ import {
   X,
   Save,
   KeyRound,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
@@ -24,6 +25,11 @@ export default function CuentasCorreo() {
   const [saving, setSaving] = useState(false);
 
   const [search, setSearch] = useState("");
+
+  // Filtros
+  const [filtroTipoLicencia, setFiltroTipoLicencia] = useState("todas");
+  const [filtroEstadoCuenta, setFiltroEstadoCuenta] = useState("todas");
+  const [filtroEstadoLicencia, setFiltroEstadoLicencia] = useState("todas");
 
   // Modal cuenta
   const [modalCuenta, setModalCuenta] = useState(false);
@@ -85,26 +91,128 @@ export default function CuentasCorreo() {
   }
 
   // =========================================================
+  // LICENCIAS - HELPERS
+  // =========================================================
+
+  function obtenerLicencias(cuentaId) {
+    return licencias.filter(
+      (licencia) => licencia.cuenta_id === cuentaId
+    );
+  }
+
+  // Devuelve: "vigente" | "por_vencer" | "vencida" | "sin_licencia"
+  // para el PEOR estado entre todas las licencias de la cuenta
+  // (si tiene alguna vencida, se considera "vencida"; si no,
+  // si tiene alguna por vencer, se considera "por_vencer"; etc.)
+  function estadoGeneralLicenciasCuenta(cuentaId) {
+    const licenciasCuenta = obtenerLicencias(cuentaId);
+
+    if (licenciasCuenta.length === 0) {
+      return "sin_licencia";
+    }
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    let tieneVencida = false;
+    let tienePorVencer = false;
+    let tieneVigente = false;
+
+    licenciasCuenta.forEach((licencia) => {
+      if (!licencia.fecha_expira) {
+        tieneVigente = true;
+        return;
+      }
+
+      const vencimiento = new Date(`${licencia.fecha_expira}T00:00:00`);
+      const diferencia = Math.ceil(
+        (vencimiento - hoy) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diferencia < 0) {
+        tieneVencida = true;
+      } else if (diferencia <= 30) {
+        tienePorVencer = true;
+      } else {
+        tieneVigente = true;
+      }
+    });
+
+    if (tieneVencida) return "vencida";
+    if (tienePorVencer) return "por_vencer";
+    if (tieneVigente) return "vigente";
+
+    return "sin_licencia";
+  }
+
+  // =========================================================
+  // LISTAS ÚNICAS PARA FILTROS
+  // =========================================================
+
+  const tiposLicenciaUnicos = useMemo(() => {
+    const set = new Set(
+      licencias.map((l) => l.tipo_licencia).filter(Boolean)
+    );
+    return [...set].sort();
+  }, [licencias]);
+
+  // =========================================================
   // FILTRO
   // =========================================================
 
   const cuentasFiltradas = useMemo(() => {
     const texto = search.toLowerCase().trim();
 
-    if (!texto) return cuentas;
+    return cuentas.filter((cuenta) => {
+      const coincideTexto =
+        !texto ||
+        [cuenta.empresa, cuenta.nombre, cuenta.correo]
+          .filter(Boolean)
+          .some((valor) => valor.toLowerCase().includes(texto));
 
-    return cuentas.filter((cuenta) =>
-      [
-        cuenta.empresa,
-        cuenta.nombre,
-        cuenta.correo,
-      ]
-        .filter(Boolean)
-        .some((valor) =>
-          valor.toLowerCase().includes(texto)
-        )
-    );
-  }, [cuentas, search]);
+      const coincideEstadoCuenta =
+        filtroEstadoCuenta === "todas" ||
+        (filtroEstadoCuenta === "activas" && cuenta.activo) ||
+        (filtroEstadoCuenta === "inactivas" && !cuenta.activo);
+
+      const licenciasCuenta = obtenerLicencias(cuenta.id);
+
+      const coincideTipoLicencia =
+        filtroTipoLicencia === "todas" ||
+        licenciasCuenta.some(
+          (l) => l.tipo_licencia === filtroTipoLicencia
+        );
+
+      const coincideEstadoLicencia =
+        filtroEstadoLicencia === "todas" ||
+        estadoGeneralLicenciasCuenta(cuenta.id) === filtroEstadoLicencia;
+
+      return (
+        coincideTexto &&
+        coincideEstadoCuenta &&
+        coincideTipoLicencia &&
+        coincideEstadoLicencia
+      );
+    });
+  }, [
+    cuentas,
+    licencias,
+    search,
+    filtroEstadoCuenta,
+    filtroTipoLicencia,
+    filtroEstadoLicencia,
+  ]);
+
+  const hayFiltrosActivos =
+    filtroTipoLicencia !== "todas" ||
+    filtroEstadoCuenta !== "todas" ||
+    filtroEstadoLicencia !== "todas";
+
+  function limpiarFiltros() {
+    setFiltroTipoLicencia("todas");
+    setFiltroEstadoCuenta("todas");
+    setFiltroEstadoLicencia("todas");
+  }
 
   // =========================================================
   // ESTADISTICAS
@@ -252,14 +360,8 @@ export default function CuentasCorreo() {
   }
 
   // =========================================================
-  // LICENCIAS
+  // LICENCIAS - MODAL
   // =========================================================
-
-  function obtenerLicencias(cuentaId) {
-    return licencias.filter(
-      (licencia) => licencia.cuenta_id === cuentaId
-    );
-  }
 
   function abrirNuevaLicencia(cuenta) {
     setCuentaSeleccionada(cuenta);
@@ -557,6 +659,93 @@ export default function CuentasCorreo() {
           <Plus size={18} strokeWidth={2.5} />
           Nueva cuenta
         </button>
+
+      </div>
+
+      {/* PANEL DE FILTROS */}
+
+      <div
+        className="rounded-2xl p-5 shadow-sm"
+        style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+      >
+
+        <div className="flex items-center gap-2 mb-4">
+          <SlidersHorizontal size={17} style={{ color: "#345D9D" }} />
+          <h2 className="font-semibold text-slate-700 text-sm">
+            Filtros
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-end">
+
+          {/* Tipo de licencia */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">
+              Tipo de licencia
+            </label>
+
+            <select
+              value={filtroTipoLicencia}
+              onChange={(e) => setFiltroTipoLicencia(e.target.value)}
+              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              {tiposLicenciaUnicos.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Estado de la cuenta */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">
+              Estado de la cuenta
+            </label>
+
+            <select
+              value={filtroEstadoCuenta}
+              onChange={(e) => setFiltroEstadoCuenta(e.target.value)}
+              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              <option value="activas">Activas</option>
+              <option value="inactivas">Inactivas</option>
+            </select>
+          </div>
+
+          {/* Estado de la licencia */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">
+              Estado de la licencia
+            </label>
+
+            <select
+              value={filtroEstadoLicencia}
+              onChange={(e) => setFiltroEstadoLicencia(e.target.value)}
+              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              <option value="vigente">Vigente</option>
+              <option value="por_vencer">Por vencer (≤30 días)</option>
+              <option value="vencida">Vencida</option>
+              <option value="sin_licencia">Sin licencia</option>
+            </select>
+          </div>
+
+          {hayFiltrosActivos && (
+            <button
+              onClick={limpiarFiltros}
+              className="text-sm font-medium transition hover:underline"
+              style={{ color: "#345D9D" }}
+            >
+              Limpiar filtros
+            </button>
+          )}
+
+        </div>
 
       </div>
 
