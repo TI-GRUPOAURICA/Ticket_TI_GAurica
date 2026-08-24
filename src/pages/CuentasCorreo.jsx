@@ -393,7 +393,7 @@ export default function CuentasCorreo() {
     if (!fechaExpira) {
       return {
         texto: "Sin fecha de vencimiento",
-        clase: "text-gray-500 bg-gray-100",
+        clase: "text-slate-500 bg-slate-100",
       };
     }
 
@@ -413,20 +413,20 @@ export default function CuentasCorreo() {
     if (diferencia < 0) {
       return {
         texto: "Vencida",
-        clase: "text-red-700 bg-red-100",
+        clase: "text-red-700 bg-red-50 ring-1 ring-red-200",
       };
     }
 
     if (diferencia <= 30) {
       return {
         texto: `Vence en ${diferencia} días`,
-        clase: "text-orange-700 bg-orange-100",
+        clase: "text-amber-700 bg-amber-50 ring-1 ring-amber-200",
       };
     }
 
     return {
       texto: "Vigente",
-      clase: "text-green-700 bg-green-100",
+      clase: "text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200",
     };
   }
 
@@ -440,11 +440,11 @@ export default function CuentasCorreo() {
       {/* ENCABEZADO */}
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
           Cuentas de correo
         </h1>
 
-        <p className="text-slate-500">
+        <p className="text-sm text-slate-500 mt-1">
           Gestión de cuentas corporativas y sus licencias
         </p>
       </div>
@@ -453,55 +453,67 @@ export default function CuentasCorreo() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        <div className="bg-white rounded-xl border p-5">
-          <div className="flex justify-between">
+        <div
+          className="rounded-2xl p-5 shadow-sm transition hover:shadow-md"
+          style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        >
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">
                 Total de cuentas
               </p>
 
-              <p className="text-3xl font-bold mt-2">
+              <p className="text-3xl font-bold text-slate-800 mt-1">
                 {totalCuentas}
               </p>
             </div>
 
-            <div className="bg-blue-50 text-blue-600 p-3 rounded-lg">
+            <div
+              className="p-3 rounded-xl"
+              style={{ background: "#eff6ff", color: "#345D9D" }}
+            >
               <Mail size={24} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border p-5">
-          <div className="flex justify-between">
+        <div
+          className="rounded-2xl p-5 shadow-sm transition hover:shadow-md"
+          style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        >
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">
                 Cuentas activas
               </p>
 
-              <p className="text-3xl font-bold text-green-600 mt-2">
+              <p className="text-3xl font-bold text-emerald-600 mt-1">
                 {cuentasActivas}
               </p>
             </div>
 
-            <div className="bg-green-50 text-green-600 p-3 rounded-lg">
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
               <CheckCircle size={24} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border p-5">
-          <div className="flex justify-between">
+        <div
+          className="rounded-2xl p-5 shadow-sm transition hover:shadow-md"
+          style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        >
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">
                 Cuentas inactivas
               </p>
 
-              <p className="text-3xl font-bold text-orange-600 mt-2">
+              <p className="text-3xl font-bold text-orange-500 mt-1">
                 {cuentasInactivas}
               </p>
             </div>
 
-            <div className="bg-orange-50 text-orange-600 p-3 rounded-lg">
+            <div className="p-3 rounded-xl bg-orange-50 text-orange-500">
               <XCircle size={24} />
             </div>
           </div>
@@ -511,11 +523,14 @@ export default function CuentasCorreo() {
 
       {/* BUSCADOR + BOTON */}
 
-      <div className="bg-white border rounded-xl p-4 flex gap-3">
+      <div
+        className="rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row gap-3"
+        style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+      >
 
         <div className="relative flex-1">
           <Search
-            size={20}
+            size={19}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
 
@@ -525,15 +540,21 @@ export default function CuentasCorreo() {
               setSearch(e.target.value)
             }
             placeholder="Buscar empresa, nombre o correo..."
-            className="w-full border rounded-lg pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition focus:ring-2"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #dbeafe",
+              color: "#1e293b",
+            }}
           />
         </div>
 
         <button
           onClick={abrirNuevaCuenta}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg flex items-center gap-2"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90"
+          style={{ background: "#345D9D", color: "#ffffff" }}
         >
-          <Plus size={20} />
+          <Plus size={18} strokeWidth={2.5} />
           Nueva cuenta
         </button>
 
@@ -545,15 +566,21 @@ export default function CuentasCorreo() {
 
         {loading ? (
 
-          <div className="bg-white rounded-xl border p-10 text-center">
+          <div
+            className="rounded-2xl p-12 text-center text-slate-500 shadow-sm"
+            style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+          >
             Cargando cuentas...
           </div>
 
         ) : cuentasFiltradas.length === 0 ? (
 
-          <div className="bg-white rounded-xl border p-10 text-center">
+          <div
+            className="rounded-2xl p-12 text-center shadow-sm"
+            style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+          >
             <Mail
-              size={45}
+              size={42}
               className="mx-auto text-slate-300 mb-3"
             />
 
@@ -572,7 +599,8 @@ export default function CuentasCorreo() {
             return (
               <div
                 key={cuenta.id}
-                className="bg-white rounded-xl border overflow-hidden"
+                className="rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md"
+                style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
               >
 
                 {/* CABECERA CUENTA */}
@@ -581,35 +609,38 @@ export default function CuentasCorreo() {
 
                   <div className="flex items-center gap-4">
 
-                    <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                    <div
+                      className="p-3 rounded-xl shrink-0"
+                      style={{ background: "#eff6ff", color: "#345D9D" }}
+                    >
                       <Mail size={25} />
                     </div>
 
                     <div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
 
                         <h2 className="font-semibold text-slate-800">
                           {cuenta.nombre}
                         </h2>
 
                         {cuenta.activo ? (
-                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
                             Activa
                           </span>
                         ) : (
-                          <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200">
                             Inactiva
                           </span>
                         )}
 
                       </div>
 
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm mt-0.5" style={{ color: "#345D9D" }}>
                         {cuenta.empresa}
                       </p>
 
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-500">
                         {cuenta.correo}
                       </p>
 
@@ -617,15 +648,16 @@ export default function CuentasCorreo() {
 
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
 
                     <button
                       onClick={() =>
                         abrirNuevaLicencia(cuenta)
                       }
-                      className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 text-sm"
+                      className="px-3 py-2 rounded-xl flex items-center gap-2 text-sm font-medium text-white transition hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}
                     >
-                      <KeyRound size={17} />
+                      <KeyRound size={16} />
                       Añadir licencia
                     </button>
 
@@ -633,20 +665,21 @@ export default function CuentasCorreo() {
                       onClick={() =>
                         abrirEditarCuenta(cuenta)
                       }
-                      className="p-2 border rounded-lg hover:bg-slate-50"
+                      className="p-2.5 rounded-xl transition hover:bg-slate-50"
+                      style={{ border: "1px solid #dbeafe", color: "#345D9D" }}
                       title="Editar cuenta"
                     >
-                      <Pencil size={18} />
+                      <Pencil size={17} />
                     </button>
 
                     <button
                       onClick={() =>
                         eliminarCuenta(cuenta)
                       }
-                      className="p-2 border rounded-lg text-red-600 hover:bg-red-50"
+                      className="p-2.5 rounded-xl text-red-600 border border-red-200 transition hover:bg-red-50"
                       title="Eliminar cuenta"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={17} />
                     </button>
 
                   </div>
@@ -655,22 +688,28 @@ export default function CuentasCorreo() {
 
                 {/* LICENCIAS */}
 
-                <div className="border-t bg-slate-50 p-5">
+                <div
+                  className="p-5"
+                  style={{ borderTop: "1px solid #dbeafe", background: "#f8fbff" }}
+                >
 
                   <div className="flex items-center justify-between mb-3">
 
                     <div className="flex items-center gap-2">
 
                       <ShieldCheck
-                        size={20}
-                        className="text-blue-600"
+                        size={19}
+                        style={{ color: "#345D9D" }}
                       />
 
-                      <h3 className="font-semibold text-slate-700">
+                      <h3 className="font-semibold text-slate-700 text-sm">
                         Licencias asignadas
                       </h3>
 
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: "#eff6ff", color: "#345D9D" }}
+                      >
                         {licenciasCuenta.length}
                       </span>
 
@@ -680,7 +719,10 @@ export default function CuentasCorreo() {
 
                   {licenciasCuenta.length === 0 ? (
 
-                    <div className="bg-white border rounded-lg p-4 text-sm text-slate-500">
+                    <div
+                      className="rounded-xl p-4 text-sm text-slate-500"
+                      style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+                    >
                       Esta cuenta no tiene licencias registradas.
                     </div>
 
@@ -699,28 +741,29 @@ export default function CuentasCorreo() {
 
                           <div
                             key={licencia.id}
-                            className="bg-white border rounded-lg p-4"
+                            className="rounded-xl p-4 transition hover:shadow-sm"
+                            style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
                           >
 
                             <div className="flex justify-between gap-2">
 
                               <div>
 
-                                <p className="font-semibold text-slate-800">
+                                <p className="font-semibold text-slate-800 text-sm">
                                   {licencia.tipo_licencia}
                                 </p>
 
                                 <div className="mt-2 space-y-1 text-xs text-slate-500">
 
-                                  <p className="flex items-center gap-1">
-                                    <CalendarDays size={14} />
+                                  <p className="flex items-center gap-1.5">
+                                    <CalendarDays size={13} />
                                     Compra:{" "}
                                     {formatearFecha(
                                       licencia.fecha_compra
                                     )}
                                   </p>
 
-                                  <p>
+                                  <p className="pl-[19px]">
                                     Vencimiento:{" "}
                                     {formatearFecha(
                                       licencia.fecha_expira
@@ -730,14 +773,14 @@ export default function CuentasCorreo() {
                                 </div>
 
                                 <span
-                                  className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${estado.clase}`}
+                                  className={`inline-block mt-2.5 px-2.5 py-1 rounded-full text-xs font-medium ${estado.clase}`}
                                 >
                                   {estado.texto}
                                 </span>
 
                               </div>
 
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 shrink-0">
 
                                 <button
                                   onClick={() =>
@@ -746,10 +789,10 @@ export default function CuentasCorreo() {
                                       licencia
                                     )
                                   }
-                                  className="p-1.5 text-slate-500 hover:text-blue-600"
+                                  className="p-1.5 rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                                   title="Editar licencia"
                                 >
-                                  <Pencil size={16} />
+                                  <Pencil size={15} />
                                 </button>
 
                                 <button
@@ -758,10 +801,10 @@ export default function CuentasCorreo() {
                                       licencia
                                     )
                                   }
-                                  className="p-1.5 text-slate-500 hover:text-red-600"
+                                  className="p-1.5 rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                                   title="Eliminar licencia"
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={15} />
                                 </button>
 
                               </div>
@@ -793,16 +836,19 @@ export default function CuentasCorreo() {
 
       {modalCuenta && (
 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
 
           <form
             onSubmit={guardarCuenta}
-            className="bg-white rounded-xl w-full max-w-lg shadow-xl"
+            className="bg-white rounded-2xl w-full max-w-lg shadow-xl"
           >
 
-            <div className="p-5 border-b flex justify-between items-center">
+            <div
+              className="p-5 flex justify-between items-center"
+              style={{ borderBottom: "1px solid #dbeafe" }}
+            >
 
-              <h2 className="text-lg font-bold">
+              <h2 className="text-lg font-bold text-slate-800">
                 {cuentaEditando
                   ? "Editar cuenta"
                   : "Nueva cuenta"}
@@ -813,8 +859,9 @@ export default function CuentasCorreo() {
                 onClick={() =>
                   setModalCuenta(false)
                 }
+                className="p-1.5 rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                <X size={22} />
+                <X size={20} />
               </button>
 
             </div>
@@ -822,7 +869,7 @@ export default function CuentasCorreo() {
             <div className="p-5 space-y-4">
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Empresa
                 </label>
 
@@ -834,13 +881,14 @@ export default function CuentasCorreo() {
                       empresa: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Nombre
                 </label>
 
@@ -852,13 +900,14 @@ export default function CuentasCorreo() {
                       nombre: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Correo
                 </label>
 
@@ -871,12 +920,13 @@ export default function CuentasCorreo() {
                       correo: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                   required
                 />
               </div>
 
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer pt-1">
 
                 <input
                   type="checkbox"
@@ -887,31 +937,39 @@ export default function CuentasCorreo() {
                       activo: e.target.checked,
                     })
                   }
+                  className="w-4 h-4"
                 />
 
-                Cuenta activa
+                <span className="text-sm text-slate-600">
+                  Cuenta activa
+                </span>
 
               </label>
 
             </div>
 
-            <div className="p-5 border-t flex justify-end gap-2">
+            <div
+              className="p-5 flex justify-end gap-3"
+              style={{ borderTop: "1px solid #dbeafe" }}
+            >
 
               <button
                 type="button"
                 onClick={() =>
                   setModalCuenta(false)
                 }
-                className="px-4 py-2 border rounded-lg"
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                style={{ border: "1px solid #dbeafe" }}
               >
                 Cancelar
               </button>
 
               <button
                 disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center gap-2 transition hover:opacity-90 disabled:opacity-50"
+                style={{ background: "#345D9D" }}
               >
-                <Save size={18} />
+                <Save size={17} />
                 {saving ? "Guardando..." : "Guardar"}
               </button>
 
@@ -929,25 +987,28 @@ export default function CuentasCorreo() {
 
       {modalLicencia && (
 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
 
           <form
             onSubmit={guardarLicencia}
-            className="bg-white rounded-xl w-full max-w-lg shadow-xl"
+            className="bg-white rounded-2xl w-full max-w-lg shadow-xl"
           >
 
-            <div className="p-5 border-b flex justify-between items-center">
+            <div
+              className="p-5 flex justify-between items-center"
+              style={{ borderBottom: "1px solid #dbeafe" }}
+            >
 
               <div>
 
-                <h2 className="text-lg font-bold">
+                <h2 className="text-lg font-bold text-slate-800">
                   {licenciaEditando
                     ? "Editar licencia"
                     : "Añadir licencia"}
                 </h2>
 
                 {cuentaSeleccionada && (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 mt-0.5">
                     {cuentaSeleccionada.nombre} ·{" "}
                     {cuentaSeleccionada.correo}
                   </p>
@@ -960,8 +1021,9 @@ export default function CuentasCorreo() {
                 onClick={() =>
                   setModalLicencia(false)
                 }
+                className="p-1.5 rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                <X size={22} />
+                <X size={20} />
               </button>
 
             </div>
@@ -969,7 +1031,7 @@ export default function CuentasCorreo() {
             <div className="p-5 space-y-4">
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Tipo de licencia
                 </label>
 
@@ -982,13 +1044,14 @@ export default function CuentasCorreo() {
                     })
                   }
                   placeholder="Ej. Microsoft 365 E3"
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Fecha de compra
                 </label>
 
@@ -1001,12 +1064,13 @@ export default function CuentasCorreo() {
                       fecha_compra: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">
                   Fecha de vencimiento
                 </label>
 
@@ -1019,29 +1083,35 @@ export default function CuentasCorreo() {
                       fecha_expira: e.target.value,
                     })
                   }
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  style={{ border: "1px solid #dbeafe" }}
                 />
               </div>
 
             </div>
 
-            <div className="p-5 border-t flex justify-end gap-2">
+            <div
+              className="p-5 flex justify-end gap-3"
+              style={{ borderTop: "1px solid #dbeafe" }}
+            >
 
               <button
                 type="button"
                 onClick={() =>
                   setModalLicencia(false)
                 }
-                className="px-4 py-2 border rounded-lg"
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                style={{ border: "1px solid #dbeafe" }}
               >
                 Cancelar
               </button>
 
               <button
                 disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center gap-2 transition hover:opacity-90 disabled:opacity-50"
+                style={{ background: "#345D9D" }}
               >
-                <Save size={18} />
+                <Save size={17} />
                 {saving ? "Guardando..." : "Guardar licencia"}
               </button>
 
