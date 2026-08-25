@@ -886,44 +886,45 @@ export default function CuentasCorreo() {
                 style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
               >
 
-                {/* CABECERA CUENTA */}
+                {/* FILA: cuenta | licencias | acciones */}
 
-                <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="p-5 flex flex-row items-center gap-3 min-h-[88px]">
 
-                  <div className="flex items-center gap-4">
+                  {/* IZQUIERDA — datos de la cuenta */}
+                  <div className="flex items-center gap-3 shrink-0 min-w-[220px] max-w-[320px]">
 
                     <div
-                      className="p-3 rounded-xl shrink-0"
+                      className="p-2.5 rounded-xl shrink-0"
                       style={{ background: "#eff6ff", color: "#345D9D" }}
                     >
-                      <Mail size={25} />
+                      <Mail size={22} />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
 
                       <div className="flex items-center gap-2 flex-wrap">
 
-                        <h2 className="font-semibold text-slate-800">
+                        <h2 className="font-semibold text-slate-800 text-sm whitespace-nowrap">
                           {cuenta.nombre}
                         </h2>
 
                         {cuenta.activo ? (
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
                             Activa
                           </span>
                         ) : (
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200">
                             Inactiva
                           </span>
                         )}
 
                       </div>
 
-                      <p className="text-sm mt-0.5" style={{ color: "#345D9D" }}>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: "#345D9D" }}>
                         {cuenta.empresa}
                       </p>
 
-                      <p className="text-sm text-slate-500">
+                      <p className="text-xs text-slate-500 truncate">
                         {cuenta.correo}
                       </p>
 
@@ -931,13 +932,128 @@ export default function CuentasCorreo() {
 
                   </div>
 
-                  <div className="flex gap-2 shrink-0 md:ml-6 md:pl-6" style={{ borderLeft: "1px solid #eff6ff" }}>
+                  {/* CENTRO — licencias */}
+                  <div
+                    className="flex-1 flex items-center justify-center gap-2 overflow-x-auto min-w-0 px-3 py-1"
+                    style={{ borderLeft: "1px solid #dbeafe", borderRight: "1px solid #dbeafe" }}
+                  >
+
+                    {licenciasCuenta.length === 0 ? (
+
+                      <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap">
+                        <ShieldCheck size={15} style={{ color: "#94a3b8" }} />
+                        Sin licencia asignada
+                      </div>
+
+                    ) : (
+
+                      licenciasCuenta.map((licencia) => {
+
+                        const estado =
+                          estadoLicencia(
+                            licencia.fecha_expira
+                          );
+
+                        const precioAnual = obtenerPrecioLicencia(
+                          licencia.tipo_licencia
+                        );
+
+                        return (
+
+                          <div
+                            key={licencia.id}
+                            className="rounded-xl px-3 py-2 flex items-center gap-3 shrink-0 transition hover:shadow-sm"
+                            style={{ background: "#f8fbff", border: "1px solid #dbeafe" }}
+                          >
+
+                            <div className="min-w-0">
+
+                              <p className="font-semibold text-slate-800 text-xs whitespace-nowrap">
+                                {licencia.tipo_licencia}
+                              </p>
+
+                              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 whitespace-nowrap">
+
+                                <span className="flex items-center gap-1">
+                                  <CalendarDays size={11} />
+                                  {formatearFecha(licencia.fecha_compra)}
+                                </span>
+
+                                <span className="text-slate-300">→</span>
+
+                                <span>
+                                  {formatearFecha(licencia.fecha_expira)}
+                                </span>
+
+                              </div>
+
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+
+                              {precioAnual !== undefined && (
+                                <span
+                                  className="text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
+                                  style={{
+                                    background: "#f0fdf4",
+                                    color: "#15803d",
+                                    border: "1px solid #bbf7d0",
+                                  }}
+                                >
+                                  ${precioAnual.toFixed(2)}/año
+                                </span>
+                              )}
+
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${estado.clase}`}
+                              >
+                                {estado.texto}
+                              </span>
+
+                              <button
+                                onClick={() =>
+                                  abrirEditarLicencia(
+                                    cuenta,
+                                    licencia
+                                  )
+                                }
+                                className="p-1 rounded-md text-slate-400 transition hover:bg-white hover:text-slate-600"
+                                title="Editar licencia"
+                              >
+                                <Pencil size={13} />
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  eliminarLicencia(
+                                    licencia
+                                  )
+                                }
+                                className="p-1 rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                title="Eliminar licencia"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+
+                            </div>
+
+                          </div>
+
+                        );
+                      })
+
+                    )}
+
+                  </div>
+
+                  {/* DERECHA — acciones */}
+                  <div className="flex gap-2 shrink-0">
 
                     <button
                       onClick={() =>
                         abrirNuevaLicencia(cuenta)
                       }
-                      className="px-3 py-2 rounded-xl flex items-center gap-2 text-sm font-medium text-white transition hover:opacity-90"
+                      className="px-3 py-2 rounded-xl flex items-center gap-2 text-sm font-medium text-white transition hover:opacity-90 whitespace-nowrap"
                       style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}
                     >
                       <KeyRound size={16} />
@@ -966,163 +1082,6 @@ export default function CuentasCorreo() {
                     </button>
 
                   </div>
-
-                </div>
-
-                {/* LICENCIAS */}
-
-                <div
-                  className="p-5"
-                  style={{ borderTop: "1px solid #dbeafe", background: "#f8fbff" }}
-                >
-
-                  <div className="flex items-center justify-between mb-3">
-
-                    <div className="flex items-center gap-2">
-
-                      <ShieldCheck
-                        size={19}
-                        style={{ color: "#345D9D" }}
-                      />
-
-                      <h3 className="font-semibold text-slate-700 text-sm">
-                        Licencias asignadas
-                      </h3>
-
-                      <span
-                        className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: "#eff6ff", color: "#345D9D" }}
-                      >
-                        {licenciasCuenta.length}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                  {licenciasCuenta.length === 0 ? (
-
-                    <div
-                      className="rounded-xl p-4 text-sm text-slate-500"
-                      style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
-                    >
-                      Esta cuenta no tiene licencias registradas.
-                    </div>
-
-                  ) : (
-
-                    <div className="flex gap-3 overflow-x-auto pb-1">
-
-                      {licenciasCuenta.map((licencia) => {
-
-                        const estado =
-                          estadoLicencia(
-                            licencia.fecha_expira
-                          );
-
-                        const precioAnual = obtenerPrecioLicencia(
-                          licencia.tipo_licencia
-                        );
-
-                        return (
-
-                          <div
-                            key={licencia.id}
-                            className="rounded-xl p-4 transition hover:shadow-sm shrink-0 w-full sm:w-80"
-                            style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
-                          >
-
-                            <div className="flex justify-between gap-3">
-
-                              <div>
-
-                                <p className="font-semibold text-slate-800 text-sm">
-                                  {licencia.tipo_licencia}
-                                </p>
-
-                                <div className="mt-2 space-y-1 text-xs text-slate-500">
-
-                                  <p className="flex items-center gap-1.5">
-                                    <CalendarDays size={13} />
-                                    Compra:{" "}
-                                    {formatearFecha(
-                                      licencia.fecha_compra
-                                    )}
-                                  </p>
-
-                                  <p className="pl-[19px]">
-                                    Vencimiento:{" "}
-                                    {formatearFecha(
-                                      licencia.fecha_expira
-                                    )}
-                                  </p>
-
-                                </div>
-
-                                <span
-                                  className={`inline-block mt-2.5 px-2.5 py-1 rounded-full text-xs font-medium ${estado.clase}`}
-                                >
-                                  {estado.texto}
-                                </span>
-
-                              </div>
-
-                              <div className="flex flex-col items-end gap-2 shrink-0">
-
-                                {precioAnual !== undefined && (
-                                  <span
-                                    className="text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap"
-                                    style={{
-                                      background: "#f0fdf4",
-                                      color: "#15803d",
-                                      border: "1px solid #bbf7d0",
-                                    }}
-                                  >
-                                    ${precioAnual.toFixed(2)} / año
-                                  </span>
-                                )}
-
-                                <div className="flex gap-1">
-
-                                <button
-                                  onClick={() =>
-                                    abrirEditarLicencia(
-                                      cuenta,
-                                      licencia
-                                    )
-                                  }
-                                  className="p-1.5 rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                                  title="Editar licencia"
-                                >
-                                  <Pencil size={15} />
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    eliminarLicencia(
-                                      licencia
-                                    )
-                                  }
-                                  className="p-1.5 rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                                  title="Eliminar licencia"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-
-                                </div>
-
-                              </div>
-
-                            </div>
-
-                          </div>
-
-                        );
-                      })}
-
-                    </div>
-
-                  )}
 
                 </div>
 
