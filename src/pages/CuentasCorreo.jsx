@@ -925,6 +925,20 @@ export default function CuentasCorreo() {
                           estadoLicencia(
                             licencia.fecha_expira
                           );
+                                                const preciosLicencias = {
+                            "KIOSK EXCHANGE ONLINE 2GB": 24,
+                            "EXCHANGE PLAN 1 50 GB": 48,
+                            "MICROSOFT ESTÁNDAR": 157,
+                            "MICROSOFT APLICACIONES": 99.60,
+                            "MICROSOFT BASIC": 72,
+                            "POWER BI PRO": 168,
+                            "SHAREPOINT": 60,
+                            "POWER AUTOMATE PREMIUM": 180,
+                            "POWER APPS": 60,
+                        };
+
+                        const precioAnual =
+                            preciosLicencias[licencia.tipo_licencia?.trim().toUpperCase()];
 
                         return (
 
@@ -934,7 +948,7 @@ export default function CuentasCorreo() {
                             style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
                           >
 
-                            <div className="flex justify-between gap-2">
+                            <div className="flex justify-between gap-3">
 
                               <div>
 
@@ -969,7 +983,19 @@ export default function CuentasCorreo() {
 
                               </div>
 
-                              <div className="flex gap-1 shrink-0">
+                                                    <div className="flex items-start gap-2 shrink-0">
+                                                                                    {precioAnual !== undefined && (
+                                                        <span
+                                                        className="text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap"
+                                                        style={{
+                                                            background: "#f0fdf4",
+                                                            color: "#15803d",
+                                                            border: "1px solid #bbf7d0",
+                                                        }}
+                                                        >
+                                                        ${precioAnual.toFixed(2)} / año
+                                                        </span>
+                                                    )}
 
                                 <button
                                   onClick={() =>
