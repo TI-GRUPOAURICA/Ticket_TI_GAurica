@@ -13,6 +13,8 @@ import {
   Save,
   KeyRound,
   SlidersHorizontal,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
@@ -52,6 +54,9 @@ export default function CuentasCorreo() {
     fecha_compra: "",
     fecha_expira: "",
   });
+
+  // Cuentas con panel de licencias expandido
+  const [cuentasExpandidas, setCuentasExpandidas] = useState({});
 
   // =========================================================
   // CARGAR DATOS
@@ -626,6 +631,79 @@ export default function CuentasCorreo() {
     };
   }
 
+  function abreviarNombreLicencia(tipo) {
+    if (!tipo) return "—";
+
+    const t = tipo.toUpperCase();
+
+    if (t.includes("MICROSOFT 365") || t.includes("M365")) {
+      if (t.includes("BÁSICO") || t.includes("BASICO")) return "M365 Básico";
+      if (t.includes("ESTÁNDAR") || t.includes("ESTANDAR")) return "M365 Estándar";
+      if (t.includes("PREMIUM")) return "M365 Premium";
+      return "M365";
+    }
+
+    if (t.includes("EXCHANGE")) return "Exchange";
+    if (t.includes("TEAMS")) return "Teams";
+    if (t.includes("SHAREPOINT")) return "SharePoint";
+    if (t.includes("DEFENDER")) return "Defender";
+    if (t.includes("POWER AUTOMATE")) return "Power Automate";
+    if (t.includes("POWER APPS")) return "Power Apps";
+
+    if (tipo.length > 24) return `${tipo.slice(0, 22)}…`;
+
+    return tipo;
+  }
+
+  function prioridadUrgenciaLicencia(fechaExpira) {
+    if (!fechaExpira) return 3;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const vencimiento = new Date(`${fechaExpira}T00:00:00`);
+    const diferencia = Math.ceil(
+      (vencimiento - hoy) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diferencia < 0) return 0;
+    if (diferencia <= 30) return 1;
+    return 2;
+  }
+
+  function ordenarLicenciasPorUrgencia(licenciasLista) {
+    return [...licenciasLista].sort((a, b) => {
+      const prioridadA = prioridadUrgenciaLicencia(a.fecha_expira);
+      const prioridadB = prioridadUrgenciaLicencia(b.fecha_expira);
+
+      if (prioridadA !== prioridadB) {
+        return prioridadA - prioridadB;
+      }
+
+      if (!a.fecha_expira) return 1;
+      if (!b.fecha_expira) return -1;
+
+      return a.fecha_expira.localeCompare(b.fecha_expira);
+    });
+  }
+
+  function toggleExpandirCuenta(cuentaId) {
+    setCuentasExpandidas((prev) => ({
+      ...prev,
+      [cuentaId]: !prev[cuentaId],
+    }));
+  }
+
+  function textoEstadoCompacto(fechaExpira) {
+    const estado = estadoLicencia(fechaExpira);
+
+    if (estado.texto === "Vencida") return "Vencida";
+    if (estado.texto.startsWith("Vence en")) return "Por vencer";
+    if (estado.texto === "Vigente") return "Vigente";
+
+    return estado.texto;
+  }
+
   // =========================================================
   // RENDER
   // =========================================================
@@ -879,6 +957,25 @@ export default function CuentasCorreo() {
             const licenciasCuenta =
               obtenerLicencias(cuenta.id);
 
+            const licenciasOrdenadas =
+              ordenarLicenciasPorUrgencia(licenciasCuenta);
+
+            const cantidadLicencias =
+              licenciasOrdenadas.length;
+
+            const expandida =
+              !!cuentasExpandidas[cuenta.id];
+
+            const licenciasVisibles =
+              cantidadLicencias <= 2
+                ? licenciasOrdenadas
+                : licenciasOrdenadas.slice(0, 2);
+
+            const licenciasOcultas =
+              cantidadLicencias > 2
+                ? cantidadLicencias - 2
+                : 0;
+
             return (
               <div
                 key={cuenta.id}
@@ -934,63 +1031,42 @@ export default function CuentasCorreo() {
 
                   {/* CENTRO — licencias */}
                   <div
-                    className="flex-1 flex items-center justify-center gap-2 overflow-x-auto min-w-0 px-3 py-1"
+                    className="flex-1 flex items-center justify-center flex-wrap gap-2 min-w-0 px-3 py-1"
                     style={{ borderLeft: "1px solid #dbeafe", borderRight: "1px solid #dbeafe" }}
                   >
 
-                    {licenciasCuenta.length === 0 ? (
+                    {cantidadLicencias === 0 ? (
 
                       <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap">
                         <ShieldCheck size={15} style={{ color: "#94a3b8" }} />
                         Sin licencia asignada
                       </div>
 
-                    ) : (
+                    ) : cantidadLicencias === 1 ? (
 
-                      licenciasCuenta.map((licencia) => {
-
-                        const estado =
-                          estadoLicencia(
-                            licencia.fecha_expira
-                          );
-
+                      (() => {
+                        const licencia = licenciasOrdenadas[0];
+                        const estado = estadoLicencia(licencia.fecha_expira);
                         const precioAnual = obtenerPrecioLicencia(
                           licencia.tipo_licencia
                         );
 
                         return (
-
                           <div
-                            key={licencia.id}
-                            className="rounded-xl px-3 py-2 flex items-center gap-3 shrink-0 transition hover:shadow-sm"
+                            className="rounded-xl px-3 py-2 flex items-center gap-3 shrink-0"
                             style={{ background: "#f8fbff", border: "1px solid #dbeafe" }}
                           >
-
                             <div className="min-w-0">
-
                               <p className="font-semibold text-slate-800 text-xs whitespace-nowrap">
-                                {licencia.tipo_licencia}
+                                {abreviarNombreLicencia(licencia.tipo_licencia)}
                               </p>
-
-                              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 whitespace-nowrap">
-
-                                <span className="flex items-center gap-1">
-                                  <CalendarDays size={11} />
-                                  {formatearFecha(licencia.fecha_compra)}
-                                </span>
-
-                                <span className="text-slate-300">→</span>
-
-                                <span>
-                                  {formatearFecha(licencia.fecha_expira)}
-                                </span>
-
-                              </div>
-
+                              <p className="text-[11px] text-slate-500 mt-0.5 whitespace-nowrap flex items-center gap-1">
+                                <CalendarDays size={11} />
+                                Vence: {formatearFecha(licencia.fecha_expira)}
+                              </p>
                             </div>
 
                             <div className="flex items-center gap-1.5 shrink-0">
-
                               {precioAnual !== undefined && (
                                 <span
                                   className="text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
@@ -1007,15 +1083,12 @@ export default function CuentasCorreo() {
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${estado.clase}`}
                               >
-                                {estado.texto}
+                                {textoEstadoCompacto(licencia.fecha_expira)}
                               </span>
 
                               <button
                                 onClick={() =>
-                                  abrirEditarLicencia(
-                                    cuenta,
-                                    licencia
-                                  )
+                                  abrirEditarLicencia(cuenta, licencia)
                                 }
                                 className="p-1 rounded-md text-slate-400 transition hover:bg-white hover:text-slate-600"
                                 title="Editar licencia"
@@ -1025,22 +1098,72 @@ export default function CuentasCorreo() {
 
                               <button
                                 onClick={() =>
-                                  eliminarLicencia(
-                                    licencia
-                                  )
+                                  eliminarLicencia(licencia)
                                 }
                                 className="p-1 rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                                 title="Eliminar licencia"
                               >
                                 <Trash2 size={13} />
                               </button>
-
                             </div>
-
                           </div>
-
                         );
-                      })
+                      })()
+
+                    ) : (
+
+                      <>
+                        {licenciasVisibles.map((licencia) => {
+                          const estado = estadoLicencia(licencia.fecha_expira);
+
+                          return (
+                            <div
+                              key={licencia.id}
+                              className="rounded-xl px-2.5 py-1.5 flex items-center gap-2 shrink-0"
+                              style={{ background: "#f8fbff", border: "1px solid #dbeafe" }}
+                            >
+                              <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">
+                                {abreviarNombreLicencia(licencia.tipo_licencia)}
+                              </span>
+
+                              <span className="text-[11px] text-slate-400">·</span>
+
+                              <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                                Vence {formatearFecha(licencia.fecha_expira)}
+                              </span>
+
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${estado.clase}`}
+                              >
+                                {textoEstadoCompacto(licencia.fecha_expira)}
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandirCuenta(cuenta.id)}
+                          className="rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium transition hover:opacity-80 shrink-0"
+                          style={{
+                            background: "#eff6ff",
+                            color: "#345D9D",
+                            border: "1px solid #dbeafe",
+                          }}
+                        >
+                          {licenciasOcultas > 0 && (
+                            <span>+{licenciasOcultas} más</span>
+                          )}
+                          {licenciasOcultas === 0 && (
+                            <span>Detalle</span>
+                          )}
+                          {expandida ? (
+                            <ChevronUp size={14} />
+                          ) : (
+                            <ChevronDown size={14} />
+                          )}
+                        </button>
+                      </>
 
                     )}
 
@@ -1084,6 +1207,91 @@ export default function CuentasCorreo() {
                   </div>
 
                 </div>
+
+                {/* PANEL EXPANDIDO — detalle completo (2+ licencias) */}
+                {expandida && cantidadLicencias >= 2 && (
+
+                  <div
+                    className="px-5 pb-4"
+                    style={{ borderTop: "1px solid #dbeafe", background: "#f8fbff" }}
+                  >
+                    <div className="pt-3 space-y-2">
+
+                      {licenciasOrdenadas.map((licencia) => {
+                        const estado = estadoLicencia(licencia.fecha_expira);
+                        const precioAnual = obtenerPrecioLicencia(
+                          licencia.tipo_licencia
+                        );
+
+                        return (
+                          <div
+                            key={licencia.id}
+                            className="rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3"
+                            style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold text-slate-800 text-sm">
+                                {licencia.tipo_licencia}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                <span>
+                                  Compra: {formatearFecha(licencia.fecha_compra)}
+                                </span>
+                                <span className="text-slate-300">→</span>
+                                <span>
+                                  Vence: {formatearFecha(licencia.fecha_expira)}
+                                </span>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {precioAnual !== undefined && (
+                                <span
+                                  className="text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap"
+                                  style={{
+                                    background: "#f0fdf4",
+                                    color: "#15803d",
+                                    border: "1px solid #bbf7d0",
+                                  }}
+                                >
+                                  ${precioAnual.toFixed(2)}/año
+                                </span>
+                              )}
+
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${estado.clase}`}
+                              >
+                                {estado.texto}
+                              </span>
+
+                              <button
+                                onClick={() =>
+                                  abrirEditarLicencia(cuenta, licencia)
+                                }
+                                className="p-1.5 rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                                title="Editar licencia"
+                              >
+                                <Pencil size={15} />
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  eliminarLicencia(licencia)
+                                }
+                                className="p-1.5 rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                title="Eliminar licencia"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    </div>
+                  </div>
+
+                )}
 
               </div>
             );
