@@ -399,6 +399,13 @@ export default function CuentasCorreo() {
       return;
     }
 
+    // Estandarizamos el tipo de licencia a MAYÚSCULAS antes de guardar,
+    // así todo queda escrito de forma consistente sin importar cómo
+    // lo haya tecleado quien lo registró.
+    const tipoLicenciaEstandarizado = formLicencia.tipo_licencia
+      .trim()
+      .toUpperCase();
+
     try {
       setSaving(true);
 
@@ -406,7 +413,7 @@ export default function CuentasCorreo() {
         const { data, error } = await supabase
           .from("licencias_correo")
           .update({
-            tipo_licencia: formLicencia.tipo_licencia,
+            tipo_licencia: tipoLicenciaEstandarizado,
             fecha_compra:
               formLicencia.fecha_compra || null,
             fecha_expira:
@@ -429,7 +436,7 @@ export default function CuentasCorreo() {
           .from("licencias_correo")
           .insert({
             cuenta_id: cuentaSeleccionada.id,
-            tipo_licencia: formLicencia.tipo_licencia,
+            tipo_licencia: tipoLicenciaEstandarizado,
             fecha_compra:
               formLicencia.fecha_compra || null,
             fecha_expira:
@@ -479,27 +486,91 @@ export default function CuentasCorreo() {
     }
   }
 
-  // Diccionario de precios estandarizado en minúsculas y sin tildes
+  // Diccionario de precios: cada precio tiene varios "alias" posibles
+  // porque el mismo tipo de licencia puede estar guardado con distintos
+  // nombres (según cómo se escribió al crearla, o el nombre que usa
+  // Microsoft en el admin center vs. el que se usó manualmente aquí).
+  // Escrito en MAYÚSCULAS para que coincida exactamente con cómo se
+  // guarda ahora en Supabase (columna tipo_licencia estandarizada).
   function obtenerPrecioLicencia(tipoLicencia) {
-    const preciosLicencias = {
-      "kiosk exchange online 2gb": 24,
-      "exchange plan 1 50 gb": 48,
-      "microsoft estandar": 157,
-      "microsoft aplicaciones": 99.60,
-      "microsoft basic": 72,
-      "power bi pro": 168,
-      "sharepoint": 60,
-      "power automate premium": 180,
-      "power apps": 60,
+    const preciosPorAlias = {
+      // Kiosk / Exchange Online Kiosk — $24
+      "KIOSK EXCHANGE ONLINE 2GB": 24,
+      "QUIOSCO DE EXCHANGE ONLINE": 24,
+      "EXCHANGE ONLINE KIOSK": 24,
+      "EXCHANGE ONLINE KIOSK - EXTENDED SERVICE TERM": 24,
+
+      // Exchange Online Plan 1 — $48
+      "EXCHANGE PLAN 1 50 GB": 48,
+      "EXCHANGE PLAN 1 50GB": 48,
+      "EXCHANGE ONLINE (PLAN 1)": 48,
+      "EXCHANGE ONLINE PLAN 1": 48,
+      "EXCHANGE ONLINE (PLAN 1) - EXTENDED SERVICE TERM": 48,
+
+      // Microsoft 365 Business Standard — $157
+      "MICROSOFT ESTANDAR": 157,
+      "MICROSOFT 365 BUSINESS STANDARD": 157,
+      "MICROSOFT 365 EMPRESA ESTANDAR": 157,
+      "BUSINESS STANDARD": 157,
+
+      // Microsoft 365 Apps for business — $99.60
+      "MICROSOFT APLICACIONES": 99.60,
+      "APLICACIONES DE MICROSOFT 365 PARA NEGOCIOS": 99.60,
+      "MICROSOFT 365 APPS FOR BUSINESS": 99.60,
+
+      // Microsoft 365 Business Basic — $72
+      "MICROSOFT BASIC": 72,
+      "MICROSOFT 365 EMPRESA BASICO": 72,
+      "MICROSOFT 365 BUSINESS BASIC": 72,
+
+      // Power BI Pro — $168
+      "POWER BI PRO": 168,
+
+      // SharePoint (Plan 1) — $60
+      "SHAREPOINT": 60,
+      "SHAREPOINT (PLAN 1)": 60,
+      "SHAREPOINT PLAN 1": 60,
+
+      // Power Automate Premium — $180
+      "POWER AUTOMATE PREMIUM": 180,
+
+      // Power Apps — $60
+      "POWER APPS": 60,
+      "POWER APPS PER APP PLAN (1 APP OR WEBSITE)": 60,
+
+      // Microsoft Teams Essentials — sin precio propio confirmado todavía
+      // (agrégalo aquí si me pasas el precio)
     };
 
-    const tipoLimpio = (tipoLicencia || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+    // Normaliza a MAYÚSCULAS, sin tildes y sin espacios repetidos/extra,
+    // para que pequeñas diferencias de escritura no rompan el match.
+    function normalizar(texto) {
+      return (texto || "")
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
 
-    return preciosLicencias[tipoLimpio];
+    const tipoLimpio = normalizar(tipoLicencia);
+
+    // 1) Intento directo con espacios normales
+    if (preciosPorAlias[tipoLimpio] !== undefined) {
+      return preciosPorAlias[tipoLimpio];
+    }
+
+    // 2) Intento ignorando espacios por completo (cubre casos como
+    //    "50gb" vs "50 gb" sin tener que listar cada variante)
+    const sinEspacios = tipoLimpio.replace(/\s+/g, "");
+
+    for (const alias in preciosPorAlias) {
+      if (alias.replace(/\s+/g, "") === sinEspacios) {
+        return preciosPorAlias[alias];
+      }
+    }
+
+    return undefined;
   }
 
   // =========================================================
@@ -1277,7 +1348,7 @@ export default function CuentasCorreo() {
                     })
                   }
                   placeholder="Ej. Microsoft 365 E3"
-                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition focus:ring-2 uppercase placeholder:normal-case"
                   style={{ border: "1px solid #dbeafe" }}
                   required
                 />
