@@ -888,7 +888,7 @@ export default function CuentasCorreo() {
 
                 {/* CABECERA CUENTA */}
 
-                <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
 
                   <div className="flex items-center gap-4">
 
@@ -931,7 +931,7 @@ export default function CuentasCorreo() {
 
                   </div>
 
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0 md:ml-6 md:pl-6" style={{ borderLeft: "1px solid #eff6ff" }}>
 
                     <button
                       onClick={() =>
@@ -1011,7 +1011,7 @@ export default function CuentasCorreo() {
 
                   ) : (
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="flex gap-3 overflow-x-auto pb-1">
 
                       {licenciasCuenta.map((licencia) => {
 
@@ -1028,7 +1028,7 @@ export default function CuentasCorreo() {
 
                           <div
                             key={licencia.id}
-                            className="rounded-xl p-4 transition hover:shadow-sm"
+                            className="rounded-xl p-4 transition hover:shadow-sm shrink-0 w-full sm:w-80"
                             style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
                           >
 
