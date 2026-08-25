@@ -479,6 +479,29 @@ export default function CuentasCorreo() {
     }
   }
 
+  // Diccionario de precios estandarizado en minúsculas y sin tildes
+  function obtenerPrecioLicencia(tipoLicencia) {
+    const preciosLicencias = {
+      "kiosk exchange online 2gb": 24,
+      "exchange plan 1 50 gb": 48,
+      "microsoft estandar": 157,
+      "microsoft aplicaciones": 99.60,
+      "microsoft basic": 72,
+      "power bi pro": 168,
+      "sharepoint": 60,
+      "power automate premium": 180,
+      "power apps": 60,
+    };
+
+    const tipoLimpio = (tipoLicencia || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+    return preciosLicencias[tipoLimpio];
+  }
+
   // =========================================================
   // FECHAS
   // =========================================================
@@ -925,20 +948,10 @@ export default function CuentasCorreo() {
                           estadoLicencia(
                             licencia.fecha_expira
                           );
-                                                const preciosLicencias = {
-                            "KIOSK EXCHANGE ONLINE 2GB": 24,
-                            "EXCHANGE PLAN 1 50 GB": 48,
-                            "MICROSOFT ESTÁNDAR": 157,
-                            "MICROSOFT APLICACIONES": 99.60,
-                            "MICROSOFT BASIC": 72,
-                            "POWER BI PRO": 168,
-                            "SHAREPOINT": 60,
-                            "POWER AUTOMATE PREMIUM": 180,
-                            "POWER APPS": 60,
-                        };
 
-                        const precioAnual =
-                            preciosLicencias[licencia.tipo_licencia?.trim().toUpperCase()];
+                        const precioAnual = obtenerPrecioLicencia(
+                          licencia.tipo_licencia
+                        );
 
                         return (
 
@@ -983,19 +996,22 @@ export default function CuentasCorreo() {
 
                               </div>
 
-                                                    <div className="flex items-start gap-2 shrink-0">
-                                                                                    {precioAnual !== undefined && (
-                                                        <span
-                                                        className="text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap"
-                                                        style={{
-                                                            background: "#f0fdf4",
-                                                            color: "#15803d",
-                                                            border: "1px solid #bbf7d0",
-                                                        }}
-                                                        >
-                                                        ${precioAnual.toFixed(2)} / año
-                                                        </span>
-                                                    )}
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+
+                                {precioAnual !== undefined && (
+                                  <span
+                                    className="text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap"
+                                    style={{
+                                      background: "#f0fdf4",
+                                      color: "#15803d",
+                                      border: "1px solid #bbf7d0",
+                                    }}
+                                  >
+                                    ${precioAnual.toFixed(2)} / año
+                                  </span>
+                                )}
+
+                                <div className="flex gap-1">
 
                                 <button
                                   onClick={() =>
@@ -1021,6 +1037,8 @@ export default function CuentasCorreo() {
                                 >
                                   <Trash2 size={15} />
                                 </button>
+
+                                </div>
 
                               </div>
 
