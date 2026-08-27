@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
   Package, User, CircleCheck, CircleX,
   Wifi, Server, Bot, Clock,
   Info, Ticket, Mail, MapPin,
+  FileSpreadsheet, FileText,
 } from "lucide-react";
  
 // =============================================================
@@ -320,6 +324,191 @@ esFechaAproximada  };
     }
 
     setLoading(false);
+  }
+
+  // ----------------------------------------------------------
+  // REPORTE DE EQUIPOS (Excel / PDF)
+  // Junta, por hostname, los datos de tres tablas:
+  //   - colaboradores (empresa, host, colaborador, tipo, cargo, correo)
+  //   - equipos       (cpu, ram_gb, disco_total_gb, marca, modelo, serial)
+  //   - analisis_ia   (resumen generado por IA)
+  // y arma una fila por equipo, sin importar los filtros activos
+  // en pantalla (siempre exporta el inventario completo).
+  // ----------------------------------------------------------
+  const [generandoReporte, setGenerandoReporte] = useState(false);
+
+  async function construirFilasReporte() {
+    const [{ data: hardwareData, error: errorHardware }, { data: iaData, error: errorIA }] =
+      await Promise.all([
+        supabase
+          .from("equipos")
+          .select("hostname, cpu, ram_gb, disco_total_gb, marca, modelo, serial"),
+        supabase
+          .from("analisis_ia")
+          .select("hostname, resumen"),
+      ]);
+
+    if (errorHardware) console.error("Error cargando hardware:", errorHardware);
+    if (errorIA) console.error("Error cargando análisis IA:", errorIA);
+
+    const normalizarHost = (h) => (h || "").trim().toUpperCase();
+
+    const hardwarePorHost = {};
+    (hardwareData || []).forEach((h) => {
+      hardwarePorHost[normalizarHost(h.hostname)] = h;
+    });
+
+    const iaPorHost = {};
+    (iaData || []).forEach((i) => {
+      iaPorHost[normalizarHost(i.hostname)] = i;
+    });
+
+    // Usamos "equipos" (el state, que viene de la tabla "colaboradores")
+    // completo, sin aplicar busqueda/filtroEmpresa/filtroTipo, para que
+    // el reporte siempre incluya TODOS los equipos.
+    return equipos.map((item) => {
+      const hw = hardwarePorHost[normalizarHost(item.host)];
+      const ia = iaPorHost[normalizarHost(item.host)];
+
+      return {
+        empresa: item.empresa || "",
+        host: item.host || "",
+        colaborador: item.colaborador || "",
+        tipo: item.tipo || "",
+        puesto: item.cargo || "",
+        correo: item.correo || "",
+        ram: hw?.ram_gb ? `${hw.ram_gb} GB` : "",
+        procesador: hw?.cpu || "",
+        marca: hw?.marca || "",
+        modelo: hw?.modelo || "",
+        numero_serie: hw?.serial || "",
+        disco_gb: hw?.disco_total_gb ? `${hw.disco_total_gb} GB` : "",
+        comentario_ia: ia?.resumen || "",
+      };
+    });
+  }
+
+  // ----------------------------------------------------------
+  // EXPORTAR EXCEL (CSV compatible con Excel, con BOM UTF-8,
+  // igual que el reporte de tickets resueltos)
+  // ----------------------------------------------------------
+  async function exportarReporteExcel() {
+    try {
+      setGenerandoReporte(true);
+
+      const filas = await construirFilasReporte();
+
+      if (filas.length === 0) {
+        alert("No hay equipos para exportar.");
+        return;
+      }
+
+      const columnas = [
+        "Empresa", "Host", "Colaborador", "Tipo", "Puesto",
+        "Correo", "RAM", "Procesador", "Marca", "Modelo",
+        "N° Serie", "Disco (GB)", "Comentario IA",
+      ];
+
+      const filasCsv = filas.map((f) => [
+        f.empresa, f.host, f.colaborador, f.tipo, f.puesto,
+        f.correo, f.ram, f.procesador, f.marca, f.modelo,
+        f.numero_serie, f.disco_gb, f.comentario_ia,
+      ]);
+
+      const csv = [
+        columnas.join(","),
+        ...filasCsv.map((fila) =>
+          fila
+            .map((campo) => `"${String(campo ?? "").replace(/"/g, '""')}"`)
+            .join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+
+      const ahora = new Date();
+      const fechaHora =
+        ahora.getFullYear() + "-" +
+        String(ahora.getMonth() + 1).padStart(2, "0") + "-" +
+        String(ahora.getDate()).padStart(2, "0") + "_" +
+        String(ahora.getHours()).padStart(2, "0") + "-" +
+        String(ahora.getMinutes()).padStart(2, "0");
+
+      saveAs(blob, `reporte_equipos_${fechaHora}.csv`);
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error generando el reporte Excel.");
+    } finally {
+      setGenerandoReporte(false);
+    }
+  }
+
+  // ----------------------------------------------------------
+  // EXPORTAR PDF (tabla con jsPDF + autoTable, orientación
+  // horizontal porque son muchas columnas)
+  // ----------------------------------------------------------
+  async function exportarReportePDF() {
+    try {
+      setGenerandoReporte(true);
+
+      const filas = await construirFilasReporte();
+
+      if (filas.length === 0) {
+        alert("No hay equipos para exportar.");
+        return;
+      }
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+      doc.setFontSize(14);
+      doc.setTextColor(52, 93, 157); // #345D9D
+      doc.text("Reporte de Equipos — Grupo Aurica", 40, 35);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generado: ${new Date().toLocaleString("es-PE")} · Total: ${filas.length} equipos`, 40, 50);
+
+      autoTable(doc, {
+        startY: 65,
+        head: [[
+          "Empresa", "Host", "Colaborador", "Tipo", "Puesto",
+          "Correo", "RAM", "Procesador", "Marca", "Modelo",
+          "N° Serie", "Disco", "Comentario IA",
+        ]],
+        body: filas.map((f) => [
+          f.empresa, f.host, f.colaborador, f.tipo, f.puesto,
+          f.correo, f.ram, f.procesador, f.marca, f.modelo,
+          f.numero_serie, f.disco_gb,
+          // Truncamos el comentario de IA en el PDF para que no
+          // rompa el ancho de la tabla; el Excel sí lleva el texto completo.
+          f.comentario_ia
+            ? (f.comentario_ia.length > 140
+                ? f.comentario_ia.slice(0, 140) + "…"
+                : f.comentario_ia)
+            : "",
+        ]),
+        styles: { fontSize: 6.5, cellPadding: 3, overflow: "linebreak" },
+        headStyles: { fillColor: [52, 93, 157], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [239, 246, 255] },
+        columnStyles: {
+          5: { cellWidth: 90 },   // correo
+          12: { cellWidth: 180 }, // comentario ia
+        },
+      });
+
+      const ahora = new Date();
+      const fechaHora =
+        ahora.getFullYear() + "-" +
+        String(ahora.getMonth() + 1).padStart(2, "0") + "-" +
+        String(ahora.getDate()).padStart(2, "0");
+
+      doc.save(`reporte_equipos_${fechaHora}.pdf`);
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error generando el reporte PDF.");
+    } finally {
+      setGenerandoReporte(false);
+    }
   }
 
   // ----------------------------------------------------------
@@ -683,11 +872,36 @@ async function analizarEquipoIA() {
           <h1 className="text-3xl font-bold text-slate-800" style={{ color: "#000000" }}>Inventario de Equipos</h1>
           <p className="text-sm mt-1 text-slate-500" style={{ color: "#000000" }}>Lista general de equipos registrados</p>
         </div>
-        <div
-          className="px-4 py-2 rounded-xl text-sm font-semibold"
-          style={{ background: "#dbeafe", color: "#345D9D", border: "1px solid #bfdbfe" }}
-        >
-          Total: {filtrados.length}
+
+        <div className="flex items-center gap-3">
+
+          <button
+            onClick={exportarReporteExcel}
+            disabled={generandoReporte}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#ffffff" }}
+          >
+            <FileSpreadsheet size={16} />
+            {generandoReporte ? "Generando..." : "Exportar Excel"}
+          </button>
+
+          <button
+            onClick={exportarReportePDF}
+            disabled={generandoReporte}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+            style={{ background: "#dc2626", color: "#ffffff" }}
+          >
+            <FileText size={16} />
+            {generandoReporte ? "Generando..." : "Exportar PDF"}
+          </button>
+
+          <div
+            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: "#dbeafe", color: "#345D9D", border: "1px solid #bfdbfe" }}
+          >
+            Total: {filtrados.length}
+          </div>
+
         </div>
       </div>
 
