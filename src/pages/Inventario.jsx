@@ -21,7 +21,7 @@ import {
 // =============================================================
 
 // Lista fija de empresas disponibles para el filtro
-const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU"];
+const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERREMETAL"];
 
 // Lista fija de tipos de equipo disponibles
 const TIPOS = ["Laptop", "PC"];
