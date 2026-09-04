@@ -123,11 +123,23 @@ function cargarLogoComoPNG(urlLogo) {
     img.onload = () => {
       const anchoNatural = img.naturalWidth || 200;
       const altoNatural = img.naturalHeight || 200;
+
+      // Muchos logos (sobre todo SVG) reportan un tamaño "natural"
+      // pequeño (ej. 40x40px). Si lo rasterizamos a ese tamaño y
+      // luego el PDF lo estira, se ve pixelado/borroso. Por eso
+      // forzamos un mínimo de resolución antes de rasterizar.
+      const RESOLUCION_MINIMA = 600; // px, en el lado más largo
+      const escala = Math.max(1, RESOLUCION_MINIMA / Math.max(anchoNatural, altoNatural));
+      const anchoRender = Math.round(anchoNatural * escala);
+      const altoRender = Math.round(altoNatural * escala);
+
       const canvas = document.createElement("canvas");
-      canvas.width = anchoNatural;
-      canvas.height = altoNatural;
+      canvas.width = anchoRender;
+      canvas.height = altoRender;
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, anchoNatural, altoNatural);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, anchoRender, altoRender);
       resolve({
         dataUrl: canvas.toDataURL("image/png"),
         ratio: anchoNatural / altoNatural,
