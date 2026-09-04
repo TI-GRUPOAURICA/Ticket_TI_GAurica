@@ -10,6 +10,19 @@ import {
   Info, Ticket, Mail, MapPin,
   FileSpreadsheet, FileText,
 } from "lucide-react";
+
+// ---- Logos por empresa, usados en el encabezado del PDF de renovación ----
+// Los archivos viven en /public, así que Vite los sirve directo desde la
+// raíz del sitio — no se importan como módulo, solo se referencia la ruta.
+// Si renombras o mueves algún archivo en /public, solo actualiza el string
+// correspondiente aquí abajo.
+const LOGOS_EMPRESA = {
+  AURICA: "/icono aurica.svg",
+  METALAB: "/icono metalab.svg",
+  MINERALAB: "/icono mineralab.svg",
+  GIANLU: "/Gianlu_imagotipo_principal.png",
+  TERRIMETAL: "/Terrimetal_imagotipo_principal.png",
+};
  
 // =============================================================
 // COMPONENTE: Inventario
@@ -94,6 +107,36 @@ const TABS_DETALLE = [
   { id: "programas",label: "Programas", icon: Package },
   { id: "tickets",  label: "Tickets",   icon: Ticket },
 ];
+
+// =============================================================
+// UTILIDAD: cargarLogoComoPNG
+// jsPDF no puede insertar SVG directamente, así que dibujamos el
+// logo (SVG o PNG) en un <canvas> oculto y devolvemos un PNG en
+// base64 listo para doc.addImage(), junto con su proporción real
+// (ancho/alto) para no deformar imagotipos no cuadrados.
+// =============================================================
+function cargarLogoComoPNG(urlLogo) {
+  return new Promise((resolve) => {
+    if (!urlLogo) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const anchoNatural = img.naturalWidth || 200;
+      const altoNatural = img.naturalHeight || 200;
+      const canvas = document.createElement("canvas");
+      canvas.width = anchoNatural;
+      canvas.height = altoNatural;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, anchoNatural, altoNatural);
+      resolve({
+        dataUrl: canvas.toDataURL("image/png"),
+        ratio: anchoNatural / altoNatural,
+      });
+    };
+    img.onerror = () => resolve(null); // si falla, el PDF se genera sin logo
+    img.src = encodeURI(urlLogo);
+  });
+}
 
 export default function Inventario() {
 
@@ -519,7 +562,7 @@ esFechaAproximada  };
   // análisis de IA (estado, salud, recomendaciones, tickets, etc).
   // Requiere que ya exista un análisis (analisisIA) generado.
   // ----------------------------------------------------------
-  function exportarReporteRenovacionPDF() {
+  async function exportarReporteRenovacionPDF() {
     if (!analisisIA) {
       alert("Primero genera el análisis con IA antes de exportar el informe.");
       return;
@@ -538,6 +581,10 @@ esFechaAproximada  };
         cargo: colaboradorActual?.cargo,
         numTickets: detalleTickets.length,
       });
+
+      // ---- Logo de la empresa del equipo (se carga antes de dibujar) ----
+      const empresaEquipo = (colaboradorActual?.empresa || "").toUpperCase();
+      const logoPNG = await cargarLogoComoPNG(LOGOS_EMPRESA[empresaEquipo]);
 
       const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -577,6 +624,27 @@ esFechaAproximada  };
       }
 
       // ---- Encabezado ----
+      if (logoPNG) {
+        // Se ajusta dentro de una caja máxima de 100x50pt manteniendo
+        // la proporción real, para no deformar logos no cuadrados.
+        const cajaAncho = 100;
+        const cajaAlto = 50;
+        let logoAncho = cajaAncho;
+        let logoAlto = logoAncho / logoPNG.ratio;
+        if (logoAlto > cajaAlto) {
+          logoAlto = cajaAlto;
+          logoAncho = logoAlto * logoPNG.ratio;
+        }
+        doc.addImage(
+          logoPNG.dataUrl,
+          "PNG",
+          pageWidth - marginX - logoAncho,
+          40,
+          logoAncho,
+          logoAlto
+        );
+      }
+
       doc.setFontSize(16);
       doc.setFont(undefined, "bold");
       doc.setTextColor(...AZUL);
