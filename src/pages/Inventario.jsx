@@ -134,6 +134,7 @@ const [renovacionData, setRenovacionData] = useState({
   const [detalleTickets, setDetalleTickets] = useState([]);       // filas de "tickets" para ese hostname
   const [analisisIA, setAnalisisIA] = useState(null);
 const [analizandoIA, setAnalizandoIA] = useState(false);
+const [generandoReporteIA, setGenerandoReporteIA] = useState(false);
   
   const [loadingDetalle, setLoadingDetalle] = useState(false);    // controla el spinner dentro de la card
   const [tabDetalle, setTabDetalle] = useState("general");        // pestaña activa dentro del panel de detalle
@@ -508,6 +509,178 @@ esFechaAproximada  };
       alert("Ocurrió un error generando el reporte PDF.");
     } finally {
       setGenerandoReporte(false);
+    }
+  }
+
+  // ----------------------------------------------------------
+  // EXPORTAR PDF — INFORME DE EVALUACIÓN DE RENOVACIÓN (IA)
+  // Genera un PDF de una sola página/equipo con los datos del
+  // equipo, los criterios evaluados y el resultado completo del
+  // análisis de IA (estado, salud, recomendaciones, tickets, etc).
+  // Requiere que ya exista un análisis (analisisIA) generado.
+  // ----------------------------------------------------------
+  function exportarReporteRenovacionPDF() {
+    if (!analisisIA) {
+      alert("Primero genera el análisis con IA antes de exportar el informe.");
+      return;
+    }
+
+    try {
+      setGenerandoReporteIA(true);
+
+      const datosRenovacion = calcularPuntajeRenovacion({
+        anioCompra: renovacionData.anio_compra,
+        fechaCompra: colaboradorActual?.fecha_compra,
+        fechaInstalacionWin: detalleEquipo?.fecha_instalacion,
+        estadoFisico: renovacionData.estado_fisico,
+        rendimiento: renovacionData.rendimiento,
+        criticidad: renovacionData.criticidad,
+        cargo: colaboradorActual?.cargo,
+        numTickets: detalleTickets.length,
+      });
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 40;
+      let y = 50;
+
+      const AZUL = [52, 93, 157];
+      const GRIS_TEXTO = [51, 65, 85];
+      const GRIS_LABEL = [100, 116, 139];
+
+      // ---- Salto de página si no queda espacio suficiente ----
+      function asegurarEspacio(alturaNecesaria) {
+        if (y + alturaNecesaria > pageHeight - 40) {
+          doc.addPage();
+          y = 50;
+        }
+      }
+
+      // ---- Escribe un bloque de texto con título, con wrap y salto de página ----
+      function agregarParrafo(titulo, texto) {
+        if (!texto) return;
+        doc.setFontSize(9);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(...GRIS_LABEL);
+        asegurarEspacio(20);
+        doc.text(titulo.toUpperCase(), marginX, y);
+        y += 14;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(...GRIS_TEXTO);
+        const lineas = doc.splitTextToSize(texto, pageWidth - marginX * 2);
+        asegurarEspacio(lineas.length * 13 + 10);
+        doc.text(lineas, marginX, y);
+        y += lineas.length * 13 + 16;
+      }
+
+      // ---- Encabezado ----
+      doc.setFontSize(16);
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(...AZUL);
+      doc.text("Informe de Evaluación de Renovación", marginX, y);
+      y += 18;
+
+      doc.setFontSize(10);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(...GRIS_LABEL);
+      const idEquipo = [hostSeleccionado, colaboradorActual?.colaborador, colaboradorActual?.empresa]
+        .filter(Boolean)
+        .join(" · ");
+      doc.text(idEquipo || "Grupo Aurica", marginX, y);
+      y += 14;
+      doc.text(`Generado: ${new Date().toLocaleString("es-PE")}`, marginX, y);
+      y += 22;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: marginX, right: marginX },
+        head: [["Estado", "Salud", "Vida útil", "Criticidad", "Reemplazo", "Upgrade"]],
+        body: [[
+          analisisIA.estado || "—",
+          `${analisisIA.salud ?? "—"}/100`,
+          analisisIA.vida_util || "—",
+          analisisIA.criticidad || "—",
+          analisisIA.requiere_reemplazo ? "Sí" : "No",
+          analisisIA.requiere_upgrade ? "Sí" : "No",
+        ]],
+        styles: { fontSize: 9, cellPadding: 6, halign: "center" },
+        headStyles: { fillColor: AZUL, textColor: 255, fontStyle: "bold" },
+        theme: "grid",
+      });
+      y = doc.lastAutoTable.finalY + 22;
+
+      // ---- Textos del análisis ----
+      agregarParrafo("Resumen", analisisIA.resumen);
+      agregarParrafo("Justificación de criticidad", analisisIA.justificacion_criticidad);
+
+      if (analisisIA.recomendaciones?.length > 0) {
+        doc.setFontSize(9);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(...GRIS_LABEL);
+        asegurarEspacio(18);
+        doc.text("RECOMENDACIONES", marginX, y);
+        y += 14;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(...GRIS_TEXTO);
+        analisisIA.recomendaciones.forEach((rec) => {
+          const lineas = doc.splitTextToSize(`•  ${rec}`, pageWidth - marginX * 2 - 10);
+          asegurarEspacio(lineas.length * 13 + 4);
+          doc.text(lineas, marginX + 4, y);
+          y += lineas.length * 13 + 6;
+        });
+        y += 10;
+      }
+
+      agregarParrafo("Análisis de tickets", analisisIA.analisis_tickets);
+
+      // ---- Evaluación de Renovación (tabla de criterios) ----
+      doc.setFontSize(12);
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(...AZUL);
+      asegurarEspacio(30);
+      doc.text("Evaluación de Renovación", marginX, y);
+      y += 10;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: marginX, right: marginX },
+        head: [["Criterio", "Valor"]],
+        body: [
+          ["Año de compra", detalleEquipo?.anio_compra || "No registrado"],
+          [
+            "Antigüedad",
+            `${datosRenovacion.anos} años${datosRenovacion.esFechaAproximada ? " (estimada por Windows)" : ""}`,
+          ],
+          ["Estado físico", renovacionData.estado_fisico],
+          ["Rendimiento", renovacionData.rendimiento],
+          ["Criticidad", renovacionData.criticidad],
+          ["Frecuencia de tickets", `${detalleTickets.length} tickets`],
+        ],
+        styles: { fontSize: 9.5, cellPadding: 6 },
+        headStyles: { fillColor: [239, 246, 255], textColor: AZUL, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 251, 255] },
+        theme: "grid",
+      });
+      y = doc.lastAutoTable.finalY + 20;
+
+      // ---- Nombre de archivo ----
+      const ahora = new Date();
+      const fechaHora =
+        ahora.getFullYear() + "-" +
+        String(ahora.getMonth() + 1).padStart(2, "0") + "-" +
+        String(ahora.getDate()).padStart(2, "0");
+
+      doc.save(`informe_renovacion_${hostSeleccionado || "equipo"}_${fechaHora}.pdf`);
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error generando el informe PDF.");
+    } finally {
+      setGenerandoReporteIA(false);
     }
   }
 
@@ -1392,7 +1565,6 @@ async function analizarEquipoIA() {
   {analizandoIA ? "Analizando..." : "🤖 Analizar con IA"}
 </button>
 
-
     {editandoRenovacion ? (
       <div className="flex gap-2">
         <button
@@ -1455,9 +1627,26 @@ async function analizarEquipoIA() {
     className="mt-4 p-5 rounded-xl"
     style={{ background: "#f8fafc", border: "1px solid #dbeafe" }}
   >
-    <h4 className="font-bold mb-4 flex items-center gap-2" style={{ color: "#345D9D" }}>
-      🤖 Resultado del análisis IA
-    </h4>
+    <div className="flex justify-between items-center mb-4">
+      <h4 className="font-bold flex items-center gap-2" style={{ color: "#345D9D" }}>
+        🤖 Resultado del análisis IA
+      </h4>
+
+      <button
+        onClick={exportarReporteRenovacionPDF}
+        disabled={generandoReporteIA}
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+        style={{
+          background: "#ffffff",
+          color: "#345D9D",
+          border: "1px solid #345D9D",
+          opacity: generandoReporteIA ? 0.6 : 1,
+        }}
+      >
+        <FileText size={14} />
+        {generandoReporteIA ? "Generando..." : "Reporte PDF"}
+      </button>
+    </div>
 
     {/* ---- Badges de resumen: estado, salud, vida útil, criticidad ---- */}
     <div className="grid grid-cols-4 gap-3 mb-4">
