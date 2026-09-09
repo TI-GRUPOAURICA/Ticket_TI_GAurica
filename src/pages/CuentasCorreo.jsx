@@ -100,6 +100,18 @@ export default function CuentasCorreo() {
   // LICENCIAS - HELPERS
   // =========================================================
 
+  // Estado visual de la cuenta combinando el flag "activo" (manual, de baja
+  // administrativa) con el estado de sus licencias (vencida, etc.)
+  // Devuelve: "activa" | "expirada" | "inactiva"
+  function estadoEfectivoCuenta(cuenta) {
+    if (!cuenta.activo) return "inactiva";
+
+    const estadoLicencias = estadoGeneralLicenciasCuenta(cuenta.id);
+    if (estadoLicencias === "vencida") return "expirada";
+
+    return "activa";
+  }
+
   function obtenerLicencias(cuentaId) {
     return licencias.filter(
       (licencia) => licencia.cuenta_id === cuentaId
@@ -186,10 +198,11 @@ export default function CuentasCorreo() {
       const coincideEmpresa =
         filtroEmpresa === "todas" || cuenta.empresa === filtroEmpresa;
 
+      const estadoCuenta = estadoEfectivoCuenta(cuenta);
+
       const coincideEstadoCuenta =
         filtroEstadoCuenta === "todas" ||
-        (filtroEstadoCuenta === "activas" && cuenta.activo) ||
-        (filtroEstadoCuenta === "inactivas" && !cuenta.activo);
+        filtroEstadoCuenta === estadoCuenta;
 
       const licenciasCuenta = obtenerLicencias(cuenta.id);
 
@@ -241,7 +254,11 @@ export default function CuentasCorreo() {
   const totalCuentas = cuentas.length;
 
   const cuentasActivas = cuentas.filter(
-    (cuenta) => cuenta.activo
+    (cuenta) => estadoEfectivoCuenta(cuenta) === "activa"
+  ).length;
+
+  const cuentasExpiradas = cuentas.filter(
+    (cuenta) => estadoEfectivoCuenta(cuenta) === "expirada"
   ).length;
 
   const cuentasInactivas = cuentas.filter(
@@ -740,7 +757,7 @@ export default function CuentasCorreo() {
 
       {/* ESTADISTICAS */}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
         <div
           className="rounded-2xl p-5 shadow-sm transition hover:shadow-md"
@@ -783,6 +800,27 @@ export default function CuentasCorreo() {
 
             <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
               <CheckCircle size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="rounded-2xl p-5 shadow-sm transition hover:shadow-md"
+          style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">
+                Cuentas expiradas
+              </p>
+
+              <p className="text-3xl font-bold text-amber-500 mt-1">
+                {cuentasExpiradas}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50 text-amber-500">
+              <XCircle size={24} />
             </div>
           </div>
         </div>
@@ -916,8 +954,9 @@ export default function CuentasCorreo() {
               style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
             >
               <option value="todas">Todas</option>
-              <option value="activas">Activas</option>
-              <option value="inactivas">Inactivas</option>
+              <option value="activa">Activas</option>
+              <option value="expirada">Expiradas</option>
+              <option value="inactiva">Inactivas</option>
             </select>
           </div>
 
@@ -1039,15 +1078,31 @@ export default function CuentasCorreo() {
                           {cuenta.nombre}
                         </h2>
 
-                        {cuenta.activo ? (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                            Activa
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200">
-                            Inactiva
-                          </span>
-                        )}
+                        {(() => {
+                          const estado = estadoEfectivoCuenta(cuenta);
+
+                          if (estado === "expirada") {
+                            return (
+                              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+                                Expirado
+                              </span>
+                            );
+                          }
+
+                          if (estado === "inactiva") {
+                            return (
+                              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200">
+                                Inactiva
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                              Activa
+                            </span>
+                          );
+                        })()}
 
                       </div>
 
