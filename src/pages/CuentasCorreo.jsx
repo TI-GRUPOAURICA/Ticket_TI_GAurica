@@ -894,90 +894,12 @@ export default function CuentasCorreo() {
         style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
       >
 
-        <div className="flex items-center gap-2 mb-4">
-          <SlidersHorizontal size={17} style={{ color: "#345D9D" }} />
-          <h2 className="font-semibold text-slate-700 text-sm">
-            Filtros
-          </h2>
-        </div>
-
-        <div className="flex flex-wrap gap-4 items-end">
-
-          {/* Empresa */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">
-              Empresa
-            </label>
-
-            <select
-              value={filtroEmpresa}
-              onChange={(e) => setFiltroEmpresa(e.target.value)}
-              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
-              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
-            >
-              <option value="todas">Todas</option>
-              {empresasUnicas.map((e) => (
-                <option key={e} value={e}>{e}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo de licencia */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">
-              Tipo de licencia
-            </label>
-
-            <select
-              value={filtroTipoLicencia}
-              onChange={(e) => setFiltroTipoLicencia(e.target.value)}
-              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
-              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
-            >
-              <option value="todas">Todas</option>
-              {tiposLicenciaUnicos.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Estado de la cuenta */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">
-              Estado de la cuenta
-            </label>
-
-            <select
-              value={filtroEstadoCuenta}
-              onChange={(e) => setFiltroEstadoCuenta(e.target.value)}
-              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
-              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
-            >
-              <option value="todas">Todas</option>
-              <option value="activa">Activas</option>
-              <option value="expirada">Expiradas</option>
-              <option value="inactiva">Inactivas</option>
-            </select>
-          </div>
-
-          {/* Estado de la licencia */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">
-              Estado de la licencia
-            </label>
-
-            <select
-              value={filtroEstadoLicencia}
-              onChange={(e) => setFiltroEstadoLicencia(e.target.value)}
-              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
-              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
-            >
-              <option value="todas">Todas</option>
-              <option value="vigente">Vigente</option>
-              <option value="por_vencer">Por vencer (≤30 días)</option>
-              <option value="vencida">Vencida</option>
-              <option value="sin_licencia">Sin licencia</option>
-            </select>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={17} style={{ color: "#345D9D" }} />
+            <h2 className="font-semibold text-slate-700 text-sm">
+              Filtros
+            </h2>
           </div>
 
           {hayFiltrosActivos && (
@@ -989,6 +911,86 @@ export default function CuentasCorreo() {
               Limpiar filtros
             </button>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+          {/* Empresa */}
+          <div className="min-w-0">
+            <label className="block text-xs text-slate-500 mb-1">
+              Empresa
+            </label>
+
+            <select
+              value={filtroEmpresa}
+              onChange={(e) => setFiltroEmpresa(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2 truncate"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              {empresasUnicas.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tipo de licencia */}
+          <div className="min-w-0">
+            <label className="block text-xs text-slate-500 mb-1">
+              Tipo de licencia
+            </label>
+
+            <select
+              value={filtroTipoLicencia}
+              onChange={(e) => setFiltroTipoLicencia(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2 truncate"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              {tiposLicenciaUnicos.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Estado de la cuenta */}
+          <div className="min-w-0">
+            <label className="block text-xs text-slate-500 mb-1">
+              Estado de la cuenta
+            </label>
+
+            <select
+              value={filtroEstadoCuenta}
+              onChange={(e) => setFiltroEstadoCuenta(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2 truncate"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              <option value="activa">Activas</option>
+              <option value="expirada">Expiradas</option>
+              <option value="inactiva">Inactivas</option>
+            </select>
+          </div>
+
+          {/* Estado de la licencia */}
+          <div className="min-w-0">
+            <label className="block text-xs text-slate-500 mb-1">
+              Estado de la licencia
+            </label>
+
+            <select
+              value={filtroEstadoLicencia}
+              onChange={(e) => setFiltroEstadoLicencia(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2 truncate"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              <option value="vigente">Vigente</option>
+              <option value="por_vencer">Por vencer (≤30 días)</option>
+              <option value="vencida">Vencida</option>
+              <option value="sin_licencia">Sin licencia</option>
+            </select>
+          </div>
 
         </div>
 
