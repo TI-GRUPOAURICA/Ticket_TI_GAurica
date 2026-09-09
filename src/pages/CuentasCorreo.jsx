@@ -32,6 +32,7 @@ export default function CuentasCorreo() {
   const [filtroTipoLicencia, setFiltroTipoLicencia] = useState("todas");
   const [filtroEstadoCuenta, setFiltroEstadoCuenta] = useState("todas");
   const [filtroEstadoLicencia, setFiltroEstadoLicencia] = useState("todas");
+  const [filtroEmpresa, setFiltroEmpresa] = useState("todas");
 
   // Modal cuenta
   const [modalCuenta, setModalCuenta] = useState(false);
@@ -161,6 +162,13 @@ export default function CuentasCorreo() {
     return [...set].sort();
   }, [licencias]);
 
+  const empresasUnicas = useMemo(() => {
+    const set = new Set(
+      cuentas.map((c) => c.empresa).filter(Boolean)
+    );
+    return [...set].sort();
+  }, [cuentas]);
+
   // =========================================================
   // FILTRO
   // =========================================================
@@ -174,6 +182,9 @@ export default function CuentasCorreo() {
         [cuenta.empresa, cuenta.nombre, cuenta.correo]
           .filter(Boolean)
           .some((valor) => valor.toLowerCase().includes(texto));
+
+      const coincideEmpresa =
+        filtroEmpresa === "todas" || cuenta.empresa === filtroEmpresa;
 
       const coincideEstadoCuenta =
         filtroEstadoCuenta === "todas" ||
@@ -194,6 +205,7 @@ export default function CuentasCorreo() {
 
       return (
         coincideTexto &&
+        coincideEmpresa &&
         coincideEstadoCuenta &&
         coincideTipoLicencia &&
         coincideEstadoLicencia
@@ -203,6 +215,7 @@ export default function CuentasCorreo() {
     cuentas,
     licencias,
     search,
+    filtroEmpresa,
     filtroEstadoCuenta,
     filtroTipoLicencia,
     filtroEstadoLicencia,
@@ -211,12 +224,14 @@ export default function CuentasCorreo() {
   const hayFiltrosActivos =
     filtroTipoLicencia !== "todas" ||
     filtroEstadoCuenta !== "todas" ||
-    filtroEstadoLicencia !== "todas";
+    filtroEstadoLicencia !== "todas" ||
+    filtroEmpresa !== "todas";
 
   function limpiarFiltros() {
     setFiltroTipoLicencia("todas");
     setFiltroEstadoCuenta("todas");
     setFiltroEstadoLicencia("todas");
+    setFiltroEmpresa("todas");
   }
 
   // =========================================================
@@ -849,6 +864,25 @@ export default function CuentasCorreo() {
         </div>
 
         <div className="flex flex-wrap gap-4 items-end">
+
+          {/* Empresa */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">
+              Empresa
+            </label>
+
+            <select
+              value={filtroEmpresa}
+              onChange={(e) => setFiltroEmpresa(e.target.value)}
+              className="rounded-xl px-3 py-2 text-sm outline-none transition focus:ring-2"
+              style={{ border: "1px solid #dbeafe", color: "#1e293b" }}
+            >
+              <option value="todas">Todas</option>
+              {empresasUnicas.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Tipo de licencia */}
           <div>
