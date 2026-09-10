@@ -9,6 +9,7 @@ import {
   Wifi, Server, Bot, Clock,
   Info, Ticket, Mail, MapPin,
   FileSpreadsheet, FileText,
+  KeyRound, Eye, EyeOff, Copy,
 } from "lucide-react";
 
 // ---- Logos por empresa, usados en el encabezado del PDF de renovación ----
@@ -180,6 +181,10 @@ const [renovacionData, setRenovacionData] = useState({
     anydesk: "",
     sede: "",
     cargo: "",
+    usuario_nas: "",
+    clave_nas: "",
+    usuario_admin: "",
+    clave_admin: "",
   });
 
   // ---- Estados para la card de detalle del equipo ----
@@ -787,6 +792,10 @@ esFechaAproximada  };
         anydesk:      editData.anydesk,
         sede:         editData.sede || null,
         cargo:        editData.cargo,
+        usuario_nas:    editData.usuario_nas,
+        clave_nas:      editData.clave_nas,
+        usuario_admin:  editData.usuario_admin,
+        clave_admin:    editData.clave_admin,
       })
       .eq("id", editandoId);
 
@@ -1437,6 +1446,10 @@ async function analizarEquipoIA() {
                                       anydesk: colaboradorActual.anydesk || "",
                                       sede: colaboradorActual.sede || "",
                                       cargo: colaboradorActual.cargo || "",
+                                      usuario_nas: colaboradorActual.usuario_nas || "",
+                                      clave_nas: colaboradorActual.clave_nas || "",
+                                      usuario_admin: colaboradorActual.usuario_admin || "",
+                                      clave_admin: colaboradorActual.clave_admin || "",
                                     });
                                   }}
                                   className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
@@ -1546,6 +1559,46 @@ async function analizarEquipoIA() {
                                 style={{ color: "#1e293b" }}
                               />
                             </CampoEditable>
+
+                            <CampoEditable label="Usuario NAS">
+                              <input
+                                value={editData.usuario_nas}
+                                onChange={(e) => setEditData({ ...editData, usuario_nas: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="off"
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Contraseña NAS">
+                              <input
+                                value={editData.clave_nas}
+                                onChange={(e) => setEditData({ ...editData, clave_nas: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="new-password"
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Usuario Administrador">
+                              <input
+                                value={editData.usuario_admin}
+                                onChange={(e) => setEditData({ ...editData, usuario_admin: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="off"
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Clave Administrador">
+                              <input
+                                value={editData.clave_admin}
+                                onChange={(e) => setEditData({ ...editData, clave_admin: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="new-password"
+                              />
+                            </CampoEditable>
                           </div>
                         ) : (
                           /* ---- Modo lectura ---- */
@@ -1574,6 +1627,16 @@ async function analizarEquipoIA() {
                                   </span>
                                 ) : undefined
                               }
+                            />
+                            <DetalleItem label="Usuario NAS" valor={colaboradorActual?.usuario_nas} />
+                            <DetalleItem
+                              label="Contraseña NAS"
+                              valorNodo={<ValorSecreto valor={colaboradorActual?.clave_nas} />}
+                            />
+                            <DetalleItem label="Usuario Administrador" valor={colaboradorActual?.usuario_admin} />
+                            <DetalleItem
+                              label="Clave Administrador"
+                              valorNodo={<ValorSecreto valor={colaboradorActual?.clave_admin} />}
                             />
                           </div>
                         )}
@@ -2275,6 +2338,59 @@ function CampoEditable({ label, children }) {
   );
 }
 
+
+// =============================================================
+// COMPONENTE AUXILIAR: ValorSecreto
+// Muestra un valor sensible (contraseña) oculto por defecto,
+// con un botón para revelarlo y otro para copiarlo al portapapeles.
+// =============================================================
+function ValorSecreto({ valor }) {
+  const [visible, setVisible] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
+  if (!valor) {
+    return <p className="text-base font-semibold" style={{ color: "#1e293b" }}>—</p>;
+  }
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(valor);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="text-base font-semibold tracking-wider"
+        style={{ color: "#1e293b", fontFamily: visible ? "inherit" : "monospace" }}
+      >
+        {visible ? valor : "•".repeat(Math.min(valor.length, 10))}
+      </span>
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        title={visible ? "Ocultar" : "Mostrar"}
+        className="p-1 rounded-lg"
+        style={{ color: "#94a3b8" }}
+      >
+        {visible ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
+      <button
+        type="button"
+        onClick={copiar}
+        title="Copiar"
+        className="p-1 rounded-lg"
+        style={{ color: copiado ? "#16a34a" : "#94a3b8" }}
+      >
+        <Copy size={14} />
+      </button>
+    </div>
+  );
+}
 
 function MiniCard({ label, valor, valorNodo }) {
   return (
