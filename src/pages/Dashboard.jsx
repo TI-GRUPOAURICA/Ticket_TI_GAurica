@@ -9,6 +9,9 @@ import {
   Monitor,
   MapPin,
   Building2,
+  Bell,
+  KeyRound,
+  ChevronRight,
 } from "lucide-react";
  
 export default function Dashboard({ onNavigate }) {
@@ -16,8 +19,11 @@ export default function Dashboard({ onNavigate }) {
   // ---- Datos "crudos" tal cual vienen de Supabase ----
   const [ticketsRaw, setTicketsRaw] = useState([]);
   const [equiposRaw, setEquiposRaw] = useState([]);
+  const [cuentasRaw, setCuentasRaw] = useState([]);
+  const [licenciasRaw, setLicenciasRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingInventario, setLoadingInventario] = useState(true);
+  const [loadingLicencias, setLoadingLicencias] = useState(true);
 
   // ---- Filtro activo del dashboard ----
   // "" = todas las empresas
@@ -26,6 +32,7 @@ export default function Dashboard({ onNavigate }) {
   useEffect(() => {
     fetchData();
     fetchInventario();
+    fetchLicencias();
   }, []);
  
   const fetchData = async () => {
@@ -50,6 +57,26 @@ export default function Dashboard({ onNavigate }) {
 
     if (data) setEquiposRaw(data);
     setLoadingInventario(false);
+  };
+
+  // ----------------------------------------------------------
+  // FETCH LICENCIAS (centro de notificaciones)
+  // Mismas tablas y mismo criterio de "vencida" / "por vencer"
+  // que ya usas en la pantalla de Cuentas de correo, para que
+  // ambas pantallas siempre digan lo mismo.
+  // ----------------------------------------------------------
+  const fetchLicencias = async () => {
+    const [cuentasRes, licenciasRes] = await Promise.all([
+      supabase.from("cuentas_correo").select("id, nombre, correo, empresa, activo"),
+      supabase.from("licencias_correo").select("cuenta_id, tipo_licencia, fecha_expira"),
+    ]);
+
+    if (cuentasRes.error) console.error(cuentasRes.error);
+    if (licenciasRes.error) console.error(licenciasRes.error);
+
+    if (cuentasRes.data) setCuentasRaw(cuentasRes.data);
+    if (licenciasRes.data) setLicenciasRaw(licenciasRes.data);
+    setLoadingLicencias(false);
   };
 
   // ----------------------------------------------------------
@@ -78,6 +105,51 @@ export default function Dashboard({ onNavigate }) {
     if (!filtroEmpresa) return equiposRaw;
     return equiposRaw.filter((e) => e.empresa === filtroEmpresa);
   }, [equiposRaw, filtroEmpresa]);
+
+  // ----------------------------------------------------------
+  // NOTIFICACIONES DE LICENCIAS
+  // Mismo criterio que estadoGeneralLicenciasCuenta() en
+  // CuentasCorreo.jsx: vencida = fecha_expira ya pasó,
+  // por_vencer = vence en 30 días o menos.
+  // ----------------------------------------------------------
+  const notificacionesLicencias = useMemo(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const cuentasPorId = {};
+    cuentasRaw.forEach((c) => { cuentasPorId[c.id] = c; });
+
+    const items = [];
+    licenciasRaw.forEach((lic) => {
+      if (!lic.fecha_expira) return;
+
+      const cuenta = cuentasPorId[lic.cuenta_id];
+      if (!cuenta) return;
+      if (filtroEmpresa && cuenta.empresa !== filtroEmpresa) return;
+
+      const vencimiento = new Date(`${lic.fecha_expira}T00:00:00`);
+      const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+      let estado = null;
+      if (diasRestantes < 0) estado = "vencida";
+      else if (diasRestantes <= 30) estado = "por_vencer";
+      else return; // vigente, no genera notificación
+
+      items.push({
+        cuenta: cuenta.nombre || cuenta.correo || "Sin nombre",
+        empresa: cuenta.empresa || "Sin empresa",
+        tipo_licencia: lic.tipo_licencia || "Licencia",
+        fecha_expira: lic.fecha_expira,
+        diasRestantes,
+        estado,
+      });
+    });
+
+    return items.sort((a, b) => a.diasRestantes - b.diasRestantes);
+  }, [cuentasRaw, licenciasRaw, filtroEmpresa]);
+
+  const licenciasVencidas = notificacionesLicencias.filter((n) => n.estado === "vencida");
+  const licenciasPorVencer = notificacionesLicencias.filter((n) => n.estado === "por_vencer");
 
   // ---- Stats de tickets (derivados de ticketsFiltrados) ----
   const stats = useMemo(() => ({
@@ -193,6 +265,109 @@ export default function Dashboard({ onNavigate }) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ============================================================
+          CENTRO DE NOTIFICACIONES: licencias por vencer / vencidas
+      ============================================================ */}
+      <div
+        className="rounded-2xl p-4 mb-4 shadow-sm"
+        style={{
+          boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
+          background: "#ffffff",
+          border: licenciasVencidas.length > 0
+            ? "1px solid #fecaca"
+            : licenciasPorVencer.length > 0
+              ? "1px solid #fde68a"
+              : "1px solid #dbeafe",
+        }}
+      >
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Bell size={18} style={{ color: "#345D9D" }} />
+            <h3 className="font-bold" style={{ color: "#1e293b" }}>
+              Centro de notificaciones
+            </h3>
+            <span className="text-xs" style={{ color: "#64748b" }}>· Licencias de correo</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {licenciasVencidas.length > 0 && (
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
+              >
+                {licenciasVencidas.length} vencida{licenciasVencidas.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            {licenciasPorVencer.length > 0 && (
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a" }}
+              >
+                {licenciasPorVencer.length} por vencer
+              </span>
+            )}
+          </div>
+        </div>
+
+        {loadingLicencias ? (
+          <p className="text-xs text-slate-500">Cargando...</p>
+        ) : notificacionesLicencias.length === 0 ? (
+          <div className="flex items-center gap-2 py-2">
+            <CircleCheckBig size={18} color="#22C55E" />
+            <p className="text-sm" style={{ color: "#64748b" }}>
+              Todo al día. No hay licencias vencidas ni próximas a vencer.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {notificacionesLicencias.slice(0, 8).map((n, i) => (
+              <div
+                key={`${n.cuenta}-${n.tipo_licencia}-${i}`}
+                className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl"
+                style={{
+                  background: n.estado === "vencida" ? "#fef2f2" : "#fffbeb",
+                  border: n.estado === "vencida" ? "1px solid #fecaca" : "1px solid #fde68a",
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <KeyRound
+                    size={15}
+                    style={{ color: n.estado === "vencida" ? "#dc2626" : "#b45309" }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#1e293b" }}>
+                      {n.cuenta} <span className="font-normal text-slate-500">· {n.tipo_licencia}</span>
+                    </p>
+                    <p className="text-xs" style={{ color: "#94a3b8" }}>{n.empresa}</p>
+                  </div>
+                </div>
+
+                <span
+                  className="text-xs font-semibold whitespace-nowrap"
+                  style={{ color: n.estado === "vencida" ? "#dc2626" : "#b45309" }}
+                >
+                  {n.estado === "vencida"
+                    ? `Venció hace ${Math.abs(n.diasRestantes)} día${Math.abs(n.diasRestantes) !== 1 ? "s" : ""}`
+                    : n.diasRestantes === 0
+                      ? "Vence hoy"
+                      : `Vence en ${n.diasRestantes} día${n.diasRestantes !== 1 ? "s" : ""}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {notificacionesLicencias.length > 8 && (
+          <button
+            onClick={() => onNavigate("cuentas-correo")}
+            className="mt-3 text-xs font-semibold flex items-center gap-1"
+            style={{ color: "#345D9D" }}
+          >
+            Ver las {notificacionesLicencias.length - 8} restantes <ChevronRight size={14} />
+          </button>
+        )}
       </div>
  
       {/* ---- TARJETAS ---- */}
