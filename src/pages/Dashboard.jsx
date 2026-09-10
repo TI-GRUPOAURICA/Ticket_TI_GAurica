@@ -762,7 +762,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="flex items-center gap-2 mb-3">
               <WifiOff size={16} style={{ color: "#345D9D" }} />
               <h3 className="font-bold text-sm" style={{ color: "#1e293b" }}>
-                Equipos sin sincronizar
+                Equipos Inactivos
               </h3>
             </div>
 
