@@ -305,7 +305,7 @@ export default function Dashboard({ onNavigate }) {
  
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black" style={{ color: "#1e293b" }}>
+          <h1 className="text-3xl font-black" style={{ color: "#345D9D" }}>
             Dashboard
           </h1>
           <p className="mt-1 text-sm" style={{ color: "#1e293b" }}>Resumen general del sistema</p>
@@ -492,7 +492,7 @@ export default function Dashboard({ onNavigate }) {
               SECCIÓN: INVENTARIO
           ============================================================ */}
           <div className="mb-4">
-            <h2 className="text-xl font-black" style={{ color: "#1e293b" }}>
+            <h2 className="text-xl font-black" style={{ color: "#345D9D" }}>
               Inventario
             </h2>
             <p className="mt-1 text-sm" style={{ color: "#64748b" }}>
@@ -663,7 +663,7 @@ export default function Dashboard({ onNavigate }) {
           >
             <div className="flex items-center gap-2 mb-3">
               <Bell size={16} style={{ color: "#345D9D" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#1e293b" }}>
+              <h3 className="font-bold text-sm" style={{ color: "#345D9D" }}>
                 Licencias de correo
               </h3>
             </div>
@@ -761,8 +761,8 @@ export default function Dashboard({ onNavigate }) {
           >
             <div className="flex items-center gap-2 mb-3">
               <WifiOff size={16} style={{ color: "#345D9D" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#1e293b" }}>
-                Equipos Inactivos
+              <h3 className="font-bold text-sm" style={{ color: "#345D9D" }}>
+                Equipos sin sincronizar
               </h3>
             </div>
 
