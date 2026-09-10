@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import {
   Ticket,
@@ -12,28 +12,16 @@ import {
 } from "lucide-react";
  
 export default function Dashboard({ onNavigate }) {
- 
-  const [stats, setStats] = useState({
-    abiertos: 0,
-    en_proceso: 0,
-    resueltos: 0,
-    total: 0,
-  });
- 
-  const [porCategoria, setPorCategoria] = useState([]);
-  const [porEmpresa, setPorEmpresa] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // ---- Estados para la sección de Inventario ----
-  const [equipoStats, setEquipoStats] = useState({
-    total: 0,
-    lima: 0,
-    chala: 0,
-    sinSede: 0,
-  });
-  const [equiposPorEmpresa, setEquiposPorEmpresa] = useState([]);
-  const [equiposPorTipo, setEquiposPorTipo] = useState([]);
+  // ---- Datos "crudos" tal cual vienen de Supabase ----
+  const [ticketsRaw, setTicketsRaw] = useState([]);
+  const [equiposRaw, setEquiposRaw] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [loadingInventario, setLoadingInventario] = useState(true);
+
+  // ---- Filtro activo del dashboard ----
+  // "" = todas las empresas
+  const [filtroEmpresa, setFiltroEmpresa] = useState("");
  
   useEffect(() => {
     fetchData();
@@ -41,46 +29,15 @@ export default function Dashboard({ onNavigate }) {
   }, []);
  
   const fetchData = async () => {
- 
     const { data } = await supabase
       .from("tickets")
       .select(`*, categorias(nombre)`);
- 
-    if (data) {
- 
-      setStats({
-        abiertos:   data.filter((t) => t.estado === "abierto").length,
-        en_proceso: data.filter((t) => t.estado === "en_proceso").length,
-        resueltos:  data.filter((t) => t.estado === "resuelto").length,
-        total:      data.length,
-      });
- 
-      const catMap = {};
-      data.forEach((t) => {
-        const cat = t.categorias?.nombre || "Sin categoría";
-        catMap[cat] = (catMap[cat] || 0) + 1;
-      });
-      setPorCategoria(Object.entries(catMap).sort((a, b) => b[1] - a[1]));
- 
-      const empMap = {};
-      data.forEach((t) => {
-        const emp = t.empresa || "Sin empresa";
-        empMap[emp] = (empMap[emp] || 0) + 1;
-      });
-      setPorEmpresa(Object.entries(empMap).sort((a, b) => b[1] - a[1]));
-    }
- 
+
+    if (data) setTicketsRaw(data);
     setLoading(false);
   };
 
-  // ----------------------------------------------------------
-  // FETCH INVENTARIO
-  // Trae empresa/sede/tipo de cada equipo (tabla "colaboradores")
-  // y arma los conteos para las tarjetas y barras de la sección
-  // de Inventario del dashboard.
-  // ----------------------------------------------------------
   const fetchInventario = async () => {
-
     const { data, error } = await supabase
       .from("colaboradores")
       .select("empresa, sede, tipo");
@@ -91,31 +48,88 @@ export default function Dashboard({ onNavigate }) {
       return;
     }
 
-    if (data) {
-      const total = data.length;
-      const lima = data.filter((e) => (e.sede || "").toUpperCase() === "LIMA").length;
-      const chala = data.filter((e) => (e.sede || "").toUpperCase() === "CHALA").length;
-      const sinSede = total - lima - chala;
-
-      setEquipoStats({ total, lima, chala, sinSede });
-
-      const empMap = {};
-      data.forEach((e) => {
-        const emp = e.empresa || "Sin empresa";
-        empMap[emp] = (empMap[emp] || 0) + 1;
-      });
-      setEquiposPorEmpresa(Object.entries(empMap).sort((a, b) => b[1] - a[1]));
-
-      const tipoMap = {};
-      data.forEach((e) => {
-        const tipo = e.tipo || "Sin tipo";
-        tipoMap[tipo] = (tipoMap[tipo] || 0) + 1;
-      });
-      setEquiposPorTipo(Object.entries(tipoMap).sort((a, b) => b[1] - a[1]));
-    }
-
+    if (data) setEquiposRaw(data);
     setLoadingInventario(false);
   };
+
+  // ----------------------------------------------------------
+  // LISTA DE EMPRESAS PARA EL FILTRO
+  // Se arma dinámicamente combinando las empresas que aparecen
+  // en tickets y en equipos, así nunca queda desactualizada
+  // aunque agregues una empresa nueva en Supabase.
+  // ----------------------------------------------------------
+  const empresasDisponibles = useMemo(() => {
+    const set = new Set();
+    ticketsRaw.forEach((t) => t.empresa && set.add(t.empresa));
+    equiposRaw.forEach((e) => e.empresa && set.add(e.empresa));
+    return Array.from(set).sort();
+  }, [ticketsRaw, equiposRaw]);
+
+  // ----------------------------------------------------------
+  // DATOS FILTRADOS POR EMPRESA
+  // Todo lo que se calcula debajo de aquí ya respeta el filtro.
+  // ----------------------------------------------------------
+  const ticketsFiltrados = useMemo(() => {
+    if (!filtroEmpresa) return ticketsRaw;
+    return ticketsRaw.filter((t) => t.empresa === filtroEmpresa);
+  }, [ticketsRaw, filtroEmpresa]);
+
+  const equiposFiltrados = useMemo(() => {
+    if (!filtroEmpresa) return equiposRaw;
+    return equiposRaw.filter((e) => e.empresa === filtroEmpresa);
+  }, [equiposRaw, filtroEmpresa]);
+
+  // ---- Stats de tickets (derivados de ticketsFiltrados) ----
+  const stats = useMemo(() => ({
+    abiertos:   ticketsFiltrados.filter((t) => t.estado === "abierto").length,
+    en_proceso: ticketsFiltrados.filter((t) => t.estado === "en_proceso").length,
+    resueltos:  ticketsFiltrados.filter((t) => t.estado === "resuelto").length,
+    total:      ticketsFiltrados.length,
+  }), [ticketsFiltrados]);
+
+  const porCategoria = useMemo(() => {
+    const catMap = {};
+    ticketsFiltrados.forEach((t) => {
+      const cat = t.categorias?.nombre || "Sin categoría";
+      catMap[cat] = (catMap[cat] || 0) + 1;
+    });
+    return Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+  }, [ticketsFiltrados]);
+
+  const porEmpresa = useMemo(() => {
+    const empMap = {};
+    ticketsFiltrados.forEach((t) => {
+      const emp = t.empresa || "Sin empresa";
+      empMap[emp] = (empMap[emp] || 0) + 1;
+    });
+    return Object.entries(empMap).sort((a, b) => b[1] - a[1]);
+  }, [ticketsFiltrados]);
+
+  // ---- Stats de inventario (derivados de equiposFiltrados) ----
+  const equipoStats = useMemo(() => {
+    const total = equiposFiltrados.length;
+    const lima = equiposFiltrados.filter((e) => (e.sede || "").toUpperCase() === "LIMA").length;
+    const chala = equiposFiltrados.filter((e) => (e.sede || "").toUpperCase() === "CHALA").length;
+    return { total, lima, chala, sinSede: total - lima - chala };
+  }, [equiposFiltrados]);
+
+  const equiposPorEmpresa = useMemo(() => {
+    const empMap = {};
+    equiposFiltrados.forEach((e) => {
+      const emp = e.empresa || "Sin empresa";
+      empMap[emp] = (empMap[emp] || 0) + 1;
+    });
+    return Object.entries(empMap).sort((a, b) => b[1] - a[1]);
+  }, [equiposFiltrados]);
+
+  const equiposPorTipo = useMemo(() => {
+    const tipoMap = {};
+    equiposFiltrados.forEach((e) => {
+      const tipo = e.tipo || "Sin tipo";
+      tipoMap[tipo] = (tipoMap[tipo] || 0) + 1;
+    });
+    return Object.entries(tipoMap).sort((a, b) => b[1] - a[1]);
+  }, [equiposFiltrados]);
  
   const maxCat = porCategoria[0]?.[1] || 1;
   const maxEmp = porEmpresa[0]?.[1] || 1;
@@ -142,11 +156,43 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="max-w-7xl mx-auto">
  
-      <div className="mb-4">
-<h1 className="text-3xl font-black" style={{ color: "#1e293b" }}>
-  Dashboard
-</h1>
-<p className="mt-1 text-sm" style={{ color: "#1e293b" }}>Resumen general del sistema</p>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-black" style={{ color: "#1e293b" }}>
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: "#1e293b" }}>Resumen general del sistema</p>
+        </div>
+
+        {/* ---- FILTRO POR EMPRESA ---- */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setFiltroEmpresa("")}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+            style={
+              filtroEmpresa === ""
+                ? { background: "#345D9D", color: "#ffffff", border: "1px solid #345D9D" }
+                : { background: "#ffffff", color: "#345D9D", border: "1px solid #dbeafe" }
+            }
+          >
+            Todas las empresas
+          </button>
+
+          {empresasDisponibles.map((emp) => (
+            <button
+              key={emp}
+              onClick={() => setFiltroEmpresa(emp)}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+              style={
+                filtroEmpresa === emp
+                  ? { background: "#345D9D", color: "#ffffff", border: "1px solid #345D9D" }
+                  : { background: "#ffffff", color: "#345D9D", border: "1px solid #dbeafe" }
+              }
+            >
+              {emp}
+            </button>
+          ))}
+        </div>
       </div>
  
       {/* ---- TARJETAS ---- */}
@@ -293,7 +339,7 @@ export default function Dashboard({ onNavigate }) {
           SECCIÓN: INVENTARIO
           Mismo patrón visual que la sección de Tickets de arriba,
           pero con datos de la tabla "colaboradores" (empresa, sede,
-          tipo de cada equipo).
+          tipo de cada equipo). También respeta el filtro de empresa.
       ============================================================ */}
       <div className="mb-4">
         <h2 className="text-xl font-black" style={{ color: "#1e293b" }}>
