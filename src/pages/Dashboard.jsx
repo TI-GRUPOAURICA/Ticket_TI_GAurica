@@ -6,6 +6,9 @@ import {
   Clock3,
   CircleCheckBig,
   FileSpreadsheet,
+  Monitor,
+  MapPin,
+  Building2,
 } from "lucide-react";
  
 export default function Dashboard({ onNavigate }) {
@@ -20,9 +23,21 @@ export default function Dashboard({ onNavigate }) {
   const [porCategoria, setPorCategoria] = useState([]);
   const [porEmpresa, setPorEmpresa] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ---- Estados para la sección de Inventario ----
+  const [equipoStats, setEquipoStats] = useState({
+    total: 0,
+    lima: 0,
+    chala: 0,
+    sinSede: 0,
+  });
+  const [equiposPorEmpresa, setEquiposPorEmpresa] = useState([]);
+  const [equiposPorTipo, setEquiposPorTipo] = useState([]);
+  const [loadingInventario, setLoadingInventario] = useState(true);
  
   useEffect(() => {
     fetchData();
+    fetchInventario();
   }, []);
  
   const fetchData = async () => {
@@ -57,15 +72,68 @@ export default function Dashboard({ onNavigate }) {
  
     setLoading(false);
   };
+
+  // ----------------------------------------------------------
+  // FETCH INVENTARIO
+  // Trae empresa/sede/tipo de cada equipo (tabla "colaboradores")
+  // y arma los conteos para las tarjetas y barras de la sección
+  // de Inventario del dashboard.
+  // ----------------------------------------------------------
+  const fetchInventario = async () => {
+
+    const { data, error } = await supabase
+      .from("colaboradores")
+      .select("empresa, sede, tipo");
+
+    if (error) {
+      console.error(error);
+      setLoadingInventario(false);
+      return;
+    }
+
+    if (data) {
+      const total = data.length;
+      const lima = data.filter((e) => (e.sede || "").toUpperCase() === "LIMA").length;
+      const chala = data.filter((e) => (e.sede || "").toUpperCase() === "CHALA").length;
+      const sinSede = total - lima - chala;
+
+      setEquipoStats({ total, lima, chala, sinSede });
+
+      const empMap = {};
+      data.forEach((e) => {
+        const emp = e.empresa || "Sin empresa";
+        empMap[emp] = (empMap[emp] || 0) + 1;
+      });
+      setEquiposPorEmpresa(Object.entries(empMap).sort((a, b) => b[1] - a[1]));
+
+      const tipoMap = {};
+      data.forEach((e) => {
+        const tipo = e.tipo || "Sin tipo";
+        tipoMap[tipo] = (tipoMap[tipo] || 0) + 1;
+      });
+      setEquiposPorTipo(Object.entries(tipoMap).sort((a, b) => b[1] - a[1]));
+    }
+
+    setLoadingInventario(false);
+  };
  
   const maxCat = porCategoria[0]?.[1] || 1;
   const maxEmp = porEmpresa[0]?.[1] || 1;
+  const maxEmpresaEquipos = equiposPorEmpresa[0]?.[1] || 1;
+  const maxTipoEquipos = equiposPorTipo[0]?.[1] || 1;
  
   const statCards = [
     { label: "Total tickets", value: stats.total,      color: "#345D9D", icon: Ticket },
     { label: "Abiertos",      value: stats.abiertos,   color: "#EF4444", icon: CircleAlert },
     { label: "En proceso",    value: stats.en_proceso,  color: "#F59E0B", icon: Clock3 },
     { label: "Resueltos",     value: stats.resueltos,  color: "#22C55E", icon: CircleCheckBig },
+  ];
+
+  const equipoStatCards = [
+    { label: "Total equipos", value: equipoStats.total,   color: "#345D9D", icon: Monitor },
+    { label: "En Lima",       value: equipoStats.lima,    color: "#22C55E", icon: MapPin },
+    { label: "En Chala",      value: equipoStats.chala,   color: "#F59E0B", icon: MapPin },
+    { label: "Sin sede",      value: equipoStats.sinSede, color: "#94A3B8", icon: Building2 },
   ];
  
   const porcentajeResueltos =
@@ -220,9 +288,126 @@ export default function Dashboard({ onNavigate }) {
         </div>
  
       </div>
+
+      {/* ============================================================
+          SECCIÓN: INVENTARIO
+          Mismo patrón visual que la sección de Tickets de arriba,
+          pero con datos de la tabla "colaboradores" (empresa, sede,
+          tipo de cada equipo).
+      ============================================================ */}
+      <div className="mb-4">
+        <h2 className="text-xl font-black" style={{ color: "#1e293b" }}>
+          Inventario
+        </h2>
+        <p className="mt-1 text-sm" style={{ color: "#64748b" }}>
+          Resumen de equipos registrados
+        </p>
+      </div>
+
+      {/* ---- TARJETAS DE INVENTARIO ---- */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        {equipoStatCards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-2xl p-4 shadow-sm"
+            style={{
+              boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
+              background: "#ffffff",
+              border: "1px solid #dbeafe",
+            }}
+          >
+            <p className="text-sm mb-2" style={{ color: "#345D9D" }}>{card.label}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold" style={{ color: "#345D9D" }}>
+                {card.value}
+              </p>
+              <card.icon size={28} color={card.color} strokeWidth={2} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ---- GRÁFICOS DE INVENTARIO ---- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        {/* Equipos por empresa */}
+        <div
+          className="rounded-2xl p-4 shadow-sm"
+          style={{
+            boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
+            background: "#ffffff",
+            border: "1px solid #dbeafe",
+          }}
+        >
+          <h3 className="font-bold mb-3" style={{ color: "#345D9D" }}>
+            Equipos por empresa
+          </h3>
+
+          {loadingInventario ? (
+            <p className="text-xs text-slate-500">Cargando...</p>
+          ) : equiposPorEmpresa.length === 0 ? (
+            <p className="text-xs text-slate-500">Sin datos aún.</p>
+          ) : (
+            <div className="space-y-3">
+              {equiposPorEmpresa.map(([emp, count]) => (
+                <div key={emp}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-500">{emp}</span>
+                    <span style={{ color: "#345D9D" }}>{count}</span>
+                  </div>
+                  <div className="h-2 rounded-full" style={{ background: "#e2e8f0" }}>
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${(count / maxEmpresaEquipos) * 100}%`, background: "#345D9D" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Equipos por tipo (Laptop / PC) */}
+        <div
+          className="rounded-2xl p-4 shadow-sm"
+          style={{
+            boxShadow: "0 4px 12px rgba(48, 93, 160, 0.08)",
+            background: "#ffffff",
+            border: "1px solid #dbeafe",
+          }}
+        >
+          <h3 className="font-bold mb-3" style={{ color: "#345D9D" }}>
+            Equipos por tipo
+          </h3>
+
+          {loadingInventario ? (
+            <p className="text-xs text-slate-500">Cargando...</p>
+          ) : equiposPorTipo.length === 0 ? (
+            <p className="text-xs text-slate-500">Sin datos aún.</p>
+          ) : (
+            <div className="space-y-3">
+              {equiposPorTipo.map(([tipo, count]) => (
+                <div key={tipo}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-500">{tipo}</span>
+                    <span style={{ color: "#345D9D" }}>{count}</span>
+                  </div>
+                  <div className="h-2 rounded-full" style={{ background: "#e2e8f0" }}>
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${(count / maxTipoEquipos) * 100}%`, background: "#345D9D" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
  
       {/* ---- ACCESOS RÁPIDOS ---- */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
  
         <button
           onClick={() => onNavigate("tickets")}
@@ -233,6 +418,18 @@ export default function Dashboard({ onNavigate }) {
           <p className="font-semibold text-slate-800 mt-2">Ver tickets pendientes</p>
           <p className="text-xs mt-1 text-slate-500">
             {stats.abiertos + stats.en_proceso} tickets requieren atención
+          </p>
+        </button>
+
+        <button
+          onClick={() => onNavigate("inventario")}
+          className="rounded-2xl p-4 text-left transition hover:shadow-md"
+          style={{ background: "#ffffff", border: "1px solid #dbeafe" }}
+        >
+          <Monitor size={30} color="#345D9D" strokeWidth={2} />
+          <p className="font-semibold text-slate-800 mt-2">Ver inventario</p>
+          <p className="text-xs mt-1 text-slate-500">
+            {equipoStats.total} equipos registrados
           </p>
         </button>
  
@@ -253,4 +450,3 @@ export default function Dashboard({ onNavigate }) {
     </div>
   );
 }
- 
