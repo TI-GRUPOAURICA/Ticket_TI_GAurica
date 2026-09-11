@@ -14,6 +14,7 @@ import SeguimientoTicket from "./pages/SeguimientoTicket";
 import ColaboradorHome from "./pages/ColaboradoresHome";
 import { ADMINS } from "./Config/admins";
 import Evaluacion from "./pages/Evaluacion";
+import EquiposCelulares from "./pages/EquiposCelulares";
 
 // NUEVO: Página de cuentas de correo
 import CuentasCorreo from "./pages/CuentasCorreo";
@@ -84,6 +85,9 @@ export default function App() {
 
       case "inventario":
         return <Inventario />;
+
+      case "equipos-celulares":
+  return <EquiposCelulares />;
 
       // NUEVO
       case "cuentas-correo":
