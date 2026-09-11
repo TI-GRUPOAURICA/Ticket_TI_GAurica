@@ -1,13 +1,33 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Search,
+  Plus,
+  ChevronRight,
+  ChevronDown,
+  Smartphone,
+  Pencil,
+  Trash2,
+  X,
+  Building2,
+  MapPin,
+  User,
+  Phone,
+  CreditCard,
+  Tag,
+  Hash,
+  MessageSquare,
+} from "lucide-react";
+
+import { supabase } from "../lib/supabase";
 
 export default function EquiposCelulares() {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [busqueda, setBusqueda] = useState("");
   const [expandido, setExpandido] = useState(null);
 
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
   const [editando, setEditando] = useState(null);
 
   const [formulario, setFormulario] = useState({
@@ -23,7 +43,7 @@ export default function EquiposCelulares() {
   });
 
   // =========================================================
-  // OBTENER EQUIPOS
+  // CARGAR EQUIPOS
   // =========================================================
 
   const cargarEquipos = async () => {
@@ -36,7 +56,8 @@ export default function EquiposCelulares() {
 
     if (error) {
       console.error("Error cargando equipos:", error);
-      alert("No se pudieron cargar los equipos.");
+      alert("Error al cargar los equipos.");
+      setEquipos([]);
     } else {
       setEquipos(data || []);
     }
@@ -49,19 +70,57 @@ export default function EquiposCelulares() {
   }, []);
 
   // =========================================================
-  // MANEJAR INPUTS
+  // BUSQUEDA
+  // =========================================================
+
+  const equiposFiltrados = useMemo(() => {
+    const texto = busqueda.toLowerCase().trim();
+
+    if (!texto) return equipos;
+
+    return equipos.filter((equipo) => {
+      return (
+        String(equipo.empresa || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.sede || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.personal_asignado || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.telefono || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.marca || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.modelo || "")
+          .toLowerCase()
+          .includes(texto) ||
+
+        String(equipo.imei || "")
+          .toLowerCase()
+          .includes(texto)
+      );
+    });
+  }, [equipos, busqueda]);
+
+  // =========================================================
+  // FORMULARIO
   // =========================================================
 
   const cambiarCampo = (campo, valor) => {
-    setFormulario((prev) => ({
-      ...prev,
+    setFormulario((actual) => ({
+      ...actual,
       [campo]: valor,
     }));
   };
-
-  // =========================================================
-  // LIMPIAR FORMULARIO
-  // =========================================================
 
   const limpiarFormulario = () => {
     setFormulario({
@@ -80,16 +139,16 @@ export default function EquiposCelulares() {
   };
 
   // =========================================================
-  // ABRIR AGREGAR
+  // NUEVO EQUIPO
   // =========================================================
 
-  const abrirAgregar = () => {
+  const abrirNuevo = () => {
     limpiarFormulario();
-    setMostrarFormulario(true);
+    setMostrarModal(true);
   };
 
   // =========================================================
-  // ABRIR EDITAR
+  // EDITAR EQUIPO
   // =========================================================
 
   const abrirEditar = (equipo) => {
@@ -106,7 +165,7 @@ export default function EquiposCelulares() {
     });
 
     setEditando(equipo.id);
-    setMostrarFormulario(true);
+    setMostrarModal(true);
   };
 
   // =========================================================
@@ -122,55 +181,62 @@ export default function EquiposCelulares() {
     }
 
     if (!formulario.personal_asignado.trim()) {
-      alert("Ingresa el personal asignado.");
+      alert("Ingresa el usuario asignado.");
       return;
     }
 
     if (!formulario.telefono.trim()) {
-      alert("Ingresa el teléfono.");
+      alert("Ingresa el número de celular.");
       return;
     }
 
     const datos = {
       empresa: formulario.empresa.trim(),
       sede: formulario.sede.trim(),
-      personal_asignado: formulario.personal_asignado.trim(),
+      personal_asignado:
+        formulario.personal_asignado.trim(),
       telefono: formulario.telefono.trim(),
+
       plan:
         formulario.plan === ""
           ? null
           : Number(formulario.plan),
+
       marca: formulario.marca.trim(),
       modelo: formulario.modelo.trim(),
       observacion: formulario.observacion.trim(),
       imei: formulario.imei.trim(),
     };
 
-    let error;
+    let resultado;
 
     if (editando) {
-      const resultado = await supabase
+      resultado = await supabase
         .from("equipos_celulares")
         .update(datos)
         .eq("id", editando);
-
-      error = resultado.error;
     } else {
-      const resultado = await supabase
+      resultado = await supabase
         .from("equipos_celulares")
         .insert([datos]);
-
-      error = resultado.error;
     }
 
-    if (error) {
-      console.error(error);
-      alert("Ocurrió un error al guardar el equipo.");
+    if (resultado.error) {
+      console.error(
+        "Error guardando equipo:",
+        resultado.error
+      );
+
+      alert(
+        `No se pudo guardar el equipo: ${resultado.error.message}`
+      );
+
       return;
     }
 
-    setMostrarFormulario(false);
+    setMostrarModal(false);
     limpiarFormulario();
+
     await cargarEquipos();
   };
 
@@ -192,7 +258,9 @@ export default function EquiposCelulares() {
 
     if (error) {
       console.error(error);
-      alert("No se pudo eliminar el equipo.");
+      alert(
+        `No se pudo eliminar: ${error.message}`
+      );
       return;
     }
 
@@ -204,66 +272,63 @@ export default function EquiposCelulares() {
   };
 
   // =========================================================
-  // FILTRO
+  // EXPANDIR
   // =========================================================
 
-  const equiposFiltrados = equipos.filter((equipo) => {
-    const texto = busqueda.toLowerCase();
-
-    return (
-      (equipo.empresa || "").toLowerCase().includes(texto) ||
-      (equipo.sede || "").toLowerCase().includes(texto) ||
-      (equipo.personal_asignado || "")
-        .toLowerCase()
-        .includes(texto) ||
-      (equipo.telefono || "").toLowerCase().includes(texto) ||
-      (equipo.marca || "").toLowerCase().includes(texto) ||
-      (equipo.modelo || "").toLowerCase().includes(texto) ||
-      (equipo.imei || "").toLowerCase().includes(texto)
+  const alternarExpandido = (id) => {
+    setExpandido((actual) =>
+      actual === id ? null : id
     );
-  });
+  };
 
   // =========================================================
   // RENDER
   // =========================================================
 
   return (
-    <div className="equipos-container">
+    <div className="equipos-page">
 
-      {/* ENCABEZADO */}
+      {/* =====================================================
+          CABECERA
+      ===================================================== */}
 
-      <div className="equipos-header">
+      <div className="equipos-titulo">
 
         <div>
-          <h2>Equipos celulares</h2>
+          <h1>Equipos celulares</h1>
 
           <p>
-            Administración de celulares asignados
+            Gestión de celulares asignados al personal
           </p>
         </div>
 
         <button
-          className="btn-agregar"
-          onClick={abrirAgregar}
+          className="boton-agregar-equipo"
+          onClick={abrirNuevo}
         >
-          + Agregar equipo
+          <Plus size={18} />
+          Agregar equipo
         </button>
 
       </div>
 
-      {/* BUSCADOR */}
+      {/* =====================================================
+          BUSCADOR
+      ===================================================== */}
 
-      <div className="buscador-container">
+      <div className="equipos-toolbar">
 
-        <div className="buscador">
+        <div className="equipos-buscador">
 
-          <span>⌕</span>
+          <Search size={19} />
 
           <input
             type="text"
-            placeholder="Buscar por empresa, usuario, teléfono, IMEI..."
+            placeholder="Buscar empresa, usuario, celular, IMEI..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) =>
+              setBusqueda(e.target.value)
+            }
           />
 
           {busqueda && (
@@ -271,40 +336,43 @@ export default function EquiposCelulares() {
               className="limpiar-busqueda"
               onClick={() => setBusqueda("")}
             >
-              ×
+              <X size={17} />
             </button>
           )}
 
         </div>
 
-        <div className="contador">
+        <span className="cantidad-equipos">
           {equiposFiltrados.length} equipos
-        </div>
+        </span>
 
       </div>
 
-      {/* TABLA */}
+      {/* =====================================================
+          LISTA
+      ===================================================== */}
 
-      <div className="equipos-lista">
+      <div className="lista-equipos">
 
         {loading ? (
 
-          <div className="estado">
-            Cargando equipos...
+          <div className="estado-equipos">
+            <Smartphone size={35} />
+            <p>Cargando equipos...</p>
           </div>
 
         ) : equiposFiltrados.length === 0 ? (
 
-          <div className="estado">
+          <div className="estado-equipos">
 
-            <div className="estado-icono">
-              📱
-            </div>
+            <Smartphone size={42} />
 
-            <h3>No hay equipos</h3>
+            <h3>
+              No hay equipos registrados
+            </h3>
 
             <p>
-              No se encontraron celulares registrados.
+              Agrega un equipo para comenzar.
             </p>
 
           </div>
@@ -313,63 +381,71 @@ export default function EquiposCelulares() {
 
           equiposFiltrados.map((equipo) => {
 
-            const estaExpandido =
+            const abierto =
               expandido === equipo.id;
 
             return (
 
               <div
                 className={`equipo-card ${
-                  estaExpandido ? "expandido" : ""
+                  abierto ? "equipo-abierto" : ""
                 }`}
                 key={equipo.id}
               >
 
-                {/* FILA PRINCIPAL */}
+                {/* =================================================
+                    FILA PRINCIPAL
+                ================================================= */}
 
                 <div
                   className="equipo-fila"
                   onClick={() =>
-                    setExpandido(
-                      estaExpandido
-                        ? null
-                        : equipo.id
-                    )
+                    alternarExpandido(equipo.id)
                   }
                 >
 
                   {/* EMPRESA */}
 
-                  <div className="equipo-col empresa-col">
+                  <div className="equipo-empresa">
 
-                    <span className="col-label">
+                    <span className="etiqueta">
                       EMPRESA
                     </span>
 
-                    <strong>
-                      {equipo.empresa || "-"}
-                    </strong>
+                    <div className="empresa-contenido">
+
+                      <Building2 size={17} />
+
+                      <strong>
+                        {equipo.empresa || "-"}
+                      </strong>
+
+                    </div>
 
                   </div>
 
                   {/* USUARIO */}
 
-                  <div className="equipo-col usuario-col">
+                  <div className="equipo-usuario">
 
-                    <span className="col-label">
+                    <span className="etiqueta">
                       USUARIO ASIGNADO
                     </span>
 
-                    <div className="usuario-info">
+                    <div className="usuario-contenido">
 
-                      <div className="avatar">
-                        {(equipo.personal_asignado || "?")
+                      <div className="avatar-usuario">
+                        {(
+                          equipo.personal_asignado ||
+                          "?"
+                        )
                           .charAt(0)
                           .toUpperCase()}
                       </div>
 
                       <strong>
-                        {equipo.personal_asignado || "-"}
+                        {equipo.personal_asignado ||
+                          "-"}
                       </strong>
 
                     </div>
@@ -378,17 +454,15 @@ export default function EquiposCelulares() {
 
                   {/* CELULAR */}
 
-                  <div className="equipo-col celular-col">
+                  <div className="equipo-celular">
 
-                    <span className="col-label">
+                    <span className="etiqueta">
                       CELULAR
                     </span>
 
-                    <div className="telefono">
+                    <div className="celular-contenido">
 
-                      <span className="telefono-icon">
-                        📱
-                      </span>
+                      <Smartphone size={18} />
 
                       <strong>
                         {equipo.telefono || "-"}
@@ -398,58 +472,65 @@ export default function EquiposCelulares() {
 
                   </div>
 
-                  {/* ACCIONES */}
+                  {/* FLECHA */}
 
-                  <div className="equipo-actions">
+                  <button
+                    className="boton-expandir"
+                    onClick={(e) => {
+                      e.stopPropagation();
 
-                    <button
-                      className="btn-flecha"
-                      onClick={(e) => {
-                        e.stopPropagation();
-
-                        setExpandido(
-                          estaExpandido
-                            ? null
-                            : equipo.id
-                        );
-                      }}
-                    >
-                      {estaExpandido ? "⌃" : "›"}
-                    </button>
-
-                  </div>
+                      alternarExpandido(
+                        equipo.id
+                      );
+                    }}
+                  >
+                    {abierto ? (
+                      <ChevronDown size={21} />
+                    ) : (
+                      <ChevronRight size={21} />
+                    )}
+                  </button>
 
                 </div>
 
-                {/* INFORMACIÓN EXPANDIDA */}
+                {/* =================================================
+                    DETALLES
+                ================================================= */}
 
-                {estaExpandido && (
+                {abierto && (
 
                   <div className="equipo-detalles">
 
-                    <div className="detalle-grid">
+                    <div className="detalles-grid">
 
                       <Detalle
+                        icono={<Building2 size={17} />}
                         titulo="Empresa"
                         valor={equipo.empresa}
                       />
 
                       <Detalle
+                        icono={<MapPin size={17} />}
                         titulo="Sede"
                         valor={equipo.sede}
                       />
 
                       <Detalle
+                        icono={<User size={17} />}
                         titulo="Personal asignado"
-                        valor={equipo.personal_asignado}
+                        valor={
+                          equipo.personal_asignado
+                        }
                       />
 
                       <Detalle
+                        icono={<Phone size={17} />}
                         titulo="Teléfono"
                         valor={equipo.telefono}
                       />
 
                       <Detalle
+                        icono={<CreditCard size={17} />}
                         titulo="Plan"
                         valor={
                           equipo.plan !== null &&
@@ -462,32 +543,40 @@ export default function EquiposCelulares() {
                       />
 
                       <Detalle
+                        icono={<Tag size={17} />}
                         titulo="Marca"
                         valor={equipo.marca}
                       />
 
                       <Detalle
+                        icono={<Smartphone size={17} />}
                         titulo="Modelo"
                         valor={equipo.modelo}
                       />
 
                       <Detalle
+                        icono={<Hash size={17} />}
                         titulo="IMEI"
                         valor={equipo.imei}
-                        completo
                       />
 
                     </div>
 
-                    {/* OBSERVACIÓN */}
+                    {/* OBSERVACION */}
 
                     {equipo.observacion && (
 
-                      <div className="observacion">
+                      <div className="observacion-equipo">
 
-                        <span>
-                          OBSERVACIÓN
-                        </span>
+                        <div className="observacion-titulo">
+
+                          <MessageSquare size={17} />
+
+                          <span>
+                            Observación
+                          </span>
+
+                        </div>
 
                         <p>
                           {equipo.observacion}
@@ -497,26 +586,30 @@ export default function EquiposCelulares() {
 
                     )}
 
-                    {/* BOTONES */}
+                    {/* ACCIONES */}
 
-                    <div className="detalle-footer">
+                    <div className="acciones-equipo">
 
                       <button
-                        className="btn-editar"
+                        className="boton-editar"
                         onClick={() =>
                           abrirEditar(equipo)
                         }
                       >
-                        ✎ Editar
+                        <Pencil size={16} />
+                        Editar
                       </button>
 
                       <button
-                        className="btn-eliminar"
+                        className="boton-eliminar"
                         onClick={() =>
-                          eliminarEquipo(equipo.id)
+                          eliminarEquipo(
+                            equipo.id
+                          )
                         }
                       >
-                        🗑 Eliminar
+                        <Trash2 size={16} />
+                        Eliminar
                       </button>
 
                     </div>
@@ -526,36 +619,33 @@ export default function EquiposCelulares() {
                 )}
 
               </div>
-
             );
-
           })
-
         )}
 
       </div>
 
       {/* =====================================================
-          MODAL AGREGAR / EDITAR
+          MODAL
       ===================================================== */}
 
-      {mostrarFormulario && (
+      {mostrarModal && (
 
         <div
-          className="modal-overlay"
+          className="modal-fondo"
           onClick={() =>
-            setMostrarFormulario(false)
+            setMostrarModal(false)
           }
         >
 
           <div
-            className="modal"
+            className="modal-equipo"
             onClick={(e) =>
               e.stopPropagation()
             }
           >
 
-            <div className="modal-header">
+            <div className="modal-cabecera">
 
               <div>
 
@@ -566,31 +656,34 @@ export default function EquiposCelulares() {
                 </h2>
 
                 <p>
-                  Ingresa los datos del celular.
+                  Completa la información del celular.
                 </p>
 
               </div>
 
               <button
-                className="modal-close"
+                className="modal-cerrar"
                 onClick={() =>
-                  setMostrarFormulario(false)
+                  setMostrarModal(false)
                 }
               >
-                ×
+                <X size={21} />
               </button>
 
             </div>
 
             <form onSubmit={guardarEquipo}>
 
-              <div className="form-grid">
+              <div className="formulario-grid">
 
                 <Campo
                   label="Empresa"
                   value={formulario.empresa}
                   onChange={(v) =>
-                    cambiarCampo("empresa", v)
+                    cambiarCampo(
+                      "empresa",
+                      v
+                    )
                   }
                   placeholder="Ej. AURICA"
                 />
@@ -599,7 +692,10 @@ export default function EquiposCelulares() {
                   label="Sede"
                   value={formulario.sede}
                   onChange={(v) =>
-                    cambiarCampo("sede", v)
+                    cambiarCampo(
+                      "sede",
+                      v
+                    )
                   }
                   placeholder="Ej. LIMA"
                 />
@@ -620,9 +716,14 @@ export default function EquiposCelulares() {
 
                 <Campo
                   label="Teléfono"
-                  value={formulario.telefono}
+                  value={
+                    formulario.telefono
+                  }
                   onChange={(v) =>
-                    cambiarCampo("telefono", v)
+                    cambiarCampo(
+                      "telefono",
+                      v
+                    )
                   }
                   placeholder="Ej. 937123456"
                 />
@@ -631,7 +732,10 @@ export default function EquiposCelulares() {
                   label="Plan"
                   value={formulario.plan}
                   onChange={(v) =>
-                    cambiarCampo("plan", v)
+                    cambiarCampo(
+                      "plan",
+                      v
+                    )
                   }
                   placeholder="Ej. 39.90"
                   type="number"
@@ -642,7 +746,10 @@ export default function EquiposCelulares() {
                   label="Marca"
                   value={formulario.marca}
                   onChange={(v) =>
-                    cambiarCampo("marca", v)
+                    cambiarCampo(
+                      "marca",
+                      v
+                    )
                   }
                   placeholder="Ej. REDMI"
                 />
@@ -651,7 +758,10 @@ export default function EquiposCelulares() {
                   label="Modelo"
                   value={formulario.modelo}
                   onChange={(v) =>
-                    cambiarCampo("modelo", v)
+                    cambiarCampo(
+                      "modelo",
+                      v
+                    )
                   }
                   placeholder="Ej. A1"
                 />
@@ -660,40 +770,45 @@ export default function EquiposCelulares() {
                   label="IMEI"
                   value={formulario.imei}
                   onChange={(v) =>
-                    cambiarCampo("imei", v)
+                    cambiarCampo(
+                      "imei",
+                      v
+                    )
                   }
                   placeholder="Número IMEI"
                 />
 
               </div>
 
-              <div className="form-group">
+              <div className="campo-completo">
 
                 <label>
                   Observación
                 </label>
 
                 <textarea
-                  value={formulario.observacion}
+                  rows="3"
+                  value={
+                    formulario.observacion
+                  }
                   onChange={(e) =>
                     cambiarCampo(
                       "observacion",
                       e.target.value
                     )
                   }
-                  placeholder="Observaciones del equipo..."
-                  rows="3"
+                  placeholder="Escribe una observación..."
                 />
 
               </div>
 
-              <div className="modal-footer">
+              <div className="modal-acciones">
 
                 <button
                   type="button"
-                  className="btn-cancelar"
+                  className="boton-cancelar"
                   onClick={() =>
-                    setMostrarFormulario(false)
+                    setMostrarModal(false)
                   }
                 >
                   Cancelar
@@ -701,7 +816,7 @@ export default function EquiposCelulares() {
 
                 <button
                   type="submit"
-                  className="btn-guardar"
+                  className="boton-guardar"
                 >
                   {editando
                     ? "Guardar cambios"
@@ -718,110 +833,111 @@ export default function EquiposCelulares() {
 
       )}
 
-      {/* CSS */}
+      {/* =====================================================
+          ESTILOS
+      ===================================================== */}
 
       <style>{`
 
-        * {
-          box-sizing: border-box;
-        }
-
-        .equipos-container {
+        .equipos-page {
           width: 100%;
           padding: 24px;
-          color: #172033;
         }
 
-        .equipos-header {
+        .equipos-titulo {
           display: flex;
-          align-items: center;
           justify-content: space-between;
+          align-items: center;
           margin-bottom: 22px;
         }
 
-        .equipos-header h2 {
+        .equipos-titulo h1 {
           margin: 0;
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 700;
+          color: #172033;
         }
 
-        .equipos-header p {
+        .equipos-titulo p {
           margin: 5px 0 0;
-          color: #718096;
+          color: #64748b;
           font-size: 14px;
         }
 
-        .btn-agregar {
+        .boton-agregar-equipo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           border: none;
           background: #16a34a;
           color: white;
-          padding: 11px 18px;
+          padding: 11px 17px;
           border-radius: 9px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
-          transition: .2s;
         }
 
-        .btn-agregar:hover {
+        .boton-agregar-equipo:hover {
           background: #15803d;
         }
 
-        .buscador-container {
+        .equipos-toolbar {
+          background: white;
+          border: 1px solid #dbe5f0;
+          border-radius: 13px;
+          padding: 12px 15px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 15px;
-          margin-bottom: 16px;
+          margin-bottom: 15px;
         }
 
-        .buscador {
+        .equipos-buscador {
+          width: 100%;
           position: relative;
-          width: 100%;
-          max-width: 520px;
+          display: flex;
+          align-items: center;
+          color: #94a3b8;
         }
 
-        .buscador span {
+        .equipos-buscador > svg {
           position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #64748b;
-          font-size: 20px;
+          left: 12px;
         }
 
-        .buscador input {
+        .equipos-buscador input {
           width: 100%;
-          height: 43px;
-          border: 1px solid #dbe4f0;
-          border-radius: 9px;
-          padding: 0 40px;
-          outline: none;
+          height: 42px;
+          border: 1px solid #dce6f2;
+          border-radius: 8px;
+          padding: 0 42px;
           font-size: 14px;
-          background: white;
+          outline: none;
+          color: #263449;
         }
 
-        .buscador input:focus {
-          border-color: #93c5fd;
+        .equipos-buscador input:focus {
+          border-color: #8db5e8;
         }
 
         .limpiar-busqueda {
           position: absolute;
-          right: 10px;
-          top: 8px;
+          right: 9px;
           border: none;
           background: transparent;
-          font-size: 22px;
           color: #64748b;
           cursor: pointer;
         }
 
-        .contador {
-          font-size: 13px;
+        .cantidad-equipos {
+          white-space: nowrap;
           color: #64748b;
+          font-size: 13px;
         }
 
-        .equipos-lista {
+        .lista-equipos {
           display: flex;
           flex-direction: column;
           gap: 10px;
@@ -832,7 +948,7 @@ export default function EquiposCelulares() {
           border: 1px solid #dbe5f0;
           border-radius: 13px;
           overflow: hidden;
-          box-shadow: 0 2px 7px rgba(30, 64, 175, .05);
+          box-shadow: 0 2px 6px rgba(30, 64, 175, .04);
           transition: .2s;
         }
 
@@ -840,49 +956,59 @@ export default function EquiposCelulares() {
           border-color: #c4d5e9;
         }
 
-        .equipo-card.expandido {
-          border-color: #b8cce3;
+        .equipo-abierto {
+          border-color: #aac4e2;
         }
 
         .equipo-fila {
           min-height: 86px;
           display: grid;
-          grid-template-columns: 1fr 1.5fr 1fr 55px;
+          grid-template-columns: 1fr 1.5fr 1fr 58px;
           align-items: center;
           cursor: pointer;
         }
 
-        .equipo-col {
-          padding: 15px 22px;
+        .equipo-empresa,
+        .equipo-usuario,
+        .equipo-celular {
+          padding: 14px 20px;
           border-right: 1px solid #edf2f7;
         }
 
-        .col-label {
+        .etiqueta {
           display: block;
+          color: #94a3b8;
           font-size: 10px;
-          color: #8a97a8;
           font-weight: 700;
           letter-spacing: .6px;
           margin-bottom: 7px;
         }
 
-        .equipo-col strong {
-          font-size: 14px;
-          color: #243047;
-        }
-
-        .usuario-info {
+        .empresa-contenido,
+        .celular-contenido,
+        .usuario-contenido {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 9px;
         }
 
-        .avatar {
+        .empresa-contenido svg,
+        .celular-contenido svg {
+          color: #416da7;
+        }
+
+        .equipo-fila strong {
+          color: #263449;
+          font-size: 14px;
+        }
+
+        .avatar-usuario {
           width: 32px;
           height: 32px;
+          min-width: 32px;
           border-radius: 50%;
           background: #edf5ff;
-          color: #2563eb;
+          color: #3165a3;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -890,146 +1016,147 @@ export default function EquiposCelulares() {
           font-weight: 700;
         }
 
-        .telefono {
+        .boton-expandir {
+          width: 35px;
+          height: 35px;
+          border: 1px solid #d8e3ef;
+          border-radius: 50%;
+          background: white;
+          color: #526b88;
           display: flex;
           align-items: center;
-          gap: 8px;
-        }
-
-        .telefono-icon {
-          font-size: 16px;
-        }
-
-        .equipo-actions {
-          display: flex;
           justify-content: center;
-        }
-
-        .btn-flecha {
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          border: 1px solid #d9e3ef;
-          background: white;
-          color: #49617c;
-          font-size: 23px;
-          line-height: 1;
           cursor: pointer;
-          transition: .2s;
+          margin: auto;
         }
 
-        .btn-flecha:hover {
-          background: #f1f6fb;
+        .boton-expandir:hover {
+          background: #f4f8fc;
         }
 
         .equipo-detalles {
-          border-top: 1px solid #e7edf4;
-          background: #f9fbfd;
-          padding: 22px;
+          border-top: 1px solid #e5edf5;
+          background: #f8fafc;
+          padding: 20px;
         }
 
-        .detalle-grid {
+        .detalles-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 15px;
+          gap: 12px;
         }
 
-        .detalle {
+        .detalle-item {
           background: white;
-          border: 1px solid #e6edf5;
+          border: 1px solid #e3eaf2;
           border-radius: 9px;
           padding: 13px;
         }
 
-        .detalle span {
-          display: block;
+        .detalle-cabecera {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: #6b7d92;
+          margin-bottom: 7px;
+        }
+
+        .detalle-cabecera span {
           font-size: 10px;
-          color: #8996a7;
           font-weight: 700;
-          margin-bottom: 6px;
           text-transform: uppercase;
         }
 
-        .detalle strong {
-          display: block;
+        .detalle-valor {
           font-size: 13px;
+          font-weight: 600;
           color: #263449;
           word-break: break-word;
         }
 
-        .observacion {
-          margin-top: 15px;
+        .observacion-equipo {
+          margin-top: 12px;
           padding: 14px;
+          background: white;
+          border: 1px solid #e3eaf2;
           border-radius: 9px;
-          background: #fff;
-          border: 1px solid #e6edf5;
         }
 
-        .observacion span {
-          display: block;
+        .observacion-titulo {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: #6b7d92;
+          margin-bottom: 7px;
+        }
+
+        .observacion-titulo span {
           font-size: 10px;
-          color: #8996a7;
           font-weight: 700;
-          margin-bottom: 6px;
+          text-transform: uppercase;
         }
 
-        .observacion p {
+        .observacion-equipo p {
           margin: 0;
+          color: #334155;
           font-size: 13px;
-          color: #263449;
         }
 
-        .detalle-footer {
+        .acciones-equipo {
           display: flex;
           justify-content: flex-end;
           gap: 9px;
-          margin-top: 18px;
+          margin-top: 15px;
         }
 
-        .btn-editar,
-        .btn-eliminar {
-          padding: 8px 14px;
+        .boton-editar,
+        .boton-eliminar {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 8px 13px;
           border-radius: 8px;
-          cursor: pointer;
+          background: white;
           font-size: 13px;
           font-weight: 600;
-          background: white;
+          cursor: pointer;
         }
 
-        .btn-editar {
+        .boton-editar {
           border: 1px solid #cbd5e1;
           color: #334155;
         }
 
-        .btn-eliminar {
+        .boton-eliminar {
           border: 1px solid #fecaca;
           color: #dc2626;
         }
 
-        .estado {
-          text-align: center;
+        .estado-equipos {
+          background: white;
+          border: 1px solid #dbe5f0;
+          border-radius: 13px;
           padding: 70px 20px;
-          color: #64748b;
+          text-align: center;
+          color: #94a3b8;
         }
 
-        .estado-icono {
-          font-size: 35px;
-          margin-bottom: 10px;
-        }
-
-        .estado h3 {
+        .estado-equipos h3 {
+          margin: 12px 0 5px;
           color: #334155;
-          margin: 0 0 5px;
+          font-size: 16px;
         }
 
-        .estado p {
+        .estado-equipos p {
           margin: 0;
           font-size: 14px;
         }
 
-        /* MODAL */
+        /* =========================
+           MODAL
+        ========================= */
 
-        .modal-overlay {
+        .modal-fondo {
           position: fixed;
           inset: 0;
           background: rgba(15, 23, 42, .45);
@@ -1040,104 +1167,116 @@ export default function EquiposCelulares() {
           z-index: 9999;
         }
 
-        .modal {
+        .modal-equipo {
           width: 100%;
           max-width: 760px;
           max-height: 90vh;
           overflow-y: auto;
           background: white;
-          border-radius: 15px;
-          box-shadow: 0 20px 60px rgba(0,0,0,.2);
+          border-radius: 14px;
+          box-shadow: 0 25px 70px rgba(0,0,0,.2);
         }
 
-        .modal-header {
+        .modal-cabecera {
+          padding: 21px 24px;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          padding: 22px 24px;
           border-bottom: 1px solid #edf2f7;
         }
 
-        .modal-header h2 {
+        .modal-cabecera h2 {
           margin: 0;
           font-size: 20px;
+          color: #172033;
         }
 
-        .modal-header p {
+        .modal-cabecera p {
           margin: 5px 0 0;
-          color: #64748b;
           font-size: 13px;
+          color: #64748b;
         }
 
-        .modal-close {
+        .modal-cerrar {
           border: none;
           background: transparent;
-          font-size: 28px;
           color: #64748b;
           cursor: pointer;
         }
 
-        form {
+        .modal-equipo form {
           padding: 24px;
         }
 
-        .form-grid {
+        .formulario-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 17px;
+          gap: 16px;
         }
 
-        .form-group {
-          margin-top: 17px;
+        .campo-formulario {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
         }
 
-        .form-group label {
-          display: block;
-          margin-bottom: 7px;
+        .campo-formulario label,
+        .campo-completo label {
           font-size: 13px;
           font-weight: 600;
           color: #334155;
         }
 
-        .form-group input,
-        .form-group textarea {
+        .campo-formulario input,
+        .campo-completo textarea {
           width: 100%;
           border: 1px solid #d5deea;
           border-radius: 8px;
           padding: 10px 12px;
+          font-family: inherit;
           font-size: 14px;
           outline: none;
-          font-family: inherit;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-          border-color: #60a5fa;
+        .campo-formulario input {
+          height: 42px;
         }
 
-        .modal-footer {
+        .campo-formulario input:focus,
+        .campo-completo textarea:focus {
+          border-color: #75a9df;
+        }
+
+        .campo-completo {
+          margin-top: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+
+        .modal-acciones {
           display: flex;
           justify-content: flex-end;
           gap: 10px;
-          margin-top: 25px;
+          margin-top: 22px;
         }
 
-        .btn-cancelar,
-        .btn-guardar {
+        .boton-cancelar,
+        .boton-guardar {
           padding: 10px 17px;
           border-radius: 8px;
+          font-size: 13px;
           font-weight: 600;
           cursor: pointer;
-          font-size: 13px;
         }
 
-        .btn-cancelar {
+        .boton-cancelar {
           background: white;
           border: 1px solid #d5deea;
           color: #475569;
         }
 
-        .btn-guardar {
+        .boton-guardar {
           background: #16a34a;
           border: none;
           color: white;
@@ -1145,46 +1284,55 @@ export default function EquiposCelulares() {
 
         @media (max-width: 900px) {
 
-          .equipo-fila {
-            grid-template-columns: 1fr 1fr 1fr 45px;
+          .detalles-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
 
-          .detalle-grid {
-            grid-template-columns: repeat(2, 1fr);
+          .equipo-fila {
+            grid-template-columns: 1fr 1.2fr 1fr 50px;
           }
 
         }
 
         @media (max-width: 650px) {
 
-          .equipos-container {
-            padding: 14px;
+          .equipos-page {
+            padding: 15px;
           }
 
-          .equipos-header {
+          .equipos-titulo {
+            flex-direction: column;
             align-items: flex-start;
             gap: 15px;
+          }
+
+          .equipos-toolbar {
             flex-direction: column;
+            align-items: stretch;
+          }
+
+          .cantidad-equipos {
+            align-self: flex-end;
           }
 
           .equipo-fila {
             grid-template-columns: 1fr 45px;
           }
 
-          .empresa-col,
-          .usuario-col {
-            border-right: none;
-          }
-
-          .celular-col {
+          .equipo-celular {
             display: none;
           }
 
-          .detalle-grid {
+          .equipo-empresa,
+          .equipo-usuario {
+            border-right: none;
+          }
+
+          .detalles-grid {
             grid-template-columns: 1fr;
           }
 
-          .form-grid {
+          .formulario-grid {
             grid-template-columns: 1fr;
           }
 
@@ -1200,18 +1348,27 @@ export default function EquiposCelulares() {
 // COMPONENTE DETALLE
 // =========================================================
 
-function Detalle({ titulo, valor }) {
-
+function Detalle({
+  icono,
+  titulo,
+  valor,
+}) {
   return (
-    <div className="detalle">
+    <div className="detalle-item">
 
-      <span>
-        {titulo}
-      </span>
+      <div className="detalle-cabecera">
 
-      <strong>
+        {icono}
+
+        <span>
+          {titulo}
+        </span>
+
+      </div>
+
+      <div className="detalle-valor">
         {valor || "-"}
-      </strong>
+      </div>
 
     </div>
   );
@@ -1230,9 +1387,8 @@ function Campo({
   type = "text",
   step,
 }) {
-
   return (
-    <div className="form-group">
+    <div className="campo-formulario">
 
       <label>
         {label}
