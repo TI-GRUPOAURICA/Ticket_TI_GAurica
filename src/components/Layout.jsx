@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { RadioTower } from "lucide-react";
 
 import {
   LayoutDashboard,
@@ -65,6 +66,11 @@ export default function Layout({
       label: "Equipos celulares",
       icon: Smartphone
     },
+    {
+  id: "radios",
+  label: "Radios",
+  icon: RadioTower
+},
 
     {
       id: "reportes",

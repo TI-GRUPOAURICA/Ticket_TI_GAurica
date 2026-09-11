@@ -31,6 +31,8 @@ import EquiposCelulares from "./pages/EquiposCelulares";
 // NUEVO: Página de cuentas de correo
 import CuentasCorreo from "./pages/CuentasCorreo";
 
+import Radios from "./pages/radios";
+
 export default function App() {
 
   // ----------------------------------------------------------
@@ -141,6 +143,8 @@ export default function App() {
       case "cuentas-correo":
 
         return <CuentasCorreo />;
+        case "radios":
+  return <Radios />;
 
       default:
 
