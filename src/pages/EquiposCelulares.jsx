@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Plus,
-  ChevronRight,
   ChevronDown,
+ChevronUp,
   Smartphone,
   Pencil,
   Trash2,
@@ -485,9 +485,9 @@ export default function EquiposCelulares() {
                     }}
                   >
                     {abierto ? (
-                      <ChevronDown size={21} />
-                    ) : (
-                      <ChevronRight size={21} />
+                      <ChevronUp size={21} />
+  ) : (
+    <ChevronDown size={21} />
                     )}
                   </button>
 
