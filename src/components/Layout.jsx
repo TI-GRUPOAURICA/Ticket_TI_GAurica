@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { RadioTower } from "lucide-react";
 
 import {
   LayoutDashboard,
@@ -11,6 +10,65 @@ import {
   LogOut,
   Mail
 } from "lucide-react";
+
+/* =========================================================
+   ÍCONO PERSONALIZADO DE WALKIE-TALKIE
+   ========================================================= */
+
+const WalkieTalkieIcon = ({
+  size = 24,
+  strokeWidth = 2
+}) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* Antena */}
+      <path d="M15.5 5L17.5 1.5" />
+
+      {/* Perilla superior */}
+      <path d="M10 4V2.5H13.5V4" />
+
+      {/* Cuerpo del walkie-talkie */}
+      <rect
+        x="7"
+        y="4"
+        width="9"
+        height="18"
+        rx="2"
+      />
+
+      {/* Pantalla */}
+      <rect
+        x="9"
+        y="7"
+        width="5"
+        height="3"
+        rx="0.5"
+      />
+
+      {/* Altavoz */}
+      <path d="M9 12H14" />
+      <path d="M9 14H14" />
+      <path d="M9 16H14" />
+
+      {/* Botón */}
+      <circle
+        cx="11.5"
+        cy="19"
+        r="1"
+      />
+    </svg>
+  );
+};
 
 export default function Layout({
   children,
@@ -29,7 +87,10 @@ export default function Layout({
       setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener(
+      "resize",
+      handleResize
+    );
 
     return () => {
       window.removeEventListener(
@@ -39,6 +100,10 @@ export default function Layout({
     };
 
   }, []);
+
+  /* =========================================================
+     MENÚ
+     ========================================================= */
 
   const menuItems = [
 
@@ -60,17 +125,17 @@ export default function Layout({
       icon: Laptop
     },
 
-    // NUEVO: EQUIPOS CELULARES
     {
       id: "equipos-celulares",
       label: "Equipos celulares",
       icon: Smartphone
     },
+
     {
-  id: "radios",
-  label: "Radios",
-  icon: RadioTower
-},
+      id: "radios",
+      label: "Radios",
+      icon: WalkieTalkieIcon
+    },
 
     {
       id: "reportes",
@@ -103,7 +168,7 @@ export default function Layout({
 
       {/* =====================================================
           SIDEBAR
-      ===================================================== */}
+          ===================================================== */}
 
       <div
         className="flex flex-col flex-shrink-0"
@@ -119,7 +184,7 @@ export default function Layout({
 
         {/* ===================================================
             LOGO
-        =================================================== */}
+            =================================================== */}
 
         <div
           className="flex items-center justify-center"
@@ -159,10 +224,9 @@ export default function Layout({
 
         </div>
 
-
         {/* ===================================================
-            MENU
-        =================================================== */}
+            MENÚ
+            =================================================== */}
 
         <nav
           className="flex-1 py-0 space-y-1 px-2"
@@ -172,11 +236,9 @@ export default function Layout({
 
             <button
               key={item.id}
-
               onClick={() =>
                 onNavigate(item.id)
               }
-
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
 
               style={
@@ -203,7 +265,6 @@ export default function Layout({
 
                   e.currentTarget.style.color =
                     "#ffffff";
-
                 }
 
               }}
@@ -219,27 +280,22 @@ export default function Layout({
 
                   e.currentTarget.style.color =
                     "#dbeafe";
-
                 }
 
               }}
             >
 
               <span>
-
                 <item.icon
                   size={20}
                   strokeWidth={2}
                 />
-
               </span>
 
               {!isMobile && (
 
                 <span className="font-medium">
-
                   {item.label}
-
                 </span>
 
               )}
@@ -250,10 +306,9 @@ export default function Layout({
 
         </nav>
 
-
         {/* ===================================================
             CERRAR SESIÓN
-        =================================================== */}
+            =================================================== */}
 
         <div
           className="p-2"
@@ -264,7 +319,6 @@ export default function Layout({
 
           <button
             onClick={onLogout}
-
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition"
 
             style={{
@@ -312,10 +366,9 @@ export default function Layout({
 
       </div>
 
-
       {/* =====================================================
           CONTENIDO
-      ===================================================== */}
+          ===================================================== */}
 
       <div
         className="flex-1 overflow-auto p-6"
@@ -348,5 +401,6 @@ export default function Layout({
       </div>
 
     </div>
+
   );
 }
