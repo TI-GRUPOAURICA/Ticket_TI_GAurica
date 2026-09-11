@@ -1190,18 +1190,43 @@ export default function EquiposCelulares() {
           gap: 11px;
         }
 
-        .equipo-card {
-          background: white;
-          border: 1px solid #e3e7ed;
-          border-radius: 11px;
-          overflow: hidden;
-          box-shadow: 0 2px 7px rgba(15, 23, 42, 0.035);
-          transition: 0.2s;
-        }
+       .equipo-card {
+  background: white;
+  border: 1px solid #e3e7ed;
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.035);
+  transition: 
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
 
         .equipo-card:hover {
-          border-color: #cbd5e1;
-        }
+  background: #eef4ff;
+  border-color: #7fa4d8;
+  box-shadow: 0 4px 14px rgba(52, 93, 157, 0.12);
+  transform: translateY(-1px);
+}
+  .equipo-card {
+  position: relative;
+}
+
+.equipo-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.equipo-card:hover::before {
+  background: #345D9D;
+}
 
         .equipo-abierto {
           border-color: #b8c8df;
