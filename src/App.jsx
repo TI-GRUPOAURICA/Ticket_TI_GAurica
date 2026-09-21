@@ -33,6 +33,8 @@ import CuentasCorreo from "./pages/CuentasCorreo";
 
 import Radios from "./pages/radios";
 
+import Microsoft365 from "./pages/Microsoft365";
+
 export default function App() {
 
   // ----------------------------------------------------------
@@ -145,6 +147,8 @@ export default function App() {
         return <CuentasCorreo />;
         case "radios":
   return <Radios />;
+          case "microsoft-365":
+  return <Microsoft365 />;
 
       default:
 
