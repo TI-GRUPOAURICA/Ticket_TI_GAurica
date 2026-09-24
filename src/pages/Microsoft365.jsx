@@ -9,6 +9,7 @@ import {
 
 import {
   InteractionStatus,
+  InteractionRequiredAuthError,
 } from "@azure/msal-browser";
 
 import {
@@ -45,7 +46,6 @@ const EDGE_FUNCTION_URL =
 // =============================================================
 
 export default function Microsoft365() {
-
   // ===========================================================
   // MICROSOFT MSAL
   // ===========================================================
@@ -127,11 +127,10 @@ export default function Microsoft365() {
   ] = useState(false);
 
   // ===========================================================
-  // EMPRESAS DINÁMICAS
+  // EMPRESAS
   // ===========================================================
 
   const empresas = useMemo(() => {
-
     const lista = usuarios
       .map(
         (usuario) =>
@@ -139,492 +138,487 @@ export default function Microsoft365() {
       )
       .filter(Boolean)
       .filter(
-        (valor) =>
-          valor !== "—"
+        (empresaNombre) =>
+          empresaNombre !== "—"
       );
 
     return [
       ...new Set(lista),
     ].sort();
-
   }, [usuarios]);
 
   // ===========================================================
   // FILTRO DE USUARIOS
   // ===========================================================
 
-  const usuariosFiltrados =
-    useMemo(() => {
+  const usuariosFiltrados = useMemo(() => {
+    return usuarios.filter(
+      (usuario) => {
+        const texto =
+          busqueda
+            .trim()
+            .toLowerCase();
 
-      return usuarios.filter(
-        (usuario) => {
+        const nombre =
+          String(
+            usuario.nombre || ""
+          ).toLowerCase();
 
-          const texto =
-            busqueda
-              .trim()
-              .toLowerCase();
+        const correo =
+          String(
+            usuario.correo || ""
+          ).toLowerCase();
 
-          const nombre =
-            String(
-              usuario.nombre || ""
-            ).toLowerCase();
+        const licencia =
+          String(
+            usuario.licencia || ""
+          ).toLowerCase();
 
-          const correo =
-            String(
-              usuario.correo || ""
-            ).toLowerCase();
+        const coincideBusqueda =
+          !texto ||
+          nombre.includes(texto) ||
+          correo.includes(texto) ||
+          licencia.includes(texto);
 
-          const licenciaTexto =
-            String(
-              usuario.licencia || ""
-            ).toLowerCase();
+        const coincideEmpresa =
+          empresa === "Todas" ||
+          usuario.empresa === empresa;
 
-          const coincideBusqueda =
-            !texto ||
-            nombre.includes(texto) ||
-            correo.includes(texto) ||
-            licenciaTexto.includes(texto);
+        const coincideEstado =
+          estado === "Todos" ||
+          usuario.estado === estado;
 
-          const coincideEmpresa =
-            empresa === "Todas" ||
-            usuario.empresa === empresa;
-
-          const coincideEstado =
-            estado === "Todos" ||
-            usuario.estado === estado;
-
-          return (
-            coincideBusqueda &&
-            coincideEmpresa &&
-            coincideEstado
-          );
-        }
-      );
-
-    }, [
-      usuarios,
-      busqueda,
-      empresa,
-      estado,
-    ]);
+        return (
+          coincideBusqueda &&
+          coincideEmpresa &&
+          coincideEstado
+        );
+      }
+    );
+  }, [
+    usuarios,
+    busqueda,
+    empresa,
+    estado,
+  ]);
 
   // ===========================================================
-  // SINCRONIZAR CON MICROSOFT 365
+  // SINCRONIZAR MICROSOFT 365
   // ===========================================================
 
-  const sincronizar =
-    async () => {
-
-      setLoading(true);
-      setErrorMicrosoft("");
-
-      try {
-
-        // -----------------------------------------------------
-        // VERIFICAR SESIÓN
-        // -----------------------------------------------------
-
-        if (
-          !accounts ||
-          accounts.length === 0
-        ) {
-
-          throw new Error(
-            "No hay una sesión activa de Microsoft 365."
-          );
-
-        }
-
-        if (
-          inProgress !==
-          InteractionStatus.None
-        ) {
-
-          throw new Error(
-            "Microsoft todavía está procesando una operación de inicio de sesión."
-          );
-
-        }
-
-        // -----------------------------------------------------
-        // OBTENER TOKEN DE MICROSOFT
-        // -----------------------------------------------------
-
-        const tokenResponse =
-          await instance.acquireTokenSilent(
-            {
-              account: accounts[0],
-
-              scopes:
-                loginRequest.scopes ||
-                ["User.Read"],
-            }
-          );
-
-        const accessToken =
-          tokenResponse.accessToken;
-
-        if (!accessToken) {
-          throw new Error(
-            "No se pudo obtener el token de Microsoft."
-          );
-        }
-
-        // -----------------------------------------------------
-        // LLAMAR A EDGE FUNCTION
-        // -----------------------------------------------------
-
-        const response =
-          await fetch(
-            EDGE_FUNCTION_URL,
-            {
-              method: "GET",
-
-              headers: {
-                Authorization:
-                  `Bearer ${accessToken}`,
-
-                "Content-Type":
-                  "application/json",
-              },
-            }
-          );
-
-        // -----------------------------------------------------
-        // LEER RESPUESTA
-        // -----------------------------------------------------
-
-        const data =
-          await response.json();
-
-        // -----------------------------------------------------
-        // VALIDAR RESPUESTA
-        // -----------------------------------------------------
-
-        if (
-          !response.ok ||
-          !data.success
-        ) {
-
-          throw new Error(
-            data?.error ||
-              `Error al consultar Microsoft 365. Código: ${response.status}`
-          );
-
-        }
-
-        // =====================================================
-        // FORMATEAR LICENCIAS
-        // =====================================================
-
-        const licenciasFormateadas =
-          (data.licencias || []).map(
-            (licencia, index) => {
-
-              const total =
-                Number(
-                  licencia.capacidad ??
-                    licencia.total ??
-                    0
-                );
-
-              const asignadas =
-                Number(
-                  licencia.asignadas ??
-                    0
-                );
-
-              const disponibles =
-                Number(
-                  licencia.disponibles ??
-                    Math.max(
-                      total -
-                        asignadas,
-                      0
-                    )
-                );
-
-              let estadoLicencia =
-                "Completa";
-
-              if (
-                total === 0
-              ) {
-
-                estadoLicencia =
-                  "Sin capacidad";
-
-              } else if (
-                disponibles > 0
-              ) {
-
-                estadoLicencia =
-                  "Disponible";
-
-              }
-
-              return {
-
-                id:
-                  licencia.id ||
-                  licencia.skuId ||
-                  index,
-
-                skuId:
-                  licencia.skuId ||
-                  "",
-
-                skuPartNumber:
-                  licencia.skuPartNumber ||
-                  "",
-
-                nombre:
-                  licencia.nombre ||
-                  licencia.skuPartNumber ||
-                  "Licencia Microsoft 365",
-
-                categoria:
-                  licencia.categoria ||
-                  "Otros",
-
-                asignadas,
-
-                disponibles,
-
-                total,
-
-                estado:
-                  estadoLicencia,
-
-                suspendidas:
-                  Number(
-                    licencia.suspendidas ||
-                      0
-                  ),
-
-                warning:
-                  Number(
-                    licencia.warning ||
-                      0
-                  ),
-              };
-
-            }
-          );
-
-        // =====================================================
-        // FORMATEAR USUARIOS
-        // =====================================================
-
-        const usuariosFormateados =
-          (data.usuarios || []).map(
-            (usuario) => {
-
-              const listaLicencias =
-                Array.isArray(
-                  usuario.licencias
-                )
-                  ? usuario.licencias
-                  : [];
-
-              const nombresLicencias =
-                listaLicencias
-                  .map(
-                    (licencia) =>
-                      licencia.nombre ||
-                      licencia.skuPartNumber ||
-                      "Licencia"
-                  );
-
-              return {
-
-                id:
-                  usuario.id,
-
-                nombre:
-                  usuario.nombre ||
-                  "Sin nombre",
-
-                correo:
-                  usuario.correo ||
-                  usuario.userPrincipalName ||
-                  "Sin correo",
-
-                empresa:
-                  usuario.empresa ||
-                  usuario.companyName ||
-                  "—",
-
-                estado:
-                  usuario.estado ||
-                  (
-                    usuario.habilitado ===
-                    false
-                      ? "Bloqueado"
-                      : "Activo"
-                  ),
-
-                tipo:
-                  usuario.tipo ||
-                  "Member",
-
-                // Texto para búsqueda
-                licencia:
-                  nombresLicencias.length >
-                  0
-                    ? nombresLicencias.join(
-                        ", "
-                      )
-                    : "Sin licencia",
-
-                // Array real para mostrar
-                licencias:
-                  listaLicencias,
-
-                cantidadLicencias:
-                  listaLicencias.length,
-              };
-
-            }
-          );
-
-        // =====================================================
-        // GUARDAR DATOS
-        // =====================================================
-
-        setLicencias(
-          licenciasFormateadas
+  const sincronizar = async () => {
+    setLoading(true);
+    setErrorMicrosoft("");
+
+    try {
+      // -------------------------------------------------------
+      // 1. COMPROBAR SESIÓN
+      // -------------------------------------------------------
+
+      if (
+        !accounts ||
+        accounts.length === 0
+      ) {
+        throw new Error(
+          "No hay una sesión activa de Microsoft 365."
         );
-
-        setUsuarios(
-          usuariosFormateados
-        );
-
-        // -----------------------------------------------------
-        // RESUMEN
-        // -----------------------------------------------------
-
-        const resumenServidor =
-          data.resumen || {};
-
-        setResumen({
-
-          totalUsuarios:
-            Number(
-              resumenServidor.totalUsuarios ??
-                usuariosFormateados.length
-            ),
-
-          usuariosConLicencia:
-            Number(
-              resumenServidor.usuariosConLicencia ??
-                usuariosFormateados.filter(
-                  (usuario) =>
-                    usuario.cantidadLicencias >
-                    0
-                ).length
-            ),
-
-          totalUsuariosSinLicencia:
-            Number(
-              resumenServidor.totalUsuariosSinLicencia ??
-                usuariosFormateados.filter(
-                  (usuario) =>
-                    usuario.cantidadLicencias ===
-                    0
-                ).length
-            ),
-
-          totalAsignaciones:
-            Number(
-              resumenServidor.totalAsignaciones ??
-                usuariosFormateados.reduce(
-                  (
-                    total,
-                    usuario
-                  ) =>
-                    total +
-                    Number(
-                      usuario.cantidadLicencias ||
-                        0
-                    ),
-                  0
-                )
-            ),
-
-          totalTiposLicencia:
-            Number(
-              resumenServidor.totalTiposLicencia ??
-                licenciasFormateadas.length
-            ),
-        });
-
-        // -----------------------------------------------------
-        // FECHA
-        // -----------------------------------------------------
-
-        setUltimaSincronizacion(
-          new Date()
-        );
-
-        setSincronizado(
-          true
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Error sincronizando Microsoft 365:",
-          error
-        );
-
-        setSincronizado(
-          false
-        );
-
-        setErrorMicrosoft(
-          error?.message ||
-            "Ocurrió un error al sincronizar Microsoft 365."
-        );
-
-      } finally {
-
-        setLoading(false);
-
       }
 
-    };
+      if (
+        inProgress !==
+        InteractionStatus.None
+      ) {
+        throw new Error(
+          "Microsoft todavía está procesando una operación de inicio de sesión."
+        );
+      }
+
+      // -------------------------------------------------------
+      // 2. OBTENER TOKEN DE MICROSOFT
+      // -------------------------------------------------------
+
+      const scopes =
+        loginRequest?.scopes || [
+          "User.Read",
+        ];
+
+      let tokenResponse;
+
+      try {
+        tokenResponse =
+          await instance.acquireTokenSilent(
+            {
+              account:
+                accounts[0],
+              scopes,
+            }
+          );
+      } catch (silentError) {
+        // -----------------------------------------------------
+        // Si Microsoft requiere interacción, abrir popup
+        // -----------------------------------------------------
+
+        if (
+          silentError instanceof
+          InteractionRequiredAuthError
+        ) {
+          tokenResponse =
+            await instance.acquireTokenPopup(
+              {
+                account:
+                  accounts[0],
+                scopes,
+              }
+            );
+        } else {
+          throw silentError;
+        }
+      }
+
+      const accessToken =
+        tokenResponse.accessToken;
+
+      if (!accessToken) {
+        throw new Error(
+          "No se pudo obtener el token de Microsoft."
+        );
+      }
+
+      // -------------------------------------------------------
+      // 3. LLAMAR A LA EDGE FUNCTION
+      // -------------------------------------------------------
+
+      const response =
+        await fetch(
+          EDGE_FUNCTION_URL,
+          {
+            method: "GET",
+
+            headers: {
+              Authorization:
+                `Bearer ${accessToken}`,
+
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
+
+      // -------------------------------------------------------
+      // 4. LEER RESPUESTA
+      // -------------------------------------------------------
+
+      const data =
+        await response.json();
+
+      // -------------------------------------------------------
+      // 5. VALIDAR RESPUESTA
+      // -------------------------------------------------------
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data?.error ||
+            `Error al consultar Microsoft 365. Código: ${response.status}`
+        );
+      }
+
+      // =======================================================
+      // 6. LICENCIAS
+      // =======================================================
+
+      const licenciasFormateadas =
+        (data.licencias || []).map(
+          (licencia, index) => {
+            const total =
+              Number(
+                licencia.capacidad ??
+                  licencia.total ??
+                  0
+              );
+
+            const asignadas =
+              Number(
+                licencia.asignadas ??
+                  0
+              );
+
+            const disponibles =
+              Number(
+                licencia.disponibles ??
+                  Math.max(
+                    total -
+                      asignadas,
+                    0
+                  )
+              );
+
+            let estadoLicencia =
+              "Completa";
+
+            if (total === 0) {
+              estadoLicencia =
+                "Sin capacidad";
+            } else if (
+              disponibles > 0
+            ) {
+              estadoLicencia =
+                "Disponible";
+            }
+
+            return {
+              id:
+                licencia.id ||
+                licencia.skuId ||
+                index,
+
+              skuId:
+                licencia.skuId ||
+                "",
+
+              skuPartNumber:
+                licencia.skuPartNumber ||
+                "",
+
+              nombre:
+                licencia.nombre ||
+                licencia.skuPartNumber ||
+                "Licencia Microsoft 365",
+
+              categoria:
+                licencia.categoria ||
+                "Otros",
+
+              asignadas,
+
+              disponibles,
+
+              total,
+
+              estado:
+                estadoLicencia,
+
+              suspendidas:
+                Number(
+                  licencia.suspendidas ||
+                    0
+                ),
+
+              warning:
+                Number(
+                  licencia.warning ||
+                    0
+                ),
+            };
+          }
+        );
+
+      // =======================================================
+      // 7. USUARIOS
+      // =======================================================
+
+      const usuariosFormateados =
+        (data.usuarios || []).map(
+          (usuario) => {
+            const listaLicencias =
+              Array.isArray(
+                usuario.licencias
+              )
+                ? usuario.licencias
+                : [];
+
+            const nombresLicencias =
+              listaLicencias.map(
+                (licencia) =>
+                  licencia.nombre ||
+                  licencia.skuPartNumber ||
+                  "Licencia"
+              );
+
+            return {
+              id:
+                usuario.id,
+
+              nombre:
+                usuario.nombre ||
+                "Sin nombre",
+
+              correo:
+                usuario.correo ||
+                usuario.userPrincipalName ||
+                "Sin correo",
+
+              empresa:
+                usuario.empresa ||
+                usuario.companyName ||
+                "—",
+
+              estado:
+                usuario.estado ||
+                (
+                  usuario.habilitado ===
+                  false
+                    ? "Bloqueado"
+                    : "Activo"
+                ),
+
+              tipo:
+                usuario.tipo ||
+                "Member",
+
+              // Texto utilizado para la búsqueda
+              licencia:
+                nombresLicencias.length >
+                0
+                  ? nombresLicencias.join(
+                      ", "
+                    )
+                  : "Sin licencia",
+
+              // Array completo
+              licencias:
+                listaLicencias,
+
+              cantidadLicencias:
+                listaLicencias.length,
+            };
+          }
+        );
+
+      // =======================================================
+      // 8. GUARDAR USUARIOS Y LICENCIAS
+      // =======================================================
+
+      setUsuarios(
+        usuariosFormateados
+      );
+
+      setLicencias(
+        licenciasFormateadas
+      );
+
+      // =======================================================
+      // 9. RESUMEN
+      // =======================================================
+
+      const resumenServidor =
+        data.resumen || {};
+
+      const totalUsuarios =
+        Number(
+          resumenServidor.totalUsuarios ??
+            usuariosFormateados.length
+        );
+
+      const usuariosConLicencia =
+        Number(
+          resumenServidor.usuariosConLicencia ??
+            usuariosFormateados.filter(
+              (usuario) =>
+                usuario.cantidadLicencias >
+                0
+            ).length
+        );
+
+      const totalUsuariosSinLicencia =
+        Number(
+          resumenServidor.totalUsuariosSinLicencia ??
+            usuariosFormateados.filter(
+              (usuario) =>
+                usuario.cantidadLicencias ===
+                0
+            ).length
+        );
+
+      const totalAsignaciones =
+        Number(
+          resumenServidor.totalAsignaciones ??
+            usuariosFormateados.reduce(
+              (
+                total,
+                usuario
+              ) =>
+                total +
+                Number(
+                  usuario.cantidadLicencias ||
+                    0
+                ),
+              0
+            )
+        );
+
+      const totalTiposLicencia =
+        Number(
+          resumenServidor.totalTiposLicencia ??
+            licenciasFormateadas.length
+        );
+
+      setResumen({
+        totalUsuarios,
+        usuariosConLicencia,
+        totalUsuariosSinLicencia,
+        totalAsignaciones,
+        totalTiposLicencia,
+      });
+
+      // =======================================================
+      // 10. FECHA DE SINCRONIZACIÓN
+      // =======================================================
+
+      setUltimaSincronizacion(
+        new Date()
+      );
+
+      setSincronizado(
+        true
+      );
+
+    } catch (error) {
+      console.error(
+        "Error sincronizando Microsoft 365:",
+        error
+      );
+
+      setSincronizado(
+        false
+      );
+
+      setErrorMicrosoft(
+        error?.message ||
+          "Ocurrió un error al sincronizar Microsoft 365."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===========================================================
   // TABS
   // ===========================================================
 
   const tabs = [
-
     {
       id: "usuarios",
       label: "Usuarios",
       icon: Users,
     },
-
     {
       id: "licencias",
       label: "Licencias",
       icon: KeyRound,
     },
-
     {
       id: "suscripciones",
       label: "Suscripciones",
       icon: Package,
     },
-
     {
       id: "aplicaciones",
       label: "Aplicaciones",
       icon: AppWindow,
     },
-
   ];
 
   // ===========================================================
@@ -632,7 +626,6 @@ export default function Microsoft365() {
   // ===========================================================
 
   return (
-
     <div className="w-full min-h-full">
 
       {/* =====================================================
@@ -730,7 +723,7 @@ export default function Microsoft365() {
       </div>
 
       {/* =====================================================
-          ERROR
+          MENSAJE DE ERROR
       ===================================================== */}
 
       {errorMicrosoft && (
@@ -801,10 +794,18 @@ export default function Microsoft365() {
         />
 
         <StatCard
-          icon={AppWindow}
-          title="Aplicaciones"
-          value="—"
-          detail="Próxima integración con Graph"
+          icon={ShieldCheck}
+          title="Usuarios sin licencia"
+          value={
+            sincronizado
+              ? resumen.totalUsuariosSinLicencia
+              : "—"
+          }
+          detail={
+            sincronizado
+              ? "Usuarios sin licencias asignadas"
+              : "Sincroniza para consultar"
+          }
         />
 
       </div>
@@ -1072,7 +1073,7 @@ export default function Microsoft365() {
 
                           <td className="px-4 py-4">
 
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 max-w-[520px]">
 
                               {usuario.licencias &&
                               usuario.licencias.length >
@@ -1214,15 +1215,19 @@ export default function Microsoft365() {
               <span>
 
                 Mostrando{" "}
+
                 <strong>
                   {
                     usuariosFiltrados.length
                   }
                 </strong>{" "}
+
                 de{" "}
+
                 <strong>
                   {usuarios.length}
                 </strong>{" "}
+
                 usuarios
 
               </span>
@@ -1244,7 +1249,6 @@ export default function Microsoft365() {
             </div>
 
           </div>
-
         )}
 
         {/* ===================================================
@@ -1475,7 +1479,7 @@ export default function Microsoft365() {
       </div>
 
       {/* =====================================================
-          MODAL DETALLE
+          MODAL DETALLE DE USUARIO
       ===================================================== */}
 
       {selectedUser && (
@@ -1650,7 +1654,6 @@ export default function Microsoft365() {
       )}
 
     </div>
-
   );
 }
 
@@ -1664,9 +1667,7 @@ function StatCard({
   value,
   detail,
 }) {
-
   return (
-
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
 
       <div className="flex items-center justify-between">
@@ -1701,7 +1702,6 @@ function StatCard({
       </p>
 
     </div>
-
   );
 }
 
@@ -1713,9 +1713,7 @@ function MiniStat({
   label,
   value,
 }) {
-
   return (
-
     <div className="bg-slate-50 rounded-lg p-3">
 
       <p className="text-[11px] text-slate-500">
@@ -1731,7 +1729,6 @@ function MiniStat({
       </p>
 
     </div>
-
   );
 }
 
@@ -1744,9 +1741,7 @@ function DetailRow({
   label,
   value,
 }) {
-
   return (
-
     <div className="flex items-center gap-3">
 
       <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -1775,7 +1770,6 @@ function DetailRow({
       </div>
 
     </div>
-
   );
 }
 
@@ -1788,9 +1782,7 @@ function EmptyModule({
   title,
   description,
 }) {
-
   return (
-
     <div className="p-12 text-center">
 
       <div className="w-14 h-14 mx-auto rounded-xl bg-blue-50 flex items-center justify-center">
@@ -1815,6 +1807,5 @@ function EmptyModule({
       </p>
 
     </div>
-
   );
 }
