@@ -41,6 +41,19 @@ import {
 const EDGE_FUNCTION_URL =
   "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
 
+  const EMPRESAS_POR_DOMINIO = {
+  "aurica.com": "GRUPO AURICA",
+  "alencorsrl.com": "ALENCOR SRL",
+};
+
+function obtenerEmpresa(correo) {
+  const dominio = String(correo || "")
+    .split("@")[1]
+    ?.toLowerCase();
+
+  return EMPRESAS_POR_DOMINIO[dominio] || "—";
+}
+
 // =============================================================
 // COMPONENTE PRINCIPAL
 // =============================================================
@@ -450,10 +463,10 @@ export default function Microsoft365() {
                 usuario.userPrincipalName ||
                 "Sin correo",
 
-              empresa:
-                usuario.empresa ||
-                usuario.companyName ||
-                "—",
+               empresa: obtenerEmpresa(
+                usuario.correo ||
+                  usuario.userPrincipalName
+              ),
 
               estado:
                 usuario.estado ||
