@@ -1,7 +1,19 @@
-import { useMemo, useState } from "react";
-import { useMsal } from "@azure/msal-react";
-import { InteractionStatus } from "@azure/msal-browser";
-import { loginRequest } from "../Config/authConfig";
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useMsal,
+} from "@azure/msal-react";
+
+import {
+  InteractionStatus,
+} from "@azure/msal-browser";
+
+import {
+  loginRequest,
+} from "../Config/authConfig";
 
 import {
   Cloud,
@@ -22,305 +34,597 @@ import {
 } from "lucide-react";
 
 // =============================================================
-// DATOS DEMO DE USUARIOS
+// CONFIGURACIÓN
 // =============================================================
-// Esta parte todavía es de demostración.
-// Más adelante la reemplazaremos por los usuarios reales
-// obtenidos desde Microsoft Graph.
-const usuariosDemo = [
-  {
-    id: 1,
-    nombre: "Admin Alencor",
-    correo: "admin@alencorsrl.com",
-    empresa: "ALENCOR SRL",
-    licencia: "Exchange Online",
-    estado: "Activo",
-    tipo: "Administrador",
-  },
-  {
-    id: 2,
-    nombre: "Marco Izagaza",
-    correo: "marco.izagaza@aurica.com",
-    empresa: "GRUPO AURICA",
-    licencia: "Microsoft 365 Business Standard",
-    estado: "Activo",
-    tipo: "Usuario",
-  },
-  {
-    id: 3,
-    nombre: "Carlos Mendoza",
-    correo: "carlos.mendoza@aurica.com",
-    empresa: "GRUPO AURICA",
-    licencia: "Microsoft 365 Business Basic",
-    estado: "Activo",
-    tipo: "Usuario",
-  },
-  {
-    id: 4,
-    nombre: "Soporte TI",
-    correo: "soporte@aurica.com",
-    empresa: "GRUPO AURICA",
-    licencia: "Microsoft 365 Business Standard",
-    estado: "Bloqueado",
-    tipo: "Usuario",
-  },
-];
 
-const licenciasIniciales = [];
+const EDGE_FUNCTION_URL =
+  "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
+
+// =============================================================
+// COMPONENTE PRINCIPAL
+// =============================================================
 
 export default function Microsoft365() {
+
   // ===========================================================
   // MICROSOFT MSAL
   // ===========================================================
 
-  const { instance, accounts, inProgress } = useMsal();
+  const {
+    instance,
+    accounts,
+    inProgress,
+  } = useMsal();
 
   // ===========================================================
   // ESTADOS
   // ===========================================================
 
-  const [activeTab, setActiveTab] = useState("usuarios");
-  const [busqueda, setBusqueda] = useState("");
-  const [empresa, setEmpresa] = useState("Todas");
-  const [estado, setEstado] = useState("Todos");
+  const [
+    activeTab,
+    setActiveTab,
+  ] = useState("usuarios");
 
-  const [loading, setLoading] = useState(false);
+  const [
+    busqueda,
+    setBusqueda,
+  ] = useState("");
 
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [
+    empresa,
+    setEmpresa,
+  ] = useState("Todas");
 
-  const [licencias, setLicencias] = useState(licenciasIniciales);
+  const [
+    estado,
+    setEstado,
+  ] = useState("Todos");
 
-  const [ultimaSincronizacion, setUltimaSincronizacion] =
-    useState(null);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-  const [errorMicrosoft, setErrorMicrosoft] = useState("");
+  const [
+    selectedUser,
+    setSelectedUser,
+  ] = useState(null);
 
-  const [sincronizado, setSincronizado] = useState(false);
+  const [
+    usuarios,
+    setUsuarios,
+  ] = useState([]);
+
+  const [
+    licencias,
+    setLicencias,
+  ] = useState([]);
+
+  const [
+    resumen,
+    setResumen,
+  ] = useState({
+    totalUsuarios: 0,
+    usuariosConLicencia: 0,
+    totalUsuariosSinLicencia: 0,
+    totalAsignaciones: 0,
+    totalTiposLicencia: 0,
+  });
+
+  const [
+    ultimaSincronizacion,
+    setUltimaSincronizacion,
+  ] = useState(null);
+
+  const [
+    errorMicrosoft,
+    setErrorMicrosoft,
+  ] = useState("");
+
+  const [
+    sincronizado,
+    setSincronizado,
+  ] = useState(false);
+
+  // ===========================================================
+  // EMPRESAS DINÁMICAS
+  // ===========================================================
+
+  const empresas = useMemo(() => {
+
+    const lista = usuarios
+      .map(
+        (usuario) =>
+          usuario.empresa
+      )
+      .filter(Boolean)
+      .filter(
+        (valor) =>
+          valor !== "—"
+      );
+
+    return [
+      ...new Set(lista),
+    ].sort();
+
+  }, [usuarios]);
 
   // ===========================================================
   // FILTRO DE USUARIOS
   // ===========================================================
 
-  const usuariosFiltrados = useMemo(() => {
-    return usuariosDemo.filter((usuario) => {
-      const texto = busqueda.toLowerCase();
+  const usuariosFiltrados =
+    useMemo(() => {
 
-      const coincideBusqueda =
-        !texto ||
-        usuario.nombre.toLowerCase().includes(texto) ||
-        usuario.correo.toLowerCase().includes(texto) ||
-        usuario.licencia.toLowerCase().includes(texto);
+      return usuarios.filter(
+        (usuario) => {
 
-      const coincideEmpresa =
-        empresa === "Todas" ||
-        usuario.empresa === empresa;
+          const texto =
+            busqueda
+              .trim()
+              .toLowerCase();
 
-      const coincideEstado =
-        estado === "Todos" ||
-        usuario.estado === estado;
+          const nombre =
+            String(
+              usuario.nombre || ""
+            ).toLowerCase();
 
-      return (
-        coincideBusqueda &&
-        coincideEmpresa &&
-        coincideEstado
+          const correo =
+            String(
+              usuario.correo || ""
+            ).toLowerCase();
+
+          const licenciaTexto =
+            String(
+              usuario.licencia || ""
+            ).toLowerCase();
+
+          const coincideBusqueda =
+            !texto ||
+            nombre.includes(texto) ||
+            correo.includes(texto) ||
+            licenciaTexto.includes(texto);
+
+          const coincideEmpresa =
+            empresa === "Todas" ||
+            usuario.empresa === empresa;
+
+          const coincideEstado =
+            estado === "Todos" ||
+            usuario.estado === estado;
+
+          return (
+            coincideBusqueda &&
+            coincideEmpresa &&
+            coincideEstado
+          );
+        }
       );
-    });
-  }, [busqueda, empresa, estado]);
 
-  // ===========================================================
-  // TOTALES DE LICENCIAS REALES
-  // ===========================================================
-
-  const totalesLicencias = useMemo(() => {
-    return licencias.reduce(
-      (acumulado, licencia) => {
-        acumulado.total += Number(licencia.total || 0);
-        acumulado.asignadas += Number(
-          licencia.asignadas || 0
-        );
-        acumulado.disponibles += Number(
-          licencia.disponibles || 0
-        );
-
-        return acumulado;
-      },
-      {
-        total: 0,
-        asignadas: 0,
-        disponibles: 0,
-      }
-    );
-  }, [licencias]);
+    }, [
+      usuarios,
+      busqueda,
+      empresa,
+      estado,
+    ]);
 
   // ===========================================================
   // SINCRONIZAR CON MICROSOFT 365
   // ===========================================================
 
-  const sincronizar = async () => {
-    setLoading(true);
-    setErrorMicrosoft("");
+  const sincronizar =
+    async () => {
 
-    try {
-      // -------------------------------------------------------
-      // Verificar que exista una sesión de Microsoft
-      // -------------------------------------------------------
+      setLoading(true);
+      setErrorMicrosoft("");
 
-      if (
-        !accounts ||
-        accounts.length === 0
-      ) {
-        throw new Error(
-          "No hay una sesión activa de Microsoft 365."
+      try {
+
+        // -----------------------------------------------------
+        // VERIFICAR SESIÓN
+        // -----------------------------------------------------
+
+        if (
+          !accounts ||
+          accounts.length === 0
+        ) {
+
+          throw new Error(
+            "No hay una sesión activa de Microsoft 365."
+          );
+
+        }
+
+        if (
+          inProgress !==
+          InteractionStatus.None
+        ) {
+
+          throw new Error(
+            "Microsoft todavía está procesando una operación de inicio de sesión."
+          );
+
+        }
+
+        // -----------------------------------------------------
+        // OBTENER TOKEN DE MICROSOFT
+        // -----------------------------------------------------
+
+        const tokenResponse =
+          await instance.acquireTokenSilent(
+            {
+              account: accounts[0],
+
+              scopes:
+                loginRequest.scopes ||
+                ["User.Read"],
+            }
+          );
+
+        const accessToken =
+          tokenResponse.accessToken;
+
+        if (!accessToken) {
+          throw new Error(
+            "No se pudo obtener el token de Microsoft."
+          );
+        }
+
+        // -----------------------------------------------------
+        // LLAMAR A EDGE FUNCTION
+        // -----------------------------------------------------
+
+        const response =
+          await fetch(
+            EDGE_FUNCTION_URL,
+            {
+              method: "GET",
+
+              headers: {
+                Authorization:
+                  `Bearer ${accessToken}`,
+
+                "Content-Type":
+                  "application/json",
+              },
+            }
+          );
+
+        // -----------------------------------------------------
+        // LEER RESPUESTA
+        // -----------------------------------------------------
+
+        const data =
+          await response.json();
+
+        // -----------------------------------------------------
+        // VALIDAR RESPUESTA
+        // -----------------------------------------------------
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+
+          throw new Error(
+            data?.error ||
+              `Error al consultar Microsoft 365. Código: ${response.status}`
+          );
+
+        }
+
+        // =====================================================
+        // FORMATEAR LICENCIAS
+        // =====================================================
+
+        const licenciasFormateadas =
+          (data.licencias || []).map(
+            (licencia, index) => {
+
+              const total =
+                Number(
+                  licencia.capacidad ??
+                    licencia.total ??
+                    0
+                );
+
+              const asignadas =
+                Number(
+                  licencia.asignadas ??
+                    0
+                );
+
+              const disponibles =
+                Number(
+                  licencia.disponibles ??
+                    Math.max(
+                      total -
+                        asignadas,
+                      0
+                    )
+                );
+
+              let estadoLicencia =
+                "Completa";
+
+              if (
+                total === 0
+              ) {
+
+                estadoLicencia =
+                  "Sin capacidad";
+
+              } else if (
+                disponibles > 0
+              ) {
+
+                estadoLicencia =
+                  "Disponible";
+
+              }
+
+              return {
+
+                id:
+                  licencia.id ||
+                  licencia.skuId ||
+                  index,
+
+                skuId:
+                  licencia.skuId ||
+                  "",
+
+                skuPartNumber:
+                  licencia.skuPartNumber ||
+                  "",
+
+                nombre:
+                  licencia.nombre ||
+                  licencia.skuPartNumber ||
+                  "Licencia Microsoft 365",
+
+                categoria:
+                  licencia.categoria ||
+                  "Otros",
+
+                asignadas,
+
+                disponibles,
+
+                total,
+
+                estado:
+                  estadoLicencia,
+
+                suspendidas:
+                  Number(
+                    licencia.suspendidas ||
+                      0
+                  ),
+
+                warning:
+                  Number(
+                    licencia.warning ||
+                      0
+                  ),
+              };
+
+            }
+          );
+
+        // =====================================================
+        // FORMATEAR USUARIOS
+        // =====================================================
+
+        const usuariosFormateados =
+          (data.usuarios || []).map(
+            (usuario) => {
+
+              const listaLicencias =
+                Array.isArray(
+                  usuario.licencias
+                )
+                  ? usuario.licencias
+                  : [];
+
+              const nombresLicencias =
+                listaLicencias
+                  .map(
+                    (licencia) =>
+                      licencia.nombre ||
+                      licencia.skuPartNumber ||
+                      "Licencia"
+                  );
+
+              return {
+
+                id:
+                  usuario.id,
+
+                nombre:
+                  usuario.nombre ||
+                  "Sin nombre",
+
+                correo:
+                  usuario.correo ||
+                  usuario.userPrincipalName ||
+                  "Sin correo",
+
+                empresa:
+                  usuario.empresa ||
+                  usuario.companyName ||
+                  "—",
+
+                estado:
+                  usuario.estado ||
+                  (
+                    usuario.habilitado ===
+                    false
+                      ? "Bloqueado"
+                      : "Activo"
+                  ),
+
+                tipo:
+                  usuario.tipo ||
+                  "Member",
+
+                // Texto para búsqueda
+                licencia:
+                  nombresLicencias.length >
+                  0
+                    ? nombresLicencias.join(
+                        ", "
+                      )
+                    : "Sin licencia",
+
+                // Array real para mostrar
+                licencias:
+                  listaLicencias,
+
+                cantidadLicencias:
+                  listaLicencias.length,
+              };
+
+            }
+          );
+
+        // =====================================================
+        // GUARDAR DATOS
+        // =====================================================
+
+        setLicencias(
+          licenciasFormateadas
         );
-      }
 
-      if (
-        inProgress !== InteractionStatus.None
-      ) {
-        throw new Error(
-          "Microsoft todavía está procesando una operación de inicio de sesión."
+        setUsuarios(
+          usuariosFormateados
         );
-      }
 
-      // -------------------------------------------------------
-      // Obtener token de Microsoft Graph
-      // -------------------------------------------------------
+        // -----------------------------------------------------
+        // RESUMEN
+        // -----------------------------------------------------
 
-      const tokenResponse =
-        await instance.acquireTokenSilent({
-          account: accounts[0],
-          scopes: ["User.Read"],
+        const resumenServidor =
+          data.resumen || {};
+
+        setResumen({
+
+          totalUsuarios:
+            Number(
+              resumenServidor.totalUsuarios ??
+                usuariosFormateados.length
+            ),
+
+          usuariosConLicencia:
+            Number(
+              resumenServidor.usuariosConLicencia ??
+                usuariosFormateados.filter(
+                  (usuario) =>
+                    usuario.cantidadLicencias >
+                    0
+                ).length
+            ),
+
+          totalUsuariosSinLicencia:
+            Number(
+              resumenServidor.totalUsuariosSinLicencia ??
+                usuariosFormateados.filter(
+                  (usuario) =>
+                    usuario.cantidadLicencias ===
+                    0
+                ).length
+            ),
+
+          totalAsignaciones:
+            Number(
+              resumenServidor.totalAsignaciones ??
+                usuariosFormateados.reduce(
+                  (
+                    total,
+                    usuario
+                  ) =>
+                    total +
+                    Number(
+                      usuario.cantidadLicencias ||
+                        0
+                    ),
+                  0
+                )
+            ),
+
+          totalTiposLicencia:
+            Number(
+              resumenServidor.totalTiposLicencia ??
+                licenciasFormateadas.length
+            ),
         });
 
-      const accessToken =
-        tokenResponse.accessToken;
+        // -----------------------------------------------------
+        // FECHA
+        // -----------------------------------------------------
 
-      // -------------------------------------------------------
-      // Llamar a la Edge Function
-      // -------------------------------------------------------
-
-      const response = await fetch(
-        "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      // -------------------------------------------------------
-      // Validar respuesta
-      // -------------------------------------------------------
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data?.error ||
-            `Error al consultar Microsoft 365. Código: ${response.status}`
+        setUltimaSincronizacion(
+          new Date()
         );
+
+        setSincronizado(
+          true
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Error sincronizando Microsoft 365:",
+          error
+        );
+
+        setSincronizado(
+          false
+        );
+
+        setErrorMicrosoft(
+          error?.message ||
+            "Ocurrió un error al sincronizar Microsoft 365."
+        );
+
+      } finally {
+
+        setLoading(false);
+
       }
 
-      // -------------------------------------------------------
-      // Formatear licencias
-      // -------------------------------------------------------
-
-      const licenciasFormateadas =
-        (data.licencias || []).map(
-          (licencia, index) => {
-            const total =
-              Number(licencia.capacidad || 0);
-
-            const asignadas =
-              Number(licencia.asignadas || 0);
-
-            const disponibles =
-              Number(licencia.disponibles || 0);
-
-            let estado = "Completa";
-
-            if (total === 0) {
-              estado = "Sin capacidad";
-            } else if (disponibles > 0) {
-              estado = "Disponible";
-            }
-
-            return {
-              id:
-                licencia.skuId || index,
-
-              nombre:
-                licencia.skuPartNumber ||
-                "Licencia Microsoft 365",
-
-              asignadas,
-
-              disponibles,
-
-              total,
-
-              estado,
-            };
-          }
-        );
-
-      // -------------------------------------------------------
-      // Guardar en el estado
-      // -------------------------------------------------------
-
-      setLicencias(
-        licenciasFormateadas
-      );
-
-      setUltimaSincronizacion(
-        new Date()
-      );
-
-      setSincronizado(true);
-    } catch (error) {
-      console.error(
-        "Error sincronizando Microsoft 365:",
-        error
-      );
-
-      setSincronizado(false);
-
-      setErrorMicrosoft(
-        error?.message ||
-          "Ocurrió un error al sincronizar Microsoft 365."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   // ===========================================================
   // TABS
   // ===========================================================
 
   const tabs = [
+
     {
       id: "usuarios",
       label: "Usuarios",
       icon: Users,
     },
+
     {
       id: "licencias",
       label: "Licencias",
       icon: KeyRound,
     },
+
     {
       id: "suscripciones",
       label: "Suscripciones",
       icon: Package,
     },
+
     {
       id: "aplicaciones",
       label: "Aplicaciones",
       icon: AppWindow,
     },
+
   ];
 
   // ===========================================================
@@ -328,6 +632,7 @@ export default function Microsoft365() {
   // ===========================================================
 
   return (
+
     <div className="w-full min-h-full">
 
       {/* =====================================================
@@ -335,9 +640,11 @@ export default function Microsoft365() {
       ===================================================== */}
 
       <div className="mb-5">
+
         <div className="flex items-center justify-between gap-4">
 
           <div>
+
             <h1 className="text-2xl font-bold text-slate-900">
               Microsoft 365
             </h1>
@@ -345,6 +652,7 @@ export default function Microsoft365() {
             <p className="text-sm text-slate-500 mt-1">
               Administración y consulta del tenant de Microsoft 365
             </p>
+
           </div>
 
           <button
@@ -352,6 +660,7 @@ export default function Microsoft365() {
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#3763a5] text-white text-sm font-semibold hover:bg-[#2f5792] disabled:opacity-60 transition"
           >
+
             <RefreshCw
               size={16}
               className={
@@ -364,9 +673,11 @@ export default function Microsoft365() {
             {loading
               ? "Sincronizando..."
               : "Sincronizar"}
+
           </button>
 
         </div>
+
       </div>
 
       {/* =====================================================
@@ -378,10 +689,12 @@ export default function Microsoft365() {
         <div className="flex items-center gap-3">
 
           <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center">
+
             <Cloud
               size={19}
               className="text-green-600"
             />
+
           </div>
 
           <div>
@@ -391,9 +704,11 @@ export default function Microsoft365() {
             </p>
 
             <p className="text-xs text-slate-500">
+
               {sincronizado
                 ? "Datos obtenidos desde Microsoft Graph"
                 : "Listo para sincronizar con Microsoft Graph"}
+
             </p>
 
           </div>
@@ -402,7 +717,9 @@ export default function Microsoft365() {
 
         <div className="flex items-center gap-2 text-xs font-semibold text-green-700">
 
-          <CheckCircle2 size={16} />
+          <CheckCircle2
+            size={16}
+          />
 
           {sincronizado
             ? "Sincronizado"
@@ -413,19 +730,23 @@ export default function Microsoft365() {
       </div>
 
       {/* =====================================================
-          MENSAJE DE ERROR
+          ERROR
       ===================================================== */}
 
       {errorMicrosoft && (
+
         <div className="mb-5 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 
-          <AlertCircle size={18} />
+          <AlertCircle
+            size={18}
+          />
 
           <span>
             {errorMicrosoft}
           </span>
 
         </div>
+
       )}
 
       {/* =====================================================
@@ -437,36 +758,44 @@ export default function Microsoft365() {
         <StatCard
           icon={Users}
           title="Usuarios"
-          value="—"
-          detail="Próxima integración con Graph"
-        />
-
-        <StatCard
-          icon={KeyRound}
-          title="Licencias asignadas"
           value={
             sincronizado
-              ? totalesLicencias.asignadas
+              ? resumen.totalUsuarios
               : "—"
           }
           detail={
             sincronizado
-              ? "Unidades asignadas"
+              ? `${resumen.usuariosConLicencia} con licencia`
+              : "Sincroniza para consultar"
+          }
+        />
+
+        <StatCard
+          icon={KeyRound}
+          title="Asignaciones"
+          value={
+            sincronizado
+              ? resumen.totalAsignaciones
+              : "—"
+          }
+          detail={
+            sincronizado
+              ? "Licencias asignadas a usuarios"
               : "Sincroniza para consultar"
           }
         />
 
         <StatCard
           icon={Package}
-          title="Licencias disponibles"
+          title="Tipos de licencia"
           value={
             sincronizado
-              ? totalesLicencias.disponibles
+              ? resumen.totalTiposLicencia
               : "—"
           }
           detail={
             sincronizado
-              ? "Unidades disponibles"
+              ? "SKU encontradas en el tenant"
               : "Sincroniza para consultar"
           }
         />
@@ -481,41 +810,55 @@ export default function Microsoft365() {
       </div>
 
       {/* =====================================================
-          TABS
+          CONTENIDO
       ===================================================== */}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+
+        {/* TABS */}
 
         <div className="border-b border-slate-200 px-4 pt-4">
 
           <div className="flex gap-2 overflow-x-auto">
 
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
+            {tabs.map(
+              (tab) => {
 
-              const active =
-                activeTab === tab.id;
+                const Icon =
+                  tab.icon;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() =>
-                    setActiveTab(tab.id)
-                  }
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition ${
-                    active
-                      ? "bg-[#3763a5] text-white"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
+                const active =
+                  activeTab ===
+                  tab.id;
 
-                  <Icon size={16} />
+                return (
 
-                  {tab.label}
+                  <button
+                    key={tab.id}
+                    onClick={() =>
+                      setActiveTab(
+                        tab.id
+                      )
+                    }
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition ${
+                      active
+                        ? "bg-[#3763a5] text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
 
-                </button>
-              );
-            })}
+                    <Icon
+                      size={16}
+                    />
+
+                    {tab.label}
+
+                  </button>
+
+                );
+
+              }
+            )}
 
           </div>
 
@@ -525,10 +868,12 @@ export default function Microsoft365() {
             USUARIOS
         =================================================== */}
 
-        {activeTab === "usuarios" && (
+        {activeTab ===
+          "usuarios" && (
+
           <div className="p-4">
 
-            {/* Filtros */}
+            {/* FILTROS */}
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_190px_170px] gap-3 mb-4">
 
@@ -542,7 +887,9 @@ export default function Microsoft365() {
                 <input
                   value={busqueda}
                   onChange={(e) =>
-                    setBusqueda(e.target.value)
+                    setBusqueda(
+                      e.target.value
+                    )
                   }
                   placeholder="Buscar usuario, correo o licencia..."
                   className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 outline-none focus:border-[#3763a5] focus:ring-2 focus:ring-blue-100 text-sm"
@@ -553,7 +900,9 @@ export default function Microsoft365() {
               <select
                 value={empresa}
                 onChange={(e) =>
-                  setEmpresa(e.target.value)
+                  setEmpresa(
+                    e.target.value
+                  )
                 }
                 className="h-11 px-3 rounded-lg border border-slate-200 outline-none focus:border-[#3763a5] text-sm bg-white"
               >
@@ -562,20 +911,31 @@ export default function Microsoft365() {
                   Todas las empresas
                 </option>
 
-                <option value="ALENCOR SRL">
-                  ALENCOR SRL
-                </option>
+                {empresas.map(
+                  (nombreEmpresa) => (
 
-                <option value="GRUPO AURICA">
-                  GRUPO AURICA
-                </option>
+                    <option
+                      key={
+                        nombreEmpresa
+                      }
+                      value={
+                        nombreEmpresa
+                      }
+                    >
+                      {nombreEmpresa}
+                    </option>
+
+                  )
+                )}
 
               </select>
 
               <select
                 value={estado}
                 onChange={(e) =>
-                  setEstado(e.target.value)
+                  setEstado(
+                    e.target.value
+                  )
                 }
                 className="h-11 px-3 rounded-lg border border-slate-200 outline-none focus:border-[#3763a5] text-sm bg-white"
               >
@@ -596,7 +956,7 @@ export default function Microsoft365() {
 
             </div>
 
-            {/* Tabla */}
+            {/* TABLA */}
 
             <div className="overflow-x-auto border border-slate-200 rounded-xl">
 
@@ -615,7 +975,7 @@ export default function Microsoft365() {
                     </th>
 
                     <th className="px-4 py-3 font-bold">
-                      Licencia
+                      Licencias
                     </th>
 
                     <th className="px-4 py-3 font-bold">
@@ -632,133 +992,213 @@ export default function Microsoft365() {
 
                 <tbody>
 
-                  {usuariosFiltrados.map(
-                    (usuario) => (
-                      <tr
-                        key={usuario.id}
-                        className="border-t border-slate-100 hover:bg-slate-50 transition"
-                      >
+                  {usuariosFiltrados.length >
+                  0 ? (
 
-                        <td className="px-4 py-4">
+                    usuariosFiltrados.map(
+                      (usuario) => (
 
-                          <div className="flex items-center gap-3">
+                        <tr
+                          key={
+                            usuario.id
+                          }
+                          className="border-t border-slate-100 hover:bg-slate-50 transition"
+                        >
 
-                            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+                          {/* USUARIO */}
 
-                              <Users
-                                size={17}
-                                className="text-[#3763a5]"
+                          <td className="px-4 py-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+
+                                <Users
+                                  size={17}
+                                  className="text-[#3763a5]"
+                                />
+
+                              </div>
+
+                              <div>
+
+                                <p className="font-semibold text-slate-800">
+
+                                  {
+                                    usuario.nombre
+                                  }
+
+                                </p>
+
+                                <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+
+                                  <Mail
+                                    size={12}
+                                  />
+
+                                  {
+                                    usuario.correo
+                                  }
+
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          {/* EMPRESA */}
+
+                          <td className="px-4 py-4 text-slate-700">
+
+                            <span className="flex items-center gap-1.5">
+
+                              <Building2
+                                size={14}
+                                className="text-slate-400"
                               />
 
-                            </div>
-
-                            <div>
-
-                              <p className="font-semibold text-slate-800">
-                                {usuario.nombre}
-                              </p>
-
-                              <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-
-                                <Mail size={12} />
-
-                                {usuario.correo}
-
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                        </td>
-
-                        <td className="px-4 py-4 text-slate-700">
-
-                          <span className="flex items-center gap-1.5">
-
-                            <Building2
-                              size={14}
-                              className="text-slate-400"
-                            />
-
-                            {usuario.empresa}
-
-                          </span>
-
-                        </td>
-
-                        <td className="px-4 py-4">
-
-                          <span className="inline-flex px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
-
-                            {usuario.licencia}
-
-                          </span>
-
-                        </td>
-
-                        <td className="px-4 py-4">
-
-                          {usuario.estado ===
-                          "Activo" ? (
-
-                            <span className="inline-flex items-center gap-1.5 text-green-600 font-semibold text-xs">
-
-                              <CheckCircle2 size={15} />
-
-                              Activo
+                              {
+                                usuario.empresa ||
+                                "—"
+                              }
 
                             </span>
 
-                          ) : (
+                          </td>
 
-                            <span className="inline-flex items-center gap-1.5 text-red-600 font-semibold text-xs">
+                          {/* LICENCIAS */}
 
-                              <XCircle size={15} />
+                          <td className="px-4 py-4">
 
-                              Bloqueado
+                            <div className="flex flex-wrap gap-1.5">
 
-                            </span>
+                              {usuario.licencias &&
+                              usuario.licencias.length >
+                                0 ? (
 
-                          )}
+                                usuario.licencias.map(
+                                  (
+                                    licencia,
+                                    index
+                                  ) => (
 
-                        </td>
+                                    <span
+                                      key={
+                                        licencia.skuId ||
+                                        index
+                                      }
+                                      className="inline-flex px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold"
+                                      title={
+                                        licencia.categoria ||
+                                        ""
+                                      }
+                                    >
 
-                        <td className="px-4 py-4 text-right">
+                                      {
+                                        licencia.nombre ||
+                                        licencia.skuPartNumber ||
+                                        "Licencia"
+                                      }
 
-                          <button
-                            onClick={() =>
-                              setSelectedUser(
-                                usuario
-                              )
-                            }
-                            className="inline-flex items-center gap-1 text-[#3763a5] hover:underline font-semibold text-xs"
-                          >
+                                    </span>
 
-                            Ver detalle
+                                  )
+                                )
 
-                            <ChevronRight size={14} />
+                              ) : (
 
-                          </button>
+                                <span className="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">
 
-                        </td>
+                                  Sin licencia
 
-                      </tr>
+                                </span>
+
+                              )}
+
+                            </div>
+
+                          </td>
+
+                          {/* ESTADO */}
+
+                          <td className="px-4 py-4">
+
+                            {usuario.estado ===
+                            "Activo" ? (
+
+                              <span className="inline-flex items-center gap-1.5 text-green-600 font-semibold text-xs">
+
+                                <CheckCircle2
+                                  size={15}
+                                />
+
+                                Activo
+
+                              </span>
+
+                            ) : (
+
+                              <span className="inline-flex items-center gap-1.5 text-red-600 font-semibold text-xs">
+
+                                <XCircle
+                                  size={15}
+                                />
+
+                                Bloqueado
+
+                              </span>
+
+                            )}
+
+                          </td>
+
+                          {/* DETALLE */}
+
+                          <td className="px-4 py-4 text-right">
+
+                            <button
+                              onClick={() =>
+                                setSelectedUser(
+                                  usuario
+                                )
+                              }
+                              className="inline-flex items-center gap-1 text-[#3763a5] hover:underline font-semibold text-xs"
+                            >
+
+                              Ver detalle
+
+                              <ChevronRight
+                                size={14}
+                              />
+
+                            </button>
+
+                          </td>
+
+                        </tr>
+
+                      )
                     )
-                  )}
 
-                  {usuariosFiltrados.length ===
-                    0 && (
+                  ) : (
+
                     <tr>
 
                       <td
                         colSpan="5"
                         className="px-4 py-12 text-center text-slate-500"
                       >
-                        No se encontraron usuarios.
+
+                        {sincronizado
+                          ? "No se encontraron usuarios con los filtros seleccionados."
+                          : 'Pulsa "Sincronizar" para cargar los usuarios reales del tenant.'}
+
                       </td>
 
                     </tr>
+
                   )}
 
                 </tbody>
@@ -767,19 +1207,34 @@ export default function Microsoft365() {
 
             </div>
 
+            {/* PIE */}
+
             <div className="flex items-center justify-between mt-4 text-xs text-slate-500">
 
               <span>
+
                 Mostrando{" "}
-                {usuariosFiltrados.length} de{" "}
-                {usuariosDemo.length} usuarios demo
+                <strong>
+                  {
+                    usuariosFiltrados.length
+                  }
+                </strong>{" "}
+                de{" "}
+                <strong>
+                  {usuarios.length}
+                </strong>{" "}
+                usuarios
+
               </span>
 
               <span className="flex items-center gap-1.5">
 
-                <CalendarDays size={14} />
+                <CalendarDays
+                  size={14}
+                />
 
                 Última sincronización:{" "}
+
                 {ultimaSincronizacion
                   ? ultimaSincronizacion.toLocaleString()
                   : "—"}
@@ -789,17 +1244,20 @@ export default function Microsoft365() {
             </div>
 
           </div>
+
         )}
 
         {/* ===================================================
             LICENCIAS
         =================================================== */}
 
-        {activeTab === "licencias" && (
+        {activeTab ===
+          "licencias" && (
 
           <div className="p-4">
 
-            {licencias.length === 0 ? (
+            {licencias.length ===
+            0 ? (
 
               <div className="min-h-[280px] flex flex-col items-center justify-center text-center">
 
@@ -827,28 +1285,47 @@ export default function Microsoft365() {
                   (licencia) => {
 
                     const porcentaje =
-                      licencia.total > 0
+                      licencia.total >
+                      0
                         ? Math.round(
-                            (licencia.asignadas /
-                              licencia.total) *
+                            (
+                              licencia.asignadas /
+                              licencia.total
+                            ) *
                               100
                           )
                         : 0;
 
                     return (
+
                       <div
-                        key={licencia.id}
+                        key={
+                          licencia.id
+                        }
                         className="border border-slate-200 rounded-xl p-5 hover:shadow-sm transition"
                       >
 
                         <div className="flex items-start justify-between gap-3">
 
-                          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <div>
 
-                            <KeyRound
-                              size={19}
-                              className="text-[#3763a5]"
-                            />
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+
+                              <KeyRound
+                                size={19}
+                                className="text-[#3763a5]"
+                              />
+
+                            </div>
+
+                            <p className="text-[11px] text-slate-400 font-semibold mt-3 uppercase">
+
+                              {
+                                licencia.categoria ||
+                                "Otros"
+                              }
+
+                            </p>
 
                           </div>
 
@@ -863,16 +1340,30 @@ export default function Microsoft365() {
                                 : "text-slate-500"
                             }`}
                           >
-                            {licencia.estado}
+
+                            {
+                              licencia.estado
+                            }
+
                           </span>
 
                         </div>
 
-                        <h3 className="font-bold text-slate-800 mt-4">
+                        <h3 className="font-bold text-slate-800 mt-3">
 
-                          {licencia.nombre}
+                          {
+                            licencia.nombre
+                          }
 
                         </h3>
+
+                        <p className="text-[11px] text-slate-400 mt-1 break-all">
+
+                          {
+                            licencia.skuPartNumber
+                          }
+
+                        </p>
 
                         <div className="grid grid-cols-3 gap-2 mt-5">
 
@@ -908,7 +1399,13 @@ export default function Microsoft365() {
                             </span>
 
                             <span>
-                              {porcentaje}%
+                              {
+                                Math.min(
+                                  porcentaje,
+                                  100
+                                )
+                              }
+                              %
                             </span>
 
                           </div>
@@ -918,10 +1415,11 @@ export default function Microsoft365() {
                             <div
                               className="h-full bg-[#3763a5] rounded-full"
                               style={{
-                                width: `${Math.min(
-                                  porcentaje,
-                                  100
-                                )}%`,
+                                width:
+                                  `${Math.min(
+                                    porcentaje,
+                                    100
+                                  )}%`,
                               }}
                             />
 
@@ -930,7 +1428,9 @@ export default function Microsoft365() {
                         </div>
 
                       </div>
+
                     );
+
                   }
                 )}
 
@@ -946,7 +1446,8 @@ export default function Microsoft365() {
             SUSCRIPCIONES
         =================================================== */}
 
-        {activeTab === "suscripciones" && (
+        {activeTab ===
+          "suscripciones" && (
 
           <EmptyModule
             icon={Package}
@@ -960,7 +1461,8 @@ export default function Microsoft365() {
             APLICACIONES
         =================================================== */}
 
-        {activeTab === "aplicaciones" && (
+        {activeTab ===
+          "aplicaciones" && (
 
           <EmptyModule
             icon={AppWindow}
@@ -973,7 +1475,7 @@ export default function Microsoft365() {
       </div>
 
       {/* =====================================================
-          MODAL DETALLE DE USUARIO
+          MODAL DETALLE
       ===================================================== */}
 
       {selectedUser && (
@@ -981,7 +1483,9 @@ export default function Microsoft365() {
         <div
           className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
           onClick={() =>
-            setSelectedUser(null)
+            setSelectedUser(
+              null
+            )
           }
         >
 
@@ -992,13 +1496,17 @@ export default function Microsoft365() {
             }
           >
 
+            {/* CABECERA */}
+
             <div className="bg-[#3763a5] text-white p-5">
 
               <div className="flex items-center gap-3">
 
                 <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center">
 
-                  <Users size={21} />
+                  <Users
+                    size={21}
+                  />
 
                 </div>
 
@@ -1006,7 +1514,9 @@ export default function Microsoft365() {
 
                   <h2 className="font-bold text-lg">
 
-                    {selectedUser.nombre}
+                    {
+                      selectedUser.nombre
+                    }
 
                   </h2>
 
@@ -1022,7 +1532,9 @@ export default function Microsoft365() {
 
             </div>
 
-            <div className="p-5 space-y-4">
+            {/* CONTENIDO */}
+
+            <div className="p-5 space-y-5">
 
               <DetailRow
                 icon={Mail}
@@ -1036,15 +1548,8 @@ export default function Microsoft365() {
                 icon={Building2}
                 label="Empresa"
                 value={
-                  selectedUser.empresa
-                }
-              />
-
-              <DetailRow
-                icon={KeyRound}
-                label="Licencia"
-                value={
-                  selectedUser.licencia
+                  selectedUser.empresa ||
+                  "—"
                 }
               />
 
@@ -1052,7 +1557,8 @@ export default function Microsoft365() {
                 icon={ShieldCheck}
                 label="Tipo"
                 value={
-                  selectedUser.tipo
+                  selectedUser.tipo ||
+                  "Member"
                 }
               />
 
@@ -1069,13 +1575,70 @@ export default function Microsoft365() {
                 }
               />
 
+              {/* LICENCIAS */}
+
+              <div>
+
+                <p className="text-xs text-slate-500 mb-2">
+                  Licencias asignadas
+                </p>
+
+                {selectedUser.licencias &&
+                selectedUser.licencias.length >
+                  0 ? (
+
+                  <div className="flex flex-wrap gap-2">
+
+                    {selectedUser.licencias.map(
+                      (
+                        licencia,
+                        index
+                      ) => (
+
+                        <span
+                          key={
+                            licencia.skuId ||
+                            index
+                          }
+                          className="inline-flex px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold"
+                        >
+
+                          {
+                            licencia.nombre ||
+                            licencia.skuPartNumber ||
+                            "Licencia"
+                          }
+
+                        </span>
+
+                      )
+                    )}
+
+                  </div>
+
+                ) : (
+
+                  <span className="inline-flex px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 text-xs font-semibold">
+
+                    Sin licencia asignada
+
+                  </span>
+
+                )}
+
+              </div>
+
               <button
                 onClick={() =>
-                  setSelectedUser(null)
+                  setSelectedUser(
+                    null
+                  )
                 }
                 className="w-full mt-2 py-2.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200"
               >
+
                 Cerrar
+
               </button>
 
             </div>
@@ -1087,6 +1650,7 @@ export default function Microsoft365() {
       )}
 
     </div>
+
   );
 }
 
@@ -1100,7 +1664,9 @@ function StatCard({
   value,
   detail,
 }) {
+
   return (
+
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
 
       <div className="flex items-center justify-between">
@@ -1135,6 +1701,7 @@ function StatCard({
       </p>
 
     </div>
+
   );
 }
 
@@ -1146,7 +1713,9 @@ function MiniStat({
   label,
   value,
 }) {
+
   return (
+
     <div className="bg-slate-50 rounded-lg p-3">
 
       <p className="text-[11px] text-slate-500">
@@ -1162,6 +1731,7 @@ function MiniStat({
       </p>
 
     </div>
+
   );
 }
 
@@ -1174,7 +1744,9 @@ function DetailRow({
   label,
   value,
 }) {
+
   return (
+
     <div className="flex items-center gap-3">
 
       <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -1203,6 +1775,7 @@ function DetailRow({
       </div>
 
     </div>
+
   );
 }
 
@@ -1215,7 +1788,9 @@ function EmptyModule({
   title,
   description,
 }) {
+
   return (
+
     <div className="p-12 text-center">
 
       <div className="w-14 h-14 mx-auto rounded-xl bg-blue-50 flex items-center justify-center">
@@ -1240,5 +1815,6 @@ function EmptyModule({
       </p>
 
     </div>
+
   );
 }
