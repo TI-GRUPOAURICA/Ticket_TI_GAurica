@@ -57,32 +57,7 @@ const usuariosDemo = [
   },
 ];
 
-const licenciasDemo = [
-  {
-    id: 1,
-    nombre: "Microsoft 365 Business Standard",
-    asignadas: 35,
-    disponibles: 12,
-    total: 47,
-    estado: "Disponible",
-  },
-  {
-    id: 2,
-    nombre: "Microsoft 365 Business Basic",
-    asignadas: 18,
-    disponibles: 7,
-    total: 25,
-    estado: "Disponible",
-  },
-  {
-    id: 3,
-    nombre: "Exchange Online",
-    asignadas: 21,
-    disponibles: 4,
-    total: 25,
-    estado: "Disponible",
-  },
-];
+const licenciasIniciales = [];
 
 export default function Microsoft365() {
   const [activeTab, setActiveTab] = useState("usuarios");
@@ -91,6 +66,9 @@ export default function Microsoft365() {
   const [estado, setEstado] = useState("Todos");
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+const [licencias, setLicencias] = useState(licenciasIniciales);
+const [ultimaSincronizacion, setUltimaSincronizacion] = useState(null);
+const [errorMicrosoft, setErrorMicrosoft] = useState("");
 
   const usuariosFiltrados = useMemo(() => {
     return usuariosDemo.filter((usuario) => {
@@ -112,14 +90,54 @@ export default function Microsoft365() {
     });
   }, [busqueda, empresa, estado]);
 
-  const sincronizar = async () => {
-    setLoading(true);
+ const sincronizar = async () => {
+  setLoading(true);
+  setErrorMicrosoft("");
 
-    // Aquí posteriormente llamaremos a la Edge Function de Supabase.
-    await new Promise((resolve) => setTimeout(resolve, 900));
+  try {
+    const response = await fetch(
+      "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data?.error || "No se pudieron obtener las licencias de Microsoft 365"
+      );
+    }
+
+    const licenciasFormateadas = (data.licencias || []).map(
+      (licencia, index) => ({
+        id: licencia.skuId || index,
+        nombre: licencia.skuPartNumber,
+        asignadas: licencia.asignadas || 0,
+        disponibles: licencia.disponibles || 0,
+        total: licencia.capacidad || 0,
+        estado:
+          (licencia.disponibles || 0) > 0
+            ? "Disponible"
+            : "Completa",
+      })
+    );
+
+    setLicencias(licenciasFormateadas);
+    setUltimaSincronizacion(new Date());
+  } catch (error) {
+    console.error("Error sincronizando Microsoft 365:", error);
+    setErrorMicrosoft(
+      error.message || "Ocurrió un error al sincronizar Microsoft 365"
+    );
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   const tabs = [
     { id: "usuarios", label: "Usuarios", icon: Users },
@@ -177,6 +195,13 @@ export default function Microsoft365() {
           Conexión preparada
         </div>
       </div>
+          {/* Estado de conexión */}
+      <div className="mb-5 flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+        ...
+      </div>
+
+      {/* KPIs */}
+
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -366,7 +391,7 @@ export default function Microsoft365() {
               </span>
               <span className="flex items-center gap-1.5">
                 <CalendarDays size={14} />
-                Última sincronización: —
+                Última sincronización: {ultimaSincronizacion ? ultimaSincronizacion.toLocaleString() : "—"}   
               </span>
             </div>
           </div>
@@ -375,8 +400,8 @@ export default function Microsoft365() {
         {/* Licencias */}
         {activeTab === "licencias" && (
           <div className="p-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {licenciasDemo.map((licencia) => {
-              const porcentaje =
+      {licencias.map((licencia) => {
+                const porcentaje =
                 licencia.total > 0
                   ? Math.round((licencia.asignadas / licencia.total) * 100)
                   : 0;
