@@ -35,18 +35,21 @@ import {
   Building2,
   ShieldCheck,
   CalendarDays,
+  Download,
 } from "lucide-react";
 
 // =============================================================
 // CONFIGURACIÓN
 // =============================================================
 
+const EMPRESAS_DISPONIBLES = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL"];
+
 const EDGE_FUNCTION_URL =
   "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
 
   const EMPRESAS_POR_DOMINIO = {
-  "aurica.com": "GRUPO AURICA",
-  "alencorsrl.com": "ALENCOR SRL",
+  "aurica.com": "AURICA",
+  "alencorsrl.com": "ALENCORSRL",
 };
 
 function obtenerEmpresa(correo) {
@@ -138,6 +141,11 @@ export default function Microsoft365() {
   ] = useState("");
 
   const [
+    guardandoEmpresaId,
+    setGuardandoEmpresaId,
+  ] = useState(null);
+
+  const [
     sincronizado,
     setSincronizado,
   ] = useState(false);
@@ -159,7 +167,7 @@ export default function Microsoft365() {
       );
 
     return [
-      ...new Set(lista),
+      ...new Set([...EMPRESAS_DISPONIBLES, ...lista]),
     ].sort();
   }, [usuarios]);
 
@@ -326,6 +334,44 @@ export default function Microsoft365() {
     }
   };
 
+  const actualizarEmpresaUsuario = async (usuarioId, nuevaEmpresa) => {
+    setGuardandoEmpresaId(usuarioId);
+    setErrorMicrosoft("");
+
+    try {
+      const accessToken = await obtenerAccessToken({ interactivo: true });
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "actualizarEmpresa",
+          usuarioId,
+          empresa: nuevaEmpresa || null,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data?.error || "No se pudo guardar la empresa.");
+      }
+
+      setUsuarios((actuales) =>
+        actuales.map((usuario) =>
+          usuario.id === usuarioId
+            ? { ...usuario, empresa: data.empresa || "—" }
+            : usuario
+        )
+      );
+    } catch (error) {
+      console.error("Error guardando empresa del usuario:", error);
+      setErrorMicrosoft(error?.message || "No se pudo guardar la empresa.");
+    } finally {
+      setGuardandoEmpresaId(null);
+    }
+  };
   // ===========================================================
   // FORMATEAR DATOS DE LA EDGE FUNCTION
   // ===========================================================
@@ -617,8 +663,70 @@ export default function Microsoft365() {
   ];
 
   // ===========================================================
-  // RENDER
+  // EXPORTAR LICENCIAS
   // ===========================================================
+
+  const exportarLicencias = () => {
+    if (licencias.length === 0) return;
+
+    const encabezados = [
+      "Nombre de licencia",
+      "SKU",
+      "SKU ID",
+      "Categoría",
+      "Total",
+      "Asignadas",
+      "Disponibles",
+      "Suspendidas",
+      "Advertencia",
+      "Estado",
+    ];
+
+    const protegerValor = (valor) => {
+      const texto = String(valor ?? "");
+      const primerCaracter = texto.trimStart()[0];
+      const seguro = ["=", "+", "-", "@"].includes(primerCaracter)
+        ? `'${texto}`
+        : texto;
+
+      return `"${seguro.replaceAll('"', '""')}"`;
+    };
+
+    const filas = licencias.map((licencia) => [
+      licencia.nombre,
+      licencia.skuPartNumber,
+      licencia.skuId,
+      licencia.categoria,
+      licencia.total,
+      licencia.asignadas,
+      licencia.disponibles,
+      licencia.suspendidas,
+      licencia.warning,
+      licencia.estado,
+    ]);
+
+    // El punto y coma facilita abrir el CSV en Excel con configuración regional en español.
+    const csv = [encabezados, ...filas]
+      .map((fila) => fila.map(protegerValor).join(";"))
+      .join(String.fromCharCode(13, 10));
+    const blob = new Blob([String.fromCharCode(0xFEFF), csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    const fecha = new Date().toISOString().slice(0, 10);
+
+    enlace.href = url;
+    enlace.download = `reporte-licencias-microsoft365-${fecha}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // =============================================================
+  // RENDER
+  // =============================================================
 
   return (
     <div className="w-full min-h-full">
@@ -1046,21 +1154,37 @@ export default function Microsoft365() {
 
                           {/* EMPRESA */}
 
-                          <td className="px-4 py-4 text-slate-700">
+                          <td className="px-4 py-4">
 
-                            <span className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2">
 
                               <Building2
                                 size={14}
-                                className="text-slate-400"
+                                className="text-slate-400 shrink-0"
                               />
 
-                              {
-                                usuario.empresa ||
-                                "—"
-                              }
+                              <select
+                                value={usuario.empresa === "—" ? "" : usuario.empresa || ""}
+                                onChange={(e) =>
+                                  actualizarEmpresaUsuario(usuario.id, e.target.value)
+                                }
+                                disabled={guardandoEmpresaId === usuario.id}
+                                aria-label={`Empresa de ${usuario.nombre}`}
+                                className="max-w-[190px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#3763a5] disabled:opacity-60"
+                              >
+                                <option value="">Sin asignar</option>
+                                {empresas.map((nombreEmpresa) => (
+                                  <option key={nombreEmpresa} value={nombreEmpresa}>
+                                    {nombreEmpresa}
+                                  </option>
+                                ))}
+                              </select>
 
-                            </span>
+                              {guardandoEmpresaId === usuario.id && (
+                                <span className="text-[11px] text-slate-400">Guardando...</span>
+                              )}
+
+                            </div>
 
                           </td>
 
@@ -1254,6 +1378,20 @@ export default function Microsoft365() {
           "licencias" && (
 
           <div className="p-4">
+
+            <div className="flex justify-end mb-4">
+
+              <button
+                type="button"
+                onClick={exportarLicencias}
+                disabled={licencias.length === 0}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#3763a5] text-[#3763a5] text-sm font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <Download size={16} />
+                Exportar
+              </button>
+
+            </div>
 
             {licencias.length ===
             0 ? (
@@ -1804,3 +1942,5 @@ function EmptyModule({
     </div>
   );
 }
+
+
