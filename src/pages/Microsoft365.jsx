@@ -43,7 +43,7 @@ import {
 const EDGE_FUNCTION_URL =
   "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
 
-const EMPRESAS_POR_DOMINIO = {
+  const EMPRESAS_POR_DOMINIO = {
   "aurica.com": "GRUPO AURICA",
   "alencorsrl.com": "ALENCOR SRL",
 };
@@ -220,12 +220,11 @@ export default function Microsoft365() {
   // ===========================================================
   // DATOS DE MICROSOFT 365
   //
-  // GET  -> lee los datos ya sincronizados en Supabase.
+  // GET  -> consulta los datos que ya están guardados en Supabase.
   // POST -> fuerza una sincronización inmediata con Microsoft Graph.
   //
-  // La sincronización automática real la hace el CRON de Supabase
-  // cada 5 minutos. Esta página consulta Supabase cada minuto
-  // para mostrar los cambios sin tener que pulsar el botón.
+  // El CRON de Supabase hace la sincronización real cada 5 minutos.
+  // La página solamente consulta los datos guardados.
   // ===========================================================
 
   const tokenCacheRef = useRef({
@@ -250,15 +249,16 @@ export default function Microsoft365() {
       );
     }
 
-    // Reutilizar el token mientras siga vigente.
-    // Evita llamar a MSAL en cada refresco automático.
-    const ahoraMs = Date.now();
-    const margenMs = 2 * 60 * 1000;
+    const ahora = Date.now();
+    const margen = 2 * 60 * 1000;
 
+    // Reutilizamos el token que ya obtuvimos.
+    // Así el refresco de la página no intenta autenticarse
+    // nuevamente cada minuto.
     if (
       tokenCacheRef.current.accessToken &&
       tokenCacheRef.current.expiresAt >
-        ahoraMs + margenMs
+        ahora + margen
     ) {
       return tokenCacheRef.current.accessToken;
     }
@@ -286,26 +286,31 @@ export default function Microsoft365() {
         accessToken,
         expiresAt:
           tokenResponse?.expiresOn?.getTime?.() ||
-          ahoraMs + 50 * 60 * 1000,
+          ahora + 45 * 60 * 1000,
       };
 
       return accessToken;
     } catch (silentError) {
-      const errorCode =
-        silentError?.errorCode ||
-        "";
+      console.error(
+        "MSAL acquireTokenSilent:",
+        silentError
+      );
 
-      const esErrorRecuperable =
+      const errorCode =
+        silentError?.errorCode || "";
+
+      const requiereInteraccion =
         silentError instanceof
           InteractionRequiredAuthError ||
-        errorCode === "timed_out";
+        errorCode === "timed_out" ||
+        errorCode === "popup_window_error";
 
-      // En una carga manual podemos recuperar la sesión
-      // mediante popup. En refrescos silenciosos no abrimos
-      // ventanas ni interrumpimos al usuario.
+      // IMPORTANTE:
+      // El refresco automático NUNCA abre un popup.
+      // Solo el botón manual puede hacerlo.
       if (
         permitirPopup &&
-        esErrorRecuperable
+        requiereInteraccion
       ) {
         const tokenResponse =
           await instance.acquireTokenPopup({
@@ -326,7 +331,7 @@ export default function Microsoft365() {
           accessToken,
           expiresAt:
             tokenResponse?.expiresOn?.getTime?.() ||
-            Date.now() + 50 * 60 * 1000,
+            Date.now() + 45 * 60 * 1000,
         };
 
         return accessToken;
@@ -336,10 +341,10 @@ export default function Microsoft365() {
     }
   };
 
-  const cargarDatosDesdeRespuesta = (data) => {
-    // ---------------------------------------------------------
+  const cargarDatos = (data) => {
+    // =========================================================
     // LICENCIAS
-    // ---------------------------------------------------------
+    // =========================================================
 
     const licenciasFormateadas =
       (data.licencias || []).map(
@@ -388,36 +393,40 @@ export default function Microsoft365() {
               "Licencia Microsoft 365",
 
             categoria:
-              licencia.categoria || "Otros",
+              licencia.categoria ||
+              "Otros",
 
             asignadas,
-
             disponibles,
-
             total,
 
-            estado: estadoLicencia,
+            estado:
+              estadoLicencia,
 
-            suspendidas: Number(
-              licencia.suspendidas || 0
-            ),
+            suspendidas:
+              Number(
+                licencia.suspendidas || 0
+              ),
 
-            warning: Number(
-              licencia.warning || 0
-            ),
+            warning:
+              Number(
+                licencia.warning || 0
+              ),
           };
         }
       );
 
-    // ---------------------------------------------------------
+    // =========================================================
     // USUARIOS
-    // ---------------------------------------------------------
+    // =========================================================
 
     const usuariosFormateados =
       (data.usuarios || []).map(
         (usuario) => {
           const listaLicencias =
-            Array.isArray(usuario.licencias)
+            Array.isArray(
+              usuario.licencias
+            )
               ? usuario.licencias
               : [];
 
@@ -430,7 +439,8 @@ export default function Microsoft365() {
             );
 
           return {
-            id: usuario.id,
+            id:
+              usuario.id,
 
             nombre:
               usuario.nombre ||
@@ -441,8 +451,6 @@ export default function Microsoft365() {
               usuario.userPrincipalName ||
               "Sin correo",
 
-            // Mantener la empresa manual guardada en Supabase.
-            // Si todavía no existe, deducirla por dominio.
             empresa:
               usuario.empresa ||
               obtenerEmpresa(
@@ -452,9 +460,11 @@ export default function Microsoft365() {
 
             estado:
               usuario.estado ||
-              (usuario.habilitado === false
-                ? "Bloqueado"
-                : "Activo"),
+              (
+                usuario.habilitado === false
+                  ? "Bloqueado"
+                  : "Activo"
+              ),
 
             tipo:
               usuario.tipo ||
@@ -478,10 +488,6 @@ export default function Microsoft365() {
         }
       );
 
-    // ---------------------------------------------------------
-    // ESTADOS DE LA PÁGINA
-    // ---------------------------------------------------------
-
     setUsuarios(
       usuariosFormateados
     );
@@ -490,50 +496,60 @@ export default function Microsoft365() {
       licenciasFormateadas
     );
 
-    const r = data.resumen || {};
+    // =========================================================
+    // RESUMEN
+    // =========================================================
+
+    const r =
+      data.resumen || {};
 
     setResumen({
-      totalUsuarios: Number(
-        r.totalUsuarios ??
-          usuariosFormateados.length
-      ),
+      totalUsuarios:
+        Number(
+          r.totalUsuarios ??
+            usuariosFormateados.length
+        ),
 
-      usuariosConLicencia: Number(
-        r.usuariosConLicencia ??
-          usuariosFormateados.filter(
-            (u) =>
-              u.cantidadLicencias > 0
-          ).length
-      ),
+      usuariosConLicencia:
+        Number(
+          r.usuariosConLicencia ??
+            usuariosFormateados.filter(
+              (u) =>
+                u.cantidadLicencias > 0
+            ).length
+        ),
 
-      totalUsuariosSinLicencia: Number(
-        r.totalUsuariosSinLicencia ??
-          usuariosFormateados.filter(
-            (u) =>
-              u.cantidadLicencias === 0
-          ).length
-      ),
+      totalUsuariosSinLicencia:
+        Number(
+          r.totalUsuariosSinLicencia ??
+            usuariosFormateados.filter(
+              (u) =>
+                u.cantidadLicencias === 0
+            ).length
+        ),
 
-      totalAsignaciones: Number(
-        r.totalAsignaciones ??
-          usuariosFormateados.reduce(
-            (total, u) =>
-              total +
-              Number(
-                u.cantidadLicencias || 0
-              ),
-            0
-          )
-      ),
+      totalAsignaciones:
+        Number(
+          r.totalAsignaciones ??
+            usuariosFormateados.reduce(
+              (total, u) =>
+                total +
+                Number(
+                  u.cantidadLicencias || 0
+                ),
+              0
+            )
+        ),
 
-      totalTiposLicencia: Number(
-        r.totalTiposLicencia ??
-          licenciasFormateadas.length
-      ),
+      totalTiposLicencia:
+        Number(
+          r.totalTiposLicencia ??
+            licenciasFormateadas.length
+        ),
     });
 
-    // Fecha real guardada por la sincronización
-    // automática en Supabase.
+    // La Edge Function devuelve la fecha real de la
+    // última sincronización Microsoft -> Supabase.
     setUltimaSincronizacion(
       data.ultimaSincronizacion
         ? new Date(
@@ -549,7 +565,6 @@ export default function Microsoft365() {
     forzar = false,
     silencioso = false,
   } = {}) => {
-    // Evitar dos peticiones simultáneas.
     if (requestInFlightRef.current) {
       return;
     }
@@ -562,31 +577,21 @@ export default function Microsoft365() {
     }
 
     try {
-      // -------------------------------------------------------
-      // 1. TOKEN
-      // -------------------------------------------------------
-
       const accessToken =
         await obtenerAccessToken({
-          // Solo el botón manual/carga inicial puede
-          // abrir popup si MSAL lo necesita.
-          permitirPopup: !silencioso,
+          // Solo el botón manual puede abrir popup.
+          // El refresco automático jamás lo hace.
+          permitirPopup: forzar,
         });
-
-      // -------------------------------------------------------
-      // 2. EDGE FUNCTION
-      //
-      // GET  = leer datos actuales de Supabase.
-      // POST = sincronizar Microsoft Graph -> Supabase.
-      // -------------------------------------------------------
 
       const response =
         await fetch(
           EDGE_FUNCTION_URL,
           {
-            method: forzar
-              ? "POST"
-              : "GET",
+            method:
+              forzar
+                ? "POST"
+                : "GET",
 
             headers: {
               Authorization:
@@ -611,9 +616,7 @@ export default function Microsoft365() {
         );
       }
 
-      cargarDatosDesdeRespuesta(
-        data
-      );
+      cargarDatos(data);
 
       setErrorMicrosoft("");
     } catch (error) {
@@ -622,10 +625,11 @@ export default function Microsoft365() {
         error
       );
 
-      // En un refresco automático no borrar la
-      // información que el usuario ya está viendo.
+      // En los refrescos automáticos conservamos los datos
+      // que ya estaban visibles.
       if (!silencioso) {
         setSincronizado(false);
+
         setErrorMicrosoft(
           error?.message ||
             "Ocurrió un error al consultar Microsoft 365."
@@ -643,13 +647,14 @@ export default function Microsoft365() {
   // ===========================================================
   // ACTUALIZACIÓN AUTOMÁTICA DE LA PÁGINA
   //
-  // 1. Al entrar -> GET desde Supabase.
-  // 2. Cada 1 minuto -> GET desde Supabase.
+  // Al abrir:
+  //   GET -> Supabase
   //
-  // IMPORTANTE:
-  // Este intervalo NO consulta Microsoft Graph.
-  // La consulta Microsoft Graph la hace el CRON de Supabase
-  // cada 5 minutos.
+  // Cada minuto:
+  //   GET -> Supabase
+  //
+  // La sincronización Microsoft Graph -> Supabase NO ocurre aquí.
+  // Esa la realiza el CRON de Supabase cada 5 minutos.
   // ===========================================================
 
   const sincronizarRef =
@@ -668,8 +673,7 @@ export default function Microsoft365() {
       return;
     }
 
-    // Cargar inmediatamente los datos
-    // que ya existen en Supabase.
+    // Primera carga.
     sincronizarRef.current();
 
     const intervalo =
@@ -788,8 +792,8 @@ export default function Microsoft365() {
             <p className="text-xs text-slate-500">
 
               {sincronizado
-                ? "Datos sincronizados automáticamente desde Supabase"
-                : "Sincronización automática activa"}
+                ? "Datos de la sincronización automática"
+                : "Esperando datos de la sincronización automática"}
 
             </p>
 
@@ -1364,7 +1368,7 @@ export default function Microsoft365() {
                 </h3>
 
                 <p className="text-sm text-slate-500 mt-1">
-                  La información se actualizará automáticamente desde Supabase.
+                  Esperando datos de la sincronización automática.
                 </p>
 
               </div>
