@@ -100,6 +100,11 @@ export default function Microsoft365() {
   ] = useState("Todos");
 
   const [
+    filtroTipoLicencia,
+    setFiltroTipoLicencia,
+  ] = useState("Todas");
+
+  const [
     loading,
     setLoading,
   ] = useState(false);
@@ -175,6 +180,16 @@ export default function Microsoft365() {
     ].sort();
   }, [usuarios]);
 
+  const tiposLicencia = useMemo(() => {
+    const nombres = usuarios.flatMap((usuario) =>
+      (usuario.licencias || []).map(
+        (licencia) => licencia.nombre || licencia.skuPartNumber || "Licencia"
+      )
+    );
+
+    return [...new Set(nombres)].sort((a, b) => a.localeCompare(b, "es"));
+  }, [usuarios]);
+
   // ===========================================================
   // FILTRO DE USUARIOS
   // ===========================================================
@@ -212,6 +227,16 @@ export default function Microsoft365() {
           empresa === "Todas" ||
           usuario.empresa === empresa;
 
+        const licenciasUsuario = usuario.licencias || [];
+        const coincideTipoLicencia =
+          filtroTipoLicencia === "Todas" ||
+          (filtroTipoLicencia === "__sin_licencia__"
+            ? licenciasUsuario.length === 0
+            : licenciasUsuario.some(
+                (licenciaAsignada) =>
+                  (licenciaAsignada.nombre || licenciaAsignada.skuPartNumber || "Licencia") === filtroTipoLicencia
+              ));
+
         const coincideEstado =
           estado === "Todos" ||
           usuario.estado === estado;
@@ -219,7 +244,8 @@ export default function Microsoft365() {
         return (
           coincideBusqueda &&
           coincideEmpresa &&
-          coincideEstado
+          coincideEstado &&
+          coincideTipoLicencia
         );
       }
     );
@@ -228,6 +254,7 @@ export default function Microsoft365() {
     busqueda,
     empresa,
     estado,
+    filtroTipoLicencia,
   ]);
 
   // ===========================================================
@@ -1186,7 +1213,7 @@ export default function Microsoft365() {
 
             {/* FILTROS */}
 
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_190px_170px] gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_190px_250px_170px] gap-3 mb-4">
 
               <div className="relative">
 
@@ -1239,6 +1266,20 @@ export default function Microsoft365() {
                   )
                 )}
 
+              </select>
+
+              <select
+                value={filtroTipoLicencia}
+                onChange={(e) => setFiltroTipoLicencia(e.target.value)}
+                className="h-11 px-3 rounded-lg border border-slate-200 outline-none focus:border-[#3763a5] text-sm bg-white"
+              >
+                <option value="Todas">Todas las licencias</option>
+                <option value="__sin_licencia__">Sin licencia</option>
+                {tiposLicencia.map((nombreLicencia) => (
+                  <option key={nombreLicencia} value={nombreLicencia}>
+                    {nombreLicencia}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -2183,6 +2224,13 @@ function EmptyModule({
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 
