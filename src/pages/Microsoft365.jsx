@@ -782,17 +782,22 @@ export default function Microsoft365() {
   };
 
   const exportarReporteUsuarios = () => {
-    if (usuarios.length === 0) return;
+    if (usuariosFiltrados.length === 0) return;
 
-    const encabezados = [
-      "Nombre de usuario",
-      "Correo",
-      "Empresa",
-      "Licencia asignada",
-      "SKU",
-      "Inicio de licencia",
-      "Vencimiento de licencia",
-    ];
+    const maxLicencias = Math.max(
+      1,
+      ...usuariosFiltrados.map((usuario) => usuario.licencias?.length || 0)
+    );
+    const encabezados = ["Nombre de usuario", "Correo", "Empresa"];
+
+    for (let indice = 1; indice <= maxLicencias; indice += 1) {
+      encabezados.push(
+        `Licencia ${indice}`,
+        `SKU ${indice}`,
+        `Inicio / compra ${indice}`,
+        `Vencimiento ${indice}`
+      );
+    }
 
     const protegerValor = (valor) => {
       const texto = String(valor ?? "");
@@ -803,20 +808,24 @@ export default function Microsoft365() {
       return `"${seguro.replaceAll('"', '""')}"`;
     };
 
-    const filas = usuariosFiltrados.flatMap((usuario) => {
-      const licenciasUsuario = usuario.licencias?.length
-        ? usuario.licencias
-        : [null];
+    const filas = usuariosFiltrados.map((usuario) => {
+      const licenciasUsuario = usuario.licencias || [];
+      const datosLicencias = Array.from({ length: maxLicencias }, (_, indice) => {
+        const licencia = licenciasUsuario[indice];
+        return [
+          licencia?.nombre || licencia?.skuPartNumber || (indice === 0 ? "Sin licencia" : ""),
+          licencia?.skuPartNumber || "",
+          licencia?.fechaInicio || "",
+          licencia?.fechaFin || "",
+        ];
+      }).flat();
 
-      return licenciasUsuario.map((licencia) => [
+      return [
         usuario.nombre,
         usuario.correo,
         usuario.empresa === "—" ? "" : usuario.empresa,
-        licencia?.nombre || licencia?.skuPartNumber || "Sin licencia",
-        licencia?.skuPartNumber || "",
-        licencia?.fechaInicio || "",
-        licencia?.fechaFin || "",
-      ]);
+        ...datosLicencias,
+      ];
     });
 
     const csv = [encabezados, ...filas]
@@ -835,8 +844,7 @@ export default function Microsoft365() {
     enlace.click();
     enlace.remove();
     URL.revokeObjectURL(url);
-  };
-  const exportarReporteRenovaciones = () => {
+  };  const exportarReporteRenovaciones = () => {
     const encabezados = [
       "Usuario",
       "Correo",
@@ -2175,6 +2183,9 @@ function EmptyModule({
     </div>
   );
 }
+
+
+
 
 
 
