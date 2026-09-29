@@ -781,6 +781,61 @@ export default function Microsoft365() {
     URL.revokeObjectURL(url);
   };
 
+  const exportarReporteUsuarios = () => {
+    if (usuarios.length === 0) return;
+
+    const encabezados = [
+      "Nombre de usuario",
+      "Correo",
+      "Empresa",
+      "Licencia asignada",
+      "SKU",
+      "Inicio de licencia",
+      "Vencimiento de licencia",
+    ];
+
+    const protegerValor = (valor) => {
+      const texto = String(valor ?? "");
+      const primerCaracter = texto.trimStart()[0];
+      const seguro = ["=", "+", "-", "@"].includes(primerCaracter)
+        ? `'${texto}`
+        : texto;
+      return `"${seguro.replaceAll('"', '""')}"`;
+    };
+
+    const filas = usuariosFiltrados.flatMap((usuario) => {
+      const licenciasUsuario = usuario.licencias?.length
+        ? usuario.licencias
+        : [null];
+
+      return licenciasUsuario.map((licencia) => [
+        usuario.nombre,
+        usuario.correo,
+        usuario.empresa === "—" ? "" : usuario.empresa,
+        licencia?.nombre || licencia?.skuPartNumber || "Sin licencia",
+        licencia?.skuPartNumber || "",
+        licencia?.fechaInicio || "",
+        licencia?.fechaFin || "",
+      ]);
+    });
+
+    const csv = [encabezados, ...filas]
+      .map((fila) => fila.map(protegerValor).join(";"))
+      .join(String.fromCharCode(13, 10));
+    const blob = new Blob([String.fromCharCode(0xFEFF), csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    const fecha = new Date().toISOString().slice(0, 10);
+
+    enlace.href = url;
+    enlace.download = `reporte-usuarios-microsoft365-${fecha}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  };
   const exportarReporteRenovaciones = () => {
     const encabezados = [
       "Usuario",
@@ -1108,6 +1163,18 @@ export default function Microsoft365() {
           "usuarios" && (
 
           <div className="p-4">
+
+            <div className="flex justify-end mb-3">
+              <button
+                type="button"
+                onClick={exportarReporteUsuarios}
+                disabled={usuariosFiltrados.length === 0}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#3763a5] text-[#3763a5] text-sm font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <Download size={16} />
+                Reporte de usuarios
+              </button>
+            </div>
 
             {/* FILTROS */}
 
@@ -2108,6 +2175,8 @@ function EmptyModule({
     </div>
   );
 }
+
+
 
 
 
