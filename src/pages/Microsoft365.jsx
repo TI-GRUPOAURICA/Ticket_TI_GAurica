@@ -141,6 +141,10 @@ export default function Microsoft365() {
   ] = useState("");
 
   const [
+    guardandoFechaLicencia,
+    setGuardandoFechaLicencia,
+  ] = useState(null);
+  const [
     guardandoEmpresaId,
     setGuardandoEmpresaId,
   ] = useState(null);
@@ -373,6 +377,59 @@ export default function Microsoft365() {
     }
   };
   // ===========================================================
+  const actualizarFechasLicencia = async (licencia, campo, valor) => {
+    if (!selectedUser) return;
+
+    const fechaInicio = campo === "fechaInicio"
+      ? valor || null
+      : licencia.fechaInicio || null;
+    const fechaFin = campo === "fechaFin"
+      ? valor || null
+      : licencia.fechaFin || null;
+    const claveLicencia = String(licencia.skuId || "");
+
+    setGuardandoFechaLicencia(claveLicencia);
+    setErrorMicrosoft("");
+
+    try {
+      const accessToken = await obtenerAccessToken({ interactivo: true });
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "actualizarFechasLicencia",
+          usuarioId: selectedUser.id,
+          skuId: licencia.skuId,
+          fechaInicio,
+          fechaFin,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data?.error || "No se pudieron guardar las fechas.");
+      }
+
+      const usuarioActualizado = {
+        ...selectedUser,
+        licencias: data.licencias,
+      };
+      setSelectedUser(usuarioActualizado);
+      setUsuarios((actuales) =>
+        actuales.map((usuario) =>
+          usuario.id === selectedUser.id ? usuarioActualizado : usuario
+        )
+      );
+    } catch (error) {
+      console.error("Error guardando fechas de licencia:", error);
+      setErrorMicrosoft(error?.message || "No se pudieron guardar las fechas.");
+    } finally {
+      setGuardandoFechaLicencia(null);
+    }
+  };
   // FORMATEAR DATOS DE LA EDGE FUNCTION
   // ===========================================================
 
@@ -724,6 +781,81 @@ export default function Microsoft365() {
     URL.revokeObjectURL(url);
   };
 
+  const exportarReporteRenovaciones = () => {
+    const encabezados = [
+      "Usuario",
+      "Correo",
+      "Empresa",
+      "Licencia",
+      "SKU",
+      "Fecha de inicio",
+      "Fecha de vencimiento",
+      "Días para vencer",
+      "Estado de renovación",
+    ];
+
+    const diasHasta = (fecha) => {
+      if (!fecha) return "";
+      const [anio, mes, dia] = fecha.split("-").map(Number);
+      const vencimiento = Date.UTC(anio, mes - 1, dia);
+      const hoy = new Date();
+      const hoyUTC = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+      return Math.ceil((vencimiento - hoyUTC) / (24 * 60 * 60 * 1000));
+    };
+
+    const filas = usuarios.flatMap((usuario) =>
+      (usuario.licencias || []).map((licencia) => {
+        const dias = diasHasta(licencia.fechaFin);
+        const estadoRenovacion = !licencia.fechaFin
+          ? "Sin fecha de vencimiento"
+          : dias < 0
+            ? "Vencida"
+            : dias <= 90
+              ? "Renovar en los próximos 90 días"
+              : "Vigente";
+
+        return [
+          usuario.nombre,
+          usuario.correo,
+          usuario.empresa === "—" ? "" : usuario.empresa,
+          licencia.nombre || licencia.skuPartNumber || "Licencia",
+          licencia.skuPartNumber,
+          licencia.fechaInicio,
+          licencia.fechaFin,
+          dias,
+          estadoRenovacion,
+        ];
+      })
+    );
+
+    if (filas.length === 0) return;
+
+    const protegerValor = (valor) => {
+      const texto = String(valor ?? "");
+      const primerCaracter = texto.trimStart()[0];
+      const seguro = ["=", "+", "-", "@"].includes(primerCaracter)
+        ? `'${texto}`
+        : texto;
+      return `"${seguro.replaceAll('"', '""')}"`;
+    };
+
+    const csv = [encabezados, ...filas]
+      .map((fila) => fila.map(protegerValor).join(";"))
+      .join(String.fromCharCode(13, 10));
+    const blob = new Blob([String.fromCharCode(0xFEFF), csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    const fecha = new Date().toISOString().slice(0, 10);
+
+    enlace.href = url;
+    enlace.download = `reporte-renovaciones-microsoft365-${fecha}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  };
   // =============================================================
   // RENDER
   // =============================================================
@@ -1379,7 +1511,7 @@ export default function Microsoft365() {
 
           <div className="p-4">
 
-            <div className="flex justify-end mb-4">
+            <div className="flex flex-wrap justify-end gap-3 mb-4">
 
               <button
                 type="button"
@@ -1391,10 +1523,20 @@ export default function Microsoft365() {
                 Exportar
               </button>
 
+              <button
+                type="button"
+                onClick={exportarReporteRenovaciones}
+                disabled={!usuarios.some((usuario) => (usuario.licencias || []).length > 0)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#3763a5] text-white text-sm font-semibold hover:bg-[#2f5792] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <Download size={16} />
+                Reporte de renovaciones
+              </button>
+
             </div>
 
-            {licencias.length ===
-            0 ? (
+{licencias.length ===
+              0 ? (
 
               <div className="min-h-[280px] flex flex-col items-center justify-center text-center">
 
@@ -1627,7 +1769,7 @@ export default function Microsoft365() {
         >
 
           <div
-            className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+            className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-y-auto"
             onClick={(e) =>
               e.stopPropagation()
             }
@@ -1724,32 +1866,56 @@ export default function Microsoft365() {
                 selectedUser.licencias.length >
                   0 ? (
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-3">
 
-                    {selectedUser.licencias.map(
-                      (
-                        licencia,
-                        index
-                      ) => (
+                    {selectedUser.licencias.map((licencia, index) => {
+                      const claveLicencia = String(licencia.skuId || "");
+                      const guardando = guardandoFechaLicencia === claveLicencia;
 
-                        <span
-                          key={
-                            licencia.skuId ||
-                            index
-                          }
-                          className="inline-flex px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold"
+                      return (
+                        <div
+                          key={licencia.skuId || index}
+                          className="rounded-xl border border-slate-200 p-4"
                         >
+                          <div className="mb-3">
+                            <p className="text-sm font-semibold text-slate-800">
+                              {licencia.nombre || licencia.skuPartNumber || "Licencia"}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {licencia.skuPartNumber || ""}
+                            </p>
+                          </div>
 
-                          {
-                            licencia.nombre ||
-                            licencia.skuPartNumber ||
-                            "Licencia"
-                          }
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="text-xs font-medium text-slate-600">
+                              Inicio de la licencia
+                              <input
+                                type="date"
+                                value={licencia.fechaInicio || ""}
+                                onChange={(e) => actualizarFechasLicencia(licencia, "fechaInicio", e.target.value)}
+                                disabled={guardando}
+                                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#3763a5] disabled:opacity-60"
+                              />
+                            </label>
 
-                        </span>
+                            <label className="text-xs font-medium text-slate-600">
+                              Vencimiento / renovación
+                              <input
+                                type="date"
+                                value={licencia.fechaFin || ""}
+                                onChange={(e) => actualizarFechasLicencia(licencia, "fechaFin", e.target.value)}
+                                disabled={guardando}
+                                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#3763a5] disabled:opacity-60"
+                              />
+                            </label>
+                          </div>
 
-                      )
-                    )}
+                          {guardando && (
+                            <p className="text-xs text-slate-400 mt-2">Guardando fechas...</p>
+                          )}
+                        </div>
+                      );
+                    })}
 
                   </div>
 
@@ -1942,5 +2108,9 @@ function EmptyModule({
     </div>
   );
 }
+
+
+
+
 
 
