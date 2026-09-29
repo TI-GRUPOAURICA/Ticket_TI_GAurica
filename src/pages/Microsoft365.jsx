@@ -138,7 +138,7 @@ export default function Microsoft365() {
 
   const [
     sincronizado,
-    setSincronizado,
+    setActualizado,
   ] = useState(false);
 
   // ===========================================================
@@ -220,61 +220,73 @@ export default function Microsoft365() {
   // ===========================================================
   // DATOS DE MICROSOFT 365
   //
-  // GET  -> consulta los datos que ya están guardados en Supabase.
+  // GET  -> lee los datos ya sincronizados en Supabase.
   // POST -> fuerza una sincronización inmediata con Microsoft Graph.
   //
-  // El CRON de Supabase hace la sincronización real cada 5 minutos.
-  // La página solamente consulta los datos guardados.
+  // La sincronización automática real la hace el CRON de Supabase
+  // cada 5 minutos. Esta página solamente consulta Supabase
+  // periódicamente para mostrar los cambios sin pulsar el botón.
   // ===========================================================
 
-  const tokenCacheRef = useRef({
-    accessToken: "",
-    expiresAt: 0,
-  });
-
-  const requestInFlightRef = useRef(false);
-
-  const obtenerAccessToken = async ({
-    permitirPopup = false,
+  const sincronizar = async ({
+    forzar = false,
+    silencioso = false,
   } = {}) => {
-    if (!accounts || accounts.length === 0) {
-      throw new Error(
-        "No hay una sesión activa de Microsoft 365."
-      );
+    if (!silencioso) {
+      setLoading(true);
+      setErrorMicrosoft("");
     }
-
-    if (inProgress !== InteractionStatus.None) {
-      throw new Error(
-        "Microsoft todavía está procesando una operación de inicio de sesión."
-      );
-    }
-
-    const ahora = Date.now();
-    const margen = 2 * 60 * 1000;
-
-    // Reutilizamos el token que ya obtuvimos.
-    // Así el refresco de la página no intenta autenticarse
-    // nuevamente cada minuto.
-    if (
-      tokenCacheRef.current.accessToken &&
-      tokenCacheRef.current.expiresAt >
-        ahora + margen
-    ) {
-      return tokenCacheRef.current.accessToken;
-    }
-
-    const scopes =
-      loginRequest?.scopes || ["User.Read"];
 
     try {
-      const tokenResponse =
-        await instance.acquireTokenSilent({
+      // ---------------------------------------------------------
+      // 1. COMPROBAR SESIÓN
+      // ---------------------------------------------------------
+
+      if (!accounts || accounts.length === 0) {
+        throw new Error(
+          "No hay una sesión activa de Microsoft 365."
+        );
+      }
+
+      if (inProgress !== InteractionStatus.None) {
+        throw new Error(
+          "Microsoft todavía está procesando una operación de inicio de sesión."
+        );
+      }
+
+      // ---------------------------------------------------------
+      // 2. OBTENER TOKEN
+      //
+      // El token solo autentica la petición contra la Edge Function.
+      // NO significa que cada GET vuelva a consultar Microsoft Graph.
+      // Los GET normales leen las tablas de Supabase.
+      // ---------------------------------------------------------
+
+      const scopes = loginRequest?.scopes || ["User.Read"];
+
+      let tokenResponse;
+
+      try {
+        tokenResponse = await instance.acquireTokenSilent({
           account: accounts[0],
           scopes,
         });
+      } catch (silentError) {
+        // Un refresco silencioso no debe abrir un popup.
+        if (
+          silentError instanceof InteractionRequiredAuthError &&
+          !silencioso
+        ) {
+          tokenResponse = await instance.acquireTokenPopup({
+            account: accounts[0],
+            scopes,
+          });
+        } else {
+          throw silentError;
+        }
+      }
 
-      const accessToken =
-        tokenResponse?.accessToken;
+      const accessToken = tokenResponse?.accessToken;
 
       if (!accessToken) {
         throw new Error(
@@ -282,77 +294,38 @@ export default function Microsoft365() {
         );
       }
 
-      tokenCacheRef.current = {
-        accessToken,
-        expiresAt:
-          tokenResponse?.expiresOn?.getTime?.() ||
-          ahora + 45 * 60 * 1000,
-      };
+      // ---------------------------------------------------------
+      // 3. LLAMAR A LA EDGE FUNCTION
+      //
+      // GET  = leer Supabase
+      // POST = sincronizar Microsoft Graph -> Supabase
+      // ---------------------------------------------------------
 
-      return accessToken;
-    } catch (silentError) {
-      console.error(
-        "MSAL acquireTokenSilent:",
-        silentError
-      );
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: forzar ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      const errorCode =
-        silentError?.errorCode || "";
+      const data = await response.json();
 
-      const requiereInteraccion =
-        silentError instanceof
-          InteractionRequiredAuthError ||
-        errorCode === "timed_out" ||
-        errorCode === "popup_window_error";
-
-      // IMPORTANTE:
-      // El refresco automático NUNCA abre un popup.
-      // Solo el botón manual puede hacerlo.
-      if (
-        permitirPopup &&
-        requiereInteraccion
-      ) {
-        const tokenResponse =
-          await instance.acquireTokenPopup({
-            account: accounts[0],
-            scopes,
-          });
-
-        const accessToken =
-          tokenResponse?.accessToken;
-
-        if (!accessToken) {
-          throw new Error(
-            "No se pudo obtener el token de Microsoft."
-          );
-        }
-
-        tokenCacheRef.current = {
-          accessToken,
-          expiresAt:
-            tokenResponse?.expiresOn?.getTime?.() ||
-            Date.now() + 45 * 60 * 1000,
-        };
-
-        return accessToken;
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data?.error ||
+            `Error al consultar Microsoft 365. Código: ${response.status}`
+        );
       }
 
-      throw silentError;
-    }
-  };
+      // ---------------------------------------------------------
+      // 4. LICENCIAS
+      // ---------------------------------------------------------
 
-  const cargarDatos = (data) => {
-    // =========================================================
-    // LICENCIAS
-    // =========================================================
-
-    const licenciasFormateadas =
-      (data.licencias || []).map(
+      const licenciasFormateadas = (data.licencias || []).map(
         (licencia, index) => {
           const total = Number(
-            licencia.capacidad ??
-              licencia.total ??
-              0
+            licencia.capacidad ?? licencia.total ?? 0
           );
 
           const asignadas = Number(
@@ -361,10 +334,7 @@ export default function Microsoft365() {
 
           const disponibles = Number(
             licencia.disponibles ??
-              Math.max(
-                total - asignadas,
-                0
-              )
+              Math.max(total - asignadas, 0)
           );
 
           let estadoLicencia = "Completa";
@@ -393,42 +363,38 @@ export default function Microsoft365() {
               "Licencia Microsoft 365",
 
             categoria:
-              licencia.categoria ||
-              "Otros",
+              licencia.categoria || "Otros",
 
             asignadas,
+
             disponibles,
+
             total,
 
-            estado:
-              estadoLicencia,
+            estado: estadoLicencia,
 
-            suspendidas:
-              Number(
-                licencia.suspendidas || 0
-              ),
+            suspendidas: Number(
+              licencia.suspendidas || 0
+            ),
 
-            warning:
-              Number(
-                licencia.warning || 0
-              ),
+            warning: Number(
+              licencia.warning || 0
+            ),
           };
         }
       );
 
-    // =========================================================
-    // USUARIOS
-    // =========================================================
+      // ---------------------------------------------------------
+      // 5. USUARIOS
+      // ---------------------------------------------------------
 
-    const usuariosFormateados =
-      (data.usuarios || []).map(
+      const usuariosFormateados = (data.usuarios || []).map(
         (usuario) => {
-          const listaLicencias =
-            Array.isArray(
-              usuario.licencias
-            )
-              ? usuario.licencias
-              : [];
+          const listaLicencias = Array.isArray(
+            usuario.licencias
+          )
+            ? usuario.licencias
+            : [];
 
           const nombresLicencias =
             listaLicencias.map(
@@ -439,205 +405,128 @@ export default function Microsoft365() {
             );
 
           return {
-            id:
-              usuario.id,
+            id: usuario.id,
 
             nombre:
-              usuario.nombre ||
-              "Sin nombre",
+              usuario.nombre || "Sin nombre",
 
             correo:
               usuario.correo ||
               usuario.userPrincipalName ||
               "Sin correo",
 
+            // La empresa viene de Supabase si fue registrada
+            // manualmente. Si no existe, se intenta deducir
+            // por el dominio del correo.
             empresa:
               usuario.empresa ||
               obtenerEmpresa(
                 usuario.correo ||
-                usuario.userPrincipalName
+                  usuario.userPrincipalName
               ),
 
             estado:
               usuario.estado ||
-              (
-                usuario.habilitado === false
-                  ? "Bloqueado"
-                  : "Activo"
-              ),
+              (usuario.habilitado === false
+                ? "Bloqueado"
+                : "Activo"),
 
             tipo:
-              usuario.tipo ||
-              "Member",
+              usuario.tipo || "Member",
 
             licencia:
               nombresLicencias.length > 0
                 ? nombresLicencias.join(", ")
                 : "Sin licencia",
 
-            licencias:
-              listaLicencias,
+            licencias: listaLicencias,
 
             cantidadLicencias:
               Number(
                 usuario.cantidadLicencias ??
-                  usuario.cantidad_licencias ??
                   listaLicencias.length
               ),
           };
         }
       );
 
-    setUsuarios(
-      usuariosFormateados
-    );
+      // ---------------------------------------------------------
+      // 6. GUARDAR EN PANTALLA
+      // ---------------------------------------------------------
 
-    setLicencias(
-      licenciasFormateadas
-    );
+      setUsuarios(usuariosFormateados);
+      setLicencias(licenciasFormateadas);
 
-    // =========================================================
-    // RESUMEN
-    // =========================================================
+      // ---------------------------------------------------------
+      // 7. RESUMEN
+      // ---------------------------------------------------------
 
-    const r =
-      data.resumen || {};
+      const r = data.resumen || {};
 
-    setResumen({
-      totalUsuarios:
-        Number(
+      setResumen({
+        totalUsuarios: Number(
           r.totalUsuarios ??
             usuariosFormateados.length
         ),
 
-      usuariosConLicencia:
-        Number(
+        usuariosConLicencia: Number(
           r.usuariosConLicencia ??
             usuariosFormateados.filter(
-              (u) =>
-                u.cantidadLicencias > 0
+              (u) => u.cantidadLicencias > 0
             ).length
         ),
 
-      totalUsuariosSinLicencia:
-        Number(
+        totalUsuariosSinLicencia: Number(
           r.totalUsuariosSinLicencia ??
             usuariosFormateados.filter(
-              (u) =>
-                u.cantidadLicencias === 0
+              (u) => u.cantidadLicencias === 0
             ).length
         ),
 
-      totalAsignaciones:
-        Number(
+        totalAsignaciones: Number(
           r.totalAsignaciones ??
             usuariosFormateados.reduce(
               (total, u) =>
                 total +
-                Number(
-                  u.cantidadLicencias || 0
-                ),
+                Number(u.cantidadLicencias || 0),
               0
             )
         ),
 
-      totalTiposLicencia:
-        Number(
+        totalTiposLicencia: Number(
           r.totalTiposLicencia ??
             licenciasFormateadas.length
         ),
-    });
+      });
 
-    // La Edge Function devuelve la fecha real de la
-    // última sincronización Microsoft -> Supabase.
-    setUltimaSincronizacion(
-      data.ultimaSincronizacion
-        ? new Date(
-            data.ultimaSincronizacion
-          )
-        : null
-    );
+      // ---------------------------------------------------------
+      // 8. ÚLTIMA SINCRONIZACIÓN REAL
+      // ---------------------------------------------------------
 
-    setSincronizado(true);
-  };
-
-  const sincronizar = async ({
-    forzar = false,
-    silencioso = false,
-  } = {}) => {
-    if (requestInFlightRef.current) {
-      return;
-    }
-
-    requestInFlightRef.current = true;
-
-    if (!silencioso) {
-      setLoading(true);
-      setErrorMicrosoft("");
-    }
-
-    try {
-      const accessToken =
-        await obtenerAccessToken({
-          // Solo el botón manual puede abrir popup.
-          // El refresco automático jamás lo hace.
-          permitirPopup: forzar,
-        });
-
-      const response =
-        await fetch(
-          EDGE_FUNCTION_URL,
-          {
-            method:
-              forzar
-                ? "POST"
-                : "GET",
-
-            headers: {
-              Authorization:
-                `Bearer ${accessToken}`,
-
-              "Content-Type":
-                "application/json",
-            },
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data?.error ||
-            `Error al consultar Microsoft 365. Código: ${response.status}`
-        );
-      }
-
-      cargarDatos(data);
+      setUltimaSincronizacion(
+        data.ultimaSincronizacion
+          ? new Date(data.ultimaSincronizacion)
+          : null
+      );
 
       setErrorMicrosoft("");
+      setSincronizado(true);
     } catch (error) {
       console.error(
         "Error consultando Microsoft 365:",
         error
       );
 
-      // En los refrescos automáticos conservamos los datos
-      // que ya estaban visibles.
+      // Los errores de refrescos silenciosos no deben
+      // borrar los datos que ya estamos mostrando.
       if (!silencioso) {
         setSincronizado(false);
-
         setErrorMicrosoft(
           error?.message ||
             "Ocurrió un error al consultar Microsoft 365."
         );
       }
     } finally {
-      requestInFlightRef.current = false;
-
       if (!silencioso) {
         setLoading(false);
       }
@@ -647,44 +536,40 @@ export default function Microsoft365() {
   // ===========================================================
   // ACTUALIZACIÓN AUTOMÁTICA DE LA PÁGINA
   //
-  // Al abrir:
-  //   GET -> Supabase
+  // Al abrir la página:
+  //   1. Hace un GET y carga lo que hay en Supabase.
   //
-  // Cada minuto:
-  //   GET -> Supabase
+  // Mientras la página permanezca abierta:
+  //   2. Cada minuto vuelve a consultar Supabase.
   //
-  // La sincronización Microsoft Graph -> Supabase NO ocurre aquí.
-  // Esa la realiza el CRON de Supabase cada 5 minutos.
+  // IMPORTANTE:
+  // Este intervalo NO sincroniza Microsoft Graph.
+  // La sincronización Microsoft -> Supabase la realiza el CRON
+  // de Supabase cada 5 minutos.
   // ===========================================================
 
-  const sincronizarRef =
-    useRef(sincronizar);
+  const sincronizarRef = useRef(sincronizar);
 
-  sincronizarRef.current =
-    sincronizar;
+  sincronizarRef.current = sincronizar;
 
   const sesionLista =
     accounts.length > 0 &&
-    inProgress ===
-      InteractionStatus.None;
+    inProgress === InteractionStatus.None;
 
   useEffect(() => {
-    if (!sesionLista) {
-      return;
-    }
+    if (!sesionLista) return;
 
-    // Primera carga.
+    // Primera carga desde Supabase.
     sincronizarRef.current();
 
-    const intervalo =
-      setInterval(() => {
-        sincronizarRef.current({
-          silencioso: true,
-        });
-      }, 60 * 1000);
+    // Refresco de pantalla cada minuto.
+    const intervalo = setInterval(() => {
+      sincronizarRef.current({
+        silencioso: true,
+      });
+    }, 60 * 1000);
 
-    return () =>
-      clearInterval(intervalo);
+    return () => clearInterval(intervalo);
   }, [sesionLista]);
 
   // ===========================================================
@@ -792,7 +677,7 @@ export default function Microsoft365() {
             <p className="text-xs text-slate-500">
 
               {sincronizado
-                ? "Datos de la sincronización automática"
+                ? "Datos sincronizados automáticamente desde Supabase"
                 : "Esperando datos de la sincronización automática"}
 
             </p>
@@ -852,7 +737,7 @@ export default function Microsoft365() {
           detail={
             sincronizado
               ? `${resumen.usuariosConLicencia} con licencia`
-              : "Esperando datos de Supabase"
+              : "Sincroniza para consultar"
           }
         />
 
@@ -867,7 +752,7 @@ export default function Microsoft365() {
           detail={
             sincronizado
               ? "Licencias asignadas a usuarios"
-              : "Esperando datos de Supabase"
+              : "Sincroniza para consultar"
           }
         />
 
@@ -882,7 +767,7 @@ export default function Microsoft365() {
           detail={
             sincronizado
               ? "SKU encontradas en el tenant"
-              : "Esperando datos de Supabase"
+              : "Sincroniza para consultar"
           }
         />
 
@@ -897,7 +782,7 @@ export default function Microsoft365() {
           detail={
             sincronizado
               ? "Usuarios sin licencias asignadas"
-              : "Esperando datos de Supabase"
+              : "Sincroniza para consultar"
           }
         />
 
@@ -1287,7 +1172,7 @@ export default function Microsoft365() {
 
                         {sincronizado
                           ? "No se encontraron usuarios con los filtros seleccionados."
-                          : "Esperando la primera sincronización automática."}
+                          : 'Pulsa "Sincronizar" para cargar los usuarios reales del tenant.'}
 
                       </td>
 
@@ -1368,7 +1253,7 @@ export default function Microsoft365() {
                 </h3>
 
                 <p className="text-sm text-slate-500 mt-1">
-                  Esperando datos de la sincronización automática.
+                  La información se actualizará automáticamente desde Supabase.
                 </p>
 
               </div>
