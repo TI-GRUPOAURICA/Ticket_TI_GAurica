@@ -42,7 +42,7 @@ import {
 // CONFIGURACIÓN
 // =============================================================
 
-const EMPRESAS_DISPONIBLES = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL"];
+const EMPRESAS_DISPONIBLES = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"];
 
 const EDGE_FUNCTION_URL =
   "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
@@ -50,6 +50,7 @@ const EDGE_FUNCTION_URL =
   const EMPRESAS_POR_DOMINIO = {
   "aurica.com": "AURICA",
   "alencorsrl.com": "ALENCORSRL",
+  "mapajoya.com": "MAPAJOYA",
 };
 
 function obtenerEmpresa(correo) {
