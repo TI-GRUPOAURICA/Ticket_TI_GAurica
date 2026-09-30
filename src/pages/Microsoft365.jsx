@@ -47,10 +47,16 @@ const EMPRESAS_DISPONIBLES = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRI
 const EDGE_FUNCTION_URL =
   "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
 
-  const EMPRESAS_POR_DOMINIO = {
+const EMPRESAS_POR_DOMINIO = {
   "aurica.com": "AURICA",
+  "auricape.onmicrosoft.com": "AURICA",
+  "auricasac.com": "AURICA",
   "alencorsrl.com": "ALENCORSRL",
+  "gianlusac.com": "GIANLU",
   "mapajoya.com": "MAPAJOYA",
+  "metalabsac.com": "METALAB",
+  "mineralabsac.com": "MINERALAB",
+  "terrimetalsac.com": "TERRIMETAL",
 };
 
 function obtenerEmpresa(correo) {
@@ -2225,15 +2231,6 @@ function EmptyModule({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
 
 
 
