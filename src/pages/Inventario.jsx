@@ -179,6 +179,7 @@ const [renovacionData, setRenovacionData] = useState({
     tipo: "",
     correo: "",
     anydesk: "",
+    clave_anydesk: "",
     sede: "",
     cargo: "",
     usuario_nas: "",
@@ -790,6 +791,7 @@ esFechaAproximada  };
         tipo:         editData.tipo,
         correo:       editData.correo,
         anydesk:      editData.anydesk,
+        clave_anydesk: editData.clave_anydesk,
         sede:         editData.sede || null,
         cargo:        editData.cargo,
         usuario_nas:    editData.usuario_nas,
@@ -1444,6 +1446,7 @@ async function analizarEquipoIA() {
                                       tipo: colaboradorActual.tipo || "",
                                       correo: colaboradorActual.correo || "",
                                       anydesk: colaboradorActual.anydesk || "",
+                                      clave_anydesk: colaboradorActual.clave_anydesk || "",
                                       sede: colaboradorActual.sede || "",
                                       cargo: colaboradorActual.cargo || "",
                                       usuario_nas: colaboradorActual.usuario_nas || "",
@@ -1537,6 +1540,17 @@ async function analizarEquipoIA() {
                               />
                             </CampoEditable>
 
+                            <CampoEditable label="Contraseña AnyDesk">
+                              <input
+                                type="password"
+                                value={editData.clave_anydesk}
+                                onChange={(e) => setEditData({ ...editData, clave_anydesk: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="new-password"
+                              />
+                            </CampoEditable>
+
                             <CampoEditable label="Sede / Ubicación">
                               <select
                                 value={editData.sede}
@@ -1618,6 +1632,10 @@ async function analizarEquipoIA() {
                             <DetalleItem label="Empresa" valor={colaboradorActual?.empresa} />
                             <DetalleItem label="Tipo de equipo" valor={colaboradorActual?.tipo} />
                             <DetalleItem label="AnyDesk" valor={colaboradorActual?.anydesk} />
+                            <DetalleItem
+                              label="Contraseña AnyDesk"
+                              valorNodo={<ValorSecreto valor={colaboradorActual?.clave_anydesk} />}
+                            />
                             <DetalleItem
                               label="Sede / Ubicación"
                               valorNodo={
