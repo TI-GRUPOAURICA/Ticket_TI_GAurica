@@ -167,9 +167,11 @@ export default function Dashboard({ onNavigate }) {
   // ---- Stats de inventario (derivados de equiposFiltrados) ----
   const equipoStats = useMemo(() => {
     const total = equiposFiltrados.length;
-    const lima = equiposFiltrados.filter((e) => (e.sede || "").toUpperCase() === "LIMA").length;
-    const chala = equiposFiltrados.filter((e) => (e.sede || "").toUpperCase() === "CHALA").length;
-    return { total, lima, chala, sinSede: total - lima - chala };
+    const obtenerSede = (e) => (e.sede || "").trim().toUpperCase();
+    const lima = equiposFiltrados.filter((e) => obtenerSede(e) === "LIMA").length;
+    const arequipa = equiposFiltrados.filter((e) => obtenerSede(e) === "AREQUIPA").length;
+    const chala = equiposFiltrados.filter((e) => obtenerSede(e) === "CHALA").length;
+    return { total, lima, arequipa, chala, sinSede: total - lima - arequipa - chala };
   }, [equiposFiltrados]);
 
   const equiposPorEmpresa = useMemo(() => {
@@ -292,8 +294,9 @@ export default function Dashboard({ onNavigate }) {
 
   const equipoStatCards = [
     { label: "Total equipos", value: equipoStats.total,   color: "#345D9D", icon: Monitor },
-    { label: "En Lima",       value: equipoStats.lima,    color: "#22C55E", icon: MapPin },
-    { label: "En Chala",      value: equipoStats.chala,   color: "#F59E0B", icon: MapPin },
+    { label: "En Lima",       value: equipoStats.lima,     color: "#22C55E", icon: MapPin },
+    { label: "En Arequipa",   value: equipoStats.arequipa, color: "#8B5CF6", icon: MapPin },
+    { label: "En Chala",      value: equipoStats.chala,    color: "#F59E0B", icon: MapPin },
     { label: "Sin sede",      value: equipoStats.sinSede, color: "#94A3B8", icon: Building2 },
   ];
  
