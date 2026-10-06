@@ -504,7 +504,7 @@ export default function Dashboard({ onNavigate }) {
           </div>
 
           {/* ---- TARJETAS DE INVENTARIO ---- */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
             {equipoStatCards.map((card) => (
               <div
                 key={card.label}
