@@ -146,7 +146,7 @@ function obtenerEstadoRenovacion(fechaFin) {
 // COMPONENTE PRINCIPAL
 // =============================================================
 
-export default function Microsoft365() {
+export default function Microsoft365({ esAdminGlobal = false } = {}) {
   // ===========================================================
   // MICROSOFT MSAL
   // ===========================================================
@@ -1274,6 +1274,7 @@ export default function Microsoft365() {
               {completandoFechas ? "Completando fechas..." : "Completar fechas desde Cuentas de correo"}
             </button>
 
+            {esAdminGlobal && (
             <button
               onClick={() => sincronizar({ forzar: true })}
               disabled={loading || completandoFechas}
@@ -1282,6 +1283,7 @@ export default function Microsoft365() {
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               {loading ? "Sincronizando..." : "Sincronizar"}
             </button>
+            )}
           </div>
 
         </div>
@@ -2247,6 +2249,7 @@ export default function Microsoft365() {
                 }
               />
 
+              {esAdminGlobal ? (
               <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
                 <Building2 size={18} className="mt-1 text-[#3763a5]" />
                 <div className="min-w-0 flex-1">
@@ -2263,6 +2266,9 @@ export default function Microsoft365() {
                   {guardandoEmpresaId === selectedUser.id && <p className="mt-1 text-xs text-slate-400">Guardando empresa...</p>}
                 </div>
               </div>
+              ) : (
+                <DetailRow icon={Building2} label="Empresa" value={selectedUser.empresa || "Sin asignar"} />
+              )}
 
               <DetailRow
                 icon={ShieldCheck}

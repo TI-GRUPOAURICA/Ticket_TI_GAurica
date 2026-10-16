@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
-
 export default function Evaluacion() {
   const [calificacion, setCalificacion] = useState(0);
   const [comentario, setComentario] = useState("");
@@ -24,37 +22,19 @@ export default function Evaluacion() {
     setBloqueado(true); // Bloquea futuros clics
 
     if (valor >= 4) {
-      await guardarEnSupabase(valor, "Excelente atención");
-      setEnviado(true);
+      if (await guardarEnSupabase(valor, "Excelente atención")) setEnviado(true);
     }
   };
 
 const guardarEnSupabase = async (valor, texto) => {
-    // 1. Primero verificamos si el ticket ya tiene una valoración registrada
-    const { data: ticketExistente, error } = await supabase
-      .from("tickets")
-      .select("valoracion_usuario")
-      .eq("id", ticketId)
-      .single();
-
-    // 2. Si ya existe un valor, bloqueamos el envío
-    if (ticketExistente && ticketExistente.valoracion_usuario !== null) {
-      alert("Este ticket ya ha sido calificado anteriormente.");
-      setEnviado(true);
-      return;
-    }
-
-    // 3. Si no existe, procedemos a actualizar
-    await supabase
-      .from("tickets")
-      .update({
-        valoracion_usuario: valor,
-        comentario_valoracion: texto,
-        fecha_valoracion: new Date().toISOString(),
-      })
-      .eq("id", ticketId);
-      
-    setEnviado(true);
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ticket-rating`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+      body: JSON.stringify({ ticketId, valor, comentario: texto }),
+    });
+    const data = await response.json();
+    if (!response.ok) { alert(data.error || "No se pudo guardar la calificación."); return false; }
+    return true;
   };
 
   if (enviado) {
@@ -93,8 +73,7 @@ const guardarEnSupabase = async (valor, texto) => {
             />
             <button
               onClick={async () => {
-                await guardarEnSupabase(calificacion, comentario);
-                setEnviado(true);
+                if (await guardarEnSupabase(calificacion, comentario)) setEnviado(true);
               }}
               style={{ backgroundColor: "#345d9d" }} // Tu color azul
               className="w-full py-2 text-white rounded-xl"

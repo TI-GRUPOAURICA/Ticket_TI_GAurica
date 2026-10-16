@@ -44,8 +44,6 @@ export default function Dashboard({ onNavigate }) {
   const [loadingLicencias, setLoadingLicencias] = useState(true);
   const [errorLicenciasMicrosoft, setErrorLicenciasMicrosoft] = useState("");
   const [loadingEstados, setLoadingEstados] = useState(true);
-  const [mostrarTodasLicencias, setMostrarTodasLicencias] = useState(false);
-  const [mostrarTodosEquipos, setMostrarTodosEquipos] = useState(false);
 
   // ---- Filtro activo del dashboard ----
   // "" = todas las empresas
@@ -744,7 +742,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             ) : (
               <div className="space-y-2">
-                {notificacionesLicencias.slice(0, mostrarTodasLicencias ? notificacionesLicencias.length : 6).map((n, i) => (
+                {notificacionesLicencias.slice(0, 6).map((n, i) => (
                   <div
                     key={`${n.cuenta}-${n.tipo_licencia}-${i}`}
                     className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl"
@@ -793,16 +791,16 @@ export default function Dashboard({ onNavigate }) {
 
             {notificacionesLicencias.length > 6 && (
               <button
-                onClick={() => setMostrarTodasLicencias((actual) => !actual)}
+                onClick={() => onNavigate("microsoft-365")}
                 className="mt-2 text-xs font-semibold flex items-center gap-1"
                 style={{ color: "#345D9D" }}
               >
-                {mostrarTodasLicencias ? "Ver menos" : <>Ver {notificacionesLicencias.length - 6} más <ChevronRight size={13} /></>}
+                Ver {notificacionesLicencias.length - 6} más <ChevronRight size={13} />
               </button>
             )}
           </div>
 
-          {/* ---- Equipos con sincronización atrasada ---- */}
+          {/* ---- Equipos sin sincronizar ---- */}
           <div
             className="rounded-2xl p-4 shadow-sm"
             style={{
@@ -818,7 +816,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="flex items-center gap-2 mb-3">
               <WifiOff size={16} style={{ color: "#345D9D" }} />
               <h3 className="font-bold text-sm" style={{ color: "#345D9D" }}>
-                Equipos con sincronización atrasada
+                Equipos sin sincronizar
               </h3>
             </div>
 
@@ -852,7 +850,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             ) : (
               <div className="space-y-2">
-                {notificacionesEquipos.slice(0, mostrarTodosEquipos ? notificacionesEquipos.length : 6).map((eq, i) => (
+                {notificacionesEquipos.slice(0, 6).map((eq, i) => (
                   <div
                     key={`${eq.host}-${i}`}
                     className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl"
@@ -889,11 +887,11 @@ export default function Dashboard({ onNavigate }) {
 
             {notificacionesEquipos.length > 6 && (
               <button
-                onClick={() => setMostrarTodosEquipos((actual) => !actual)}
+                onClick={() => onNavigate("inventario")}
                 className="mt-2 text-xs font-semibold flex items-center gap-1"
                 style={{ color: "#345D9D" }}
               >
-                {mostrarTodosEquipos ? "Ver menos" : <>Ver {notificacionesEquipos.length - 6} más <ChevronRight size={13} /></>}
+                Ver {notificacionesEquipos.length - 6} más <ChevronRight size={13} />
               </button>
             )}
           </div>

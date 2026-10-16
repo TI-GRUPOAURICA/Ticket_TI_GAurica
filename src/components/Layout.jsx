@@ -74,7 +74,8 @@ export default function Layout({
   children,
   onNavigate,
   currentPage,
-  onLogout
+  onLogout,
+  esAdminGlobal = false
 }) {
   const [isMobile, setIsMobile] = useState(
     window.innerWidth < 768
@@ -146,7 +147,8 @@ export default function Layout({
       id: "microsoft-365",
       label: "Microsoft 365",
       icon: Cloud
-    }
+    },
+    ...(esAdminGlobal ? [{ id: "permisos", label: "Permisos", icon: Users }] : [])
   ];
 
   return (
