@@ -573,6 +573,11 @@ export default function Microsoft365() {
             : usuario
         )
       );
+      setSelectedUser((actual) =>
+        actual?.id === usuarioId
+          ? { ...actual, empresa: data.empresa || "—" }
+          : actual
+      );
     } catch (error) {
       console.error("Error guardando empresa del usuario:", error);
       setErrorMicrosoft(error?.message || "No se pudo guardar la empresa.");
@@ -1427,7 +1432,8 @@ export default function Microsoft365() {
       </div>
 
       {sincronizado && (
-        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-xs font-bold text-slate-600">Estado de licencias pagadas o renovables:</span>
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
             {resumenEstadoLicencias.activa} activas
@@ -1438,6 +1444,10 @@ export default function Microsoft365() {
           <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
             {resumenEstadoLicencias.expirada} expiradas
           </span>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            El conteo es por licencia asignada. Activa: vence en más de 30 días o no tiene fecha registrada. Por vencer: vence dentro de 30 días. Expirada: su fecha ya pasó.
+          </p>
         </div>
       )}
 
@@ -1710,33 +1720,14 @@ export default function Microsoft365() {
 
                           <td className="px-4 py-4">
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-sm text-slate-700">
 
                               <Building2
                                 size={14}
                                 className="text-slate-400 shrink-0"
                               />
 
-                              <select
-                                value={usuario.empresa === "—" ? "" : usuario.empresa || ""}
-                                onChange={(e) =>
-                                  actualizarEmpresaUsuario(usuario.id, e.target.value)
-                                }
-                                disabled={guardandoEmpresaId === usuario.id}
-                                aria-label={`Empresa de ${usuario.nombre}`}
-                                className="max-w-[190px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#3763a5] disabled:opacity-60"
-                              >
-                                <option value="">Sin asignar</option>
-                                {empresas.map((nombreEmpresa) => (
-                                  <option key={nombreEmpresa} value={nombreEmpresa}>
-                                    {nombreEmpresa}
-                                  </option>
-                                ))}
-                              </select>
-
-                              {guardandoEmpresaId === usuario.id && (
-                                <span className="text-[11px] text-slate-400">Guardando...</span>
-                              )}
+                              <span>{usuario.empresa || "Sin asignar"}</span>
 
                             </div>
 
@@ -1746,51 +1737,28 @@ export default function Microsoft365() {
 
                           <td className="px-4 py-4">
 
-                            <div className="flex flex-wrap gap-1.5 max-w-[520px]">
-
-                              {usuario.licencias &&
-                              usuario.licencias.length >
-                                0 ? (
-
-                                usuario.licencias.map(
-                                  (
-                                    licencia,
-                                    index
-                                  ) => (
-
-                                    <span
-                                      key={
-                                        licencia.skuId ||
-                                        index
-                                      }
-                                      className="inline-flex px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold"
-                                      title={
-                                        licencia.categoria ||
-                                        ""
-                                      }
-                                    >
-
-                                      {
-                                        licencia.nombre ||
-                                        licencia.skuPartNumber ||
-                                        "Licencia"
-                                      }
-
-                                    </span>
-
-                                  )
-                                )
-
+                            <div className="min-w-[240px] space-y-2">
+                              {(usuario.licencias || []).filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)).length ? (
+                                (usuario.licencias || []).filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)).map((licencia, index) => {
+                                  const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
+                                  const fecha = licencia.fechaFin
+                                    ? new Date(`${String(licencia.fechaFin).slice(0, 10)}T00:00:00`).toLocaleDateString("es-PE")
+                                    : "Sin fecha registrada";
+                                  return (
+                                    <div key={licencia.skuId || `${licencia.nombre}-${index}`} className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="text-xs font-semibold text-slate-700">{licencia.nombre || licencia.skuPartNumber || "Licencia"}</span>
+                                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${estadoRenovacion.clases}`}>{estadoRenovacion.etiqueta}</span>
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500">{licencia.fechaFin ? `Renovación: ${fecha}` : fecha}</p>
+                                    </div>
+                                  );
+                                })
+                              ) : usuario.licencias?.length ? (
+                                <span className="text-xs text-slate-500">Sin licencias pagadas o con renovación</span>
                               ) : (
-
-                                <span className="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">
-
-                                  Sin licencia
-
-                                </span>
-
+                                <span className="text-xs text-slate-500">Sin licencia</span>
                               )}
-
                             </div>
 
                           </td>
@@ -2279,14 +2247,22 @@ export default function Microsoft365() {
                 }
               />
 
-              <DetailRow
-                icon={Building2}
-                label="Empresa"
-                value={
-                  selectedUser.empresa ||
-                  "—"
-                }
-              />
+              <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <Building2 size={18} className="mt-1 text-[#3763a5]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-slate-500">Empresa</p>
+                  <select
+                    value={selectedUser.empresa === "—" ? "" : selectedUser.empresa || ""}
+                    onChange={(e) => actualizarEmpresaUsuario(selectedUser.id, e.target.value)}
+                    disabled={guardandoEmpresaId === selectedUser.id}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#3763a5] disabled:opacity-60"
+                  >
+                    <option value="">Sin asignar</option>
+                    {empresas.map((nombreEmpresa) => <option key={nombreEmpresa} value={nombreEmpresa}>{nombreEmpresa}</option>)}
+                  </select>
+                  {guardandoEmpresaId === selectedUser.id && <p className="mt-1 text-xs text-slate-400">Guardando empresa...</p>}
+                </div>
+              </div>
 
               <DetailRow
                 icon={ShieldCheck}
