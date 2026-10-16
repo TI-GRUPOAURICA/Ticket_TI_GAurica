@@ -45,6 +45,16 @@ const TEMAS = {
     logo: "/Gianlu_imagotipo_principal.png",
     nombre: "Gianlu",
   },
+  "TERRIMETAL": {
+    primary: "#839B75",
+    dark: "#5F7254",
+    light: "#F3F6F0",
+    border: "#D5E0CE",
+    text: "#3F5038",
+    bg: "#F7F9F5",
+    logo: "/Terrimetal_imagotipo_principal.png",
+    nombre: "Terrimetal",
+  },
 };
 
 const TEMA_DEFAULT = {
@@ -84,7 +94,7 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
     const { data, error } = await supabase
       .from("colaboradores")
       .select("*")
-      .eq("correo", userEmail)
+      .ilike("correo", userEmail)
       .single();
 
     if (error || !data) {

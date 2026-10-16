@@ -115,7 +115,7 @@ export default function App() {
   // ----------------------------------------------------------
 
   const userEmail =
-    accounts[0]?.username || "";
+    accesoEmpresa?.correo || accounts[0]?.username || "";
 
   const userName =
     accounts[0]?.name || "";
