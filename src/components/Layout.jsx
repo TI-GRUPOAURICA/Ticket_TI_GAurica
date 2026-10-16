@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   Users,
   LogOut,
-  Mail,
   Cloud,
   Printer
 } from "lucide-react";
@@ -142,11 +141,6 @@ export default function Layout({
       id: "usuarios",
       label: "Usuarios",
       icon: Users
-    },
-    {
-      id: "cuentas-correo",
-      label: "Cuentas de correo",
-      icon: Mail
     },
     {
       id: "microsoft-365",

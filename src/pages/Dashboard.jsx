@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
+import { useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
 import { supabase } from "../lib/supabase";
+import { loginRequest } from "../Config/authConfig";
 import {
   Ticket,
   CircleAlert,
@@ -15,6 +18,9 @@ import {
   WifiOff,
 } from "lucide-react";
 
+const MICROSOFT365_EDGE_FUNCTION =
+  "https://kugmjzhaxdzyuizjtvjh.supabase.co/functions/v1/sync-microsoft365";
+
 // Empresas que NO deben aparecer como filtro (typos de datos ya
 // identificados; en cuanto se corrijan en Supabase, esta lista
 // puede quedar vacía).
@@ -26,15 +32,17 @@ const DIAS_ALERTA_CRITICO = 7;  // 7+ días -> rojo
  
 export default function Dashboard({ onNavigate }) {
 
+  const { instance, accounts, inProgress } = useMsal();
+
   // ---- Datos "crudos" tal cual vienen de Supabase ----
   const [ticketsRaw, setTicketsRaw] = useState([]);
   const [equiposRaw, setEquiposRaw] = useState([]);
-  const [cuentasRaw, setCuentasRaw] = useState([]);
-  const [licenciasRaw, setLicenciasRaw] = useState([]);
+  const [usuariosMicrosoftRaw, setUsuariosMicrosoftRaw] = useState([]);
   const [estadosRaw, setEstadosRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingInventario, setLoadingInventario] = useState(true);
   const [loadingLicencias, setLoadingLicencias] = useState(true);
+  const [errorLicenciasMicrosoft, setErrorLicenciasMicrosoft] = useState("");
   const [loadingEstados, setLoadingEstados] = useState(true);
 
   // ---- Filtro activo del dashboard ----
@@ -44,7 +52,6 @@ export default function Dashboard({ onNavigate }) {
   useEffect(() => {
     fetchData();
     fetchInventario();
-    fetchLicencias();
     fetchEstadosAgente();
   }, []);
  
@@ -73,24 +80,49 @@ export default function Dashboard({ onNavigate }) {
   };
 
   // ----------------------------------------------------------
-  // FETCH LICENCIAS (centro de notificaciones)
-  // Mismas tablas y mismo criterio de "vencida" / "por vencer"
-  // que ya usas en la pantalla de Cuentas de correo, para que
-  // ambas pantallas siempre digan lo mismo.
+  // FETCH LICENCIAS DESDE MICROSOFT 365
   // ----------------------------------------------------------
-  const fetchLicencias = async () => {
-    const [cuentasRes, licenciasRes] = await Promise.all([
-      supabase.from("cuentas_correo").select("id, nombre, correo, empresa, activo"),
-      supabase.from("licencias_correo").select("cuenta_id, tipo_licencia, fecha_expira"),
-    ]);
+  useEffect(() => {
+    if (inProgress !== InteractionStatus.None) return;
+    if (!accounts?.length) {
+      setLoadingLicencias(false);
+      setErrorLicenciasMicrosoft("No hay una sesión activa de Microsoft 365.");
+      return;
+    }
 
-    if (cuentasRes.error) console.error(cuentasRes.error);
-    if (licenciasRes.error) console.error(licenciasRes.error);
+    let vigente = true;
+    const cargarLicenciasMicrosoft = async () => {
+      setLoadingLicencias(true);
+      setErrorLicenciasMicrosoft("");
+      try {
+        const token = await instance.acquireTokenSilent({
+          account: accounts[0],
+          scopes: loginRequest?.scopes || ["User.Read"],
+        });
+        const response = await fetch(MICROSOFT365_EDGE_FUNCTION, {
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data?.error || "No se pudieron consultar las licencias de Microsoft 365.");
+        }
+        if (vigente) setUsuariosMicrosoftRaw(data.usuarios || []);
+      } catch (error) {
+        console.error("Error cargando licencias de Microsoft 365 en el dashboard:", error);
+        if (vigente) setErrorLicenciasMicrosoft(error?.message || "No se pudo cargar Microsoft 365.");
+      } finally {
+        if (vigente) setLoadingLicencias(false);
+      }
+    };
 
-    if (cuentasRes.data) setCuentasRaw(cuentasRes.data);
-    if (licenciasRes.data) setLicenciasRaw(licenciasRes.data);
-    setLoadingLicencias(false);
-  };
+    cargarLicenciasMicrosoft();
+    return () => {
+      vigente = false;
+    };
+  }, [instance, accounts, inProgress]);
 
   // ----------------------------------------------------------
   // FETCH ESTADO DEL AGENTE (equipos_estado)
@@ -121,9 +153,10 @@ export default function Dashboard({ onNavigate }) {
     const set = new Set();
     ticketsRaw.forEach((t) => t.empresa && set.add(t.empresa));
     equiposRaw.forEach((e) => e.empresa && set.add(e.empresa));
+    usuariosMicrosoftRaw.forEach((u) => u.empresa && u.empresa !== "—" && set.add(u.empresa));
     EMPRESAS_EXCLUIDAS_FILTRO.forEach((e) => set.delete(e));
     return Array.from(set).sort();
-  }, [ticketsRaw, equiposRaw]);
+  }, [ticketsRaw, equiposRaw, usuariosMicrosoftRaw]);
 
   // ----------------------------------------------------------
   // DATOS FILTRADOS POR EMPRESA
@@ -193,49 +226,47 @@ export default function Dashboard({ onNavigate }) {
   }, [equiposFiltrados]);
 
   // ----------------------------------------------------------
-  // NOTIFICACIONES DE LICENCIAS
-  // Mismo criterio que estadoGeneralLicenciasCuenta() en
-  // CuentasCorreo.jsx: vencida = fecha_expira ya pasó,
-  // por_vencer = vence en 30 días o menos.
+  // ESTADOS DE RENOVACIÓN DE MICROSOFT 365
+  // Expirada: pasó la fecha; por vencer: faltan 30 días o menos.
   // ----------------------------------------------------------
-  const notificacionesLicencias = useMemo(() => {
+  const licenciasMicrosoftConEstado = useMemo(() => {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-
-    const cuentasPorId = {};
-    cuentasRaw.forEach((c) => { cuentasPorId[c.id] = c; });
-
     const items = [];
-    licenciasRaw.forEach((lic) => {
-      if (!lic.fecha_expira) return;
+    usuariosMicrosoftRaw.forEach((usuario) => {
+      const empresaUsuario = usuario.empresa || "—";
+      if (filtroEmpresa && empresaUsuario !== filtroEmpresa) return;
 
-      const cuenta = cuentasPorId[lic.cuenta_id];
-      if (!cuenta) return;
-      if (filtroEmpresa && cuenta.empresa !== filtroEmpresa) return;
+      (usuario.licencias || []).forEach((licencia) => {
+        if (!licencia.fechaFin) return;
+        const fechaExpira = String(licencia.fechaFin).slice(0, 10);
+        const vencimiento = new Date(`${fechaExpira}T00:00:00`);
+        const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+        const estado = diasRestantes < 0
+          ? "expirada"
+          : diasRestantes <= 30
+            ? "por_vencer"
+            : "activa";
 
-      const vencimiento = new Date(`${lic.fecha_expira}T00:00:00`);
-      const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
-
-      let estado = null;
-      if (diasRestantes < 0) estado = "vencida";
-      else if (diasRestantes <= 30) estado = "por_vencer";
-      else return; // vigente, no genera notificación
-
-      items.push({
-        cuenta: cuenta.nombre || cuenta.correo || "Sin nombre",
-        empresa: cuenta.empresa || "Sin empresa",
-        tipo_licencia: lic.tipo_licencia || "Licencia",
-        fecha_expira: lic.fecha_expira,
-        diasRestantes,
-        estado,
+        items.push({
+          cuenta: usuario.nombre || usuario.displayName || usuario.correo || "Sin nombre",
+          correo: usuario.correo || usuario.userPrincipalName || "",
+          empresa: empresaUsuario,
+          tipo_licencia: licencia.nombre || licencia.skuPartNumber || "Licencia",
+          fecha_expira: fechaExpira,
+          diasRestantes,
+          estado,
+        });
       });
     });
 
     return items.sort((a, b) => a.diasRestantes - b.diasRestantes);
-  }, [cuentasRaw, licenciasRaw, filtroEmpresa]);
+  }, [usuariosMicrosoftRaw, filtroEmpresa]);
 
-  const licenciasVencidas = notificacionesLicencias.filter((n) => n.estado === "vencida");
+  const notificacionesLicencias = licenciasMicrosoftConEstado.filter((n) => n.estado !== "activa");
+  const licenciasVencidas = notificacionesLicencias.filter((n) => n.estado === "expirada");
   const licenciasPorVencer = notificacionesLicencias.filter((n) => n.estado === "por_vencer");
+  const licenciasActivas = licenciasMicrosoftConEstado.filter((n) => n.estado === "activa");
 
   // ----------------------------------------------------------
   // NOTIFICACIONES DE EQUIPOS SIN SINCRONIZAR (offline)
@@ -667,7 +698,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="flex items-center gap-2 mb-3">
               <Bell size={16} style={{ color: "#345D9D" }} />
               <h3 className="font-bold text-sm" style={{ color: "#345D9D" }}>
-                Licencias de correo
+                Licencias Microsoft 365
               </h3>
             </div>
 
@@ -677,7 +708,7 @@ export default function Dashboard({ onNavigate }) {
                   className="text-xs font-semibold px-2 py-1 rounded-full"
                   style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
                 >
-                  {licenciasVencidas.length} vencida{licenciasVencidas.length !== 1 ? "s" : ""}
+                  {licenciasVencidas.length} expirada{licenciasVencidas.length !== 1 ? "s" : ""}
                 </span>
               )}
               {licenciasPorVencer.length > 0 && (
@@ -688,14 +719,26 @@ export default function Dashboard({ onNavigate }) {
                   {licenciasPorVencer.length} por vencer
                 </span>
               )}
+              {licenciasActivas.length > 0 && (
+                <span
+                  className="text-xs font-semibold px-2 py-1 rounded-full"
+                  style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" }}
+                >
+                  {licenciasActivas.length} activas
+                </span>
+              )}
             </div>
 
             {loadingLicencias ? (
               <p className="text-xs text-slate-500">Cargando...</p>
+            ) : errorLicenciasMicrosoft ? (
+              <p className="text-xs text-red-600">{errorLicenciasMicrosoft} Abre Microsoft 365 para revisar la conexión.</p>
             ) : notificacionesLicencias.length === 0 ? (
               <div className="flex items-center gap-2 py-1">
                 <CircleCheckBig size={16} color="#22C55E" />
-                <p className="text-xs" style={{ color: "#64748b" }}>Todo al día.</p>
+                <p className="text-xs" style={{ color: "#64748b" }}>
+                  Todo al día. {licenciasActivas.length} licencias activas.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -704,14 +747,14 @@ export default function Dashboard({ onNavigate }) {
                     key={`${n.cuenta}-${n.tipo_licencia}-${i}`}
                     className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl"
                     style={{
-                      background: n.estado === "vencida" ? "#fef2f2" : "#fffbeb",
-                      border: n.estado === "vencida" ? "1px solid #fecaca" : "1px solid #fde68a",
+                      background: n.estado === "expirada" ? "#fef2f2" : "#fffbeb",
+                      border: n.estado === "expirada" ? "1px solid #fecaca" : "1px solid #fde68a",
                     }}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <KeyRound
                         size={13}
-                        style={{ color: n.estado === "vencida" ? "#dc2626" : "#b45309" }}
+                        style={{ color: n.estado === "expirada" ? "#dc2626" : "#b45309" }}
                       />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold truncate" style={{ color: "#1e293b" }}>
@@ -723,16 +766,24 @@ export default function Dashboard({ onNavigate }) {
                       </div>
                     </div>
 
-                    <span
-                      className="text-[11px] font-semibold whitespace-nowrap"
-                      style={{ color: n.estado === "vencida" ? "#dc2626" : "#b45309" }}
-                    >
-                      {n.estado === "vencida"
-                        ? `-${Math.abs(n.diasRestantes)}d`
-                        : n.diasRestantes === 0
-                          ? "Hoy"
-                          : `${n.diasRestantes}d`}
-                    </span>
+                    <div className="text-right">
+                      <p
+                        className="text-[11px] font-bold whitespace-nowrap"
+                        style={{ color: n.estado === "expirada" ? "#dc2626" : "#b45309" }}
+                      >
+                        {n.estado === "expirada" ? "Expirada" : "Por vencer"}
+                      </p>
+                      <p
+                        className="text-[10px] font-semibold whitespace-nowrap"
+                        style={{ color: n.estado === "expirada" ? "#dc2626" : "#b45309" }}
+                      >
+                        {n.estado === "expirada"
+                          ? `-${Math.abs(n.diasRestantes)}d`
+                          : n.diasRestantes === 0
+                            ? "Hoy"
+                            : `${n.diasRestantes}d`}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -740,7 +791,7 @@ export default function Dashboard({ onNavigate }) {
 
             {notificacionesLicencias.length > 6 && (
               <button
-                onClick={() => onNavigate("cuentas-correo")}
+                onClick={() => onNavigate("microsoft-365")}
                 className="mt-2 text-xs font-semibold flex items-center gap-1"
                 style={{ color: "#345D9D" }}
               >

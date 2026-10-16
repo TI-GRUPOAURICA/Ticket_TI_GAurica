@@ -123,6 +123,25 @@ function obtenerClaveLicencia(texto) {
   return nombre.replace(/\s+/g, "");
 }
 
+function obtenerEstadoRenovacion(fechaFin) {
+  if (!fechaFin) {
+    return { etiqueta: "Activa", clases: "bg-emerald-50 text-emerald-700 ring-emerald-200" };
+  }
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const vencimiento = new Date(`${String(fechaFin).slice(0, 10)}T00:00:00`);
+  const dias = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+  if (dias < 0) {
+    return { etiqueta: "Expirada", clases: "bg-red-50 text-red-700 ring-red-200" };
+  }
+  if (dias <= 30) {
+    return { etiqueta: "Por vencer", clases: "bg-amber-50 text-amber-700 ring-amber-200" };
+  }
+  return { etiqueta: "Activa", clases: "bg-emerald-50 text-emerald-700 ring-emerald-200" };
+}
+
 // =============================================================
 // COMPONENTE PRINCIPAL
 // =============================================================
@@ -332,6 +351,21 @@ export default function Microsoft365() {
     return [licencia.skuPartNumber, licencia.nombre]
       .some((nombre) => clavesPagadas.has(obtenerClaveLicencia(nombre)));
   };
+
+  const resumenEstadoLicencias = useMemo(() => {
+    const conteo = { activa: 0, porVencer: 0, expirada: 0 };
+    usuarios.forEach((usuario) => {
+      (usuario.licencias || [])
+        .filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo))
+        .forEach((licencia) => {
+          const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin).etiqueta;
+          if (estadoRenovacion === "Expirada") conteo.expirada += 1;
+          else if (estadoRenovacion === "Por vencer") conteo.porVencer += 1;
+          else conteo.activa += 1;
+        });
+    });
+    return conteo;
+  }, [usuarios, licenciasPagadasPorCorreo]);
 
   // ===========================================================
   // FILTRO DE USUARIOS
@@ -1392,6 +1426,21 @@ export default function Microsoft365() {
 
       </div>
 
+      {sincronizado && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <span className="mr-1 text-xs font-bold text-slate-600">Estado de licencias pagadas o renovables:</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+            {resumenEstadoLicencias.activa} activas
+          </span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+            {resumenEstadoLicencias.porVencer} por vencer (30 días o menos)
+          </span>
+          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+            {resumenEstadoLicencias.expirada} expiradas
+          </span>
+        </div>
+      )}
+
       {/* =====================================================
           CONTENIDO
       ===================================================== */}
@@ -2292,19 +2341,25 @@ export default function Microsoft365() {
                     {licenciasDetalle.map((licencia, index) => {
                       const claveLicencia = String(licencia.skuId || "");
                       const guardando = guardandoFechaLicencia === claveLicencia;
+                      const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
 
                       return (
                         <div
                           key={licencia.skuId || index}
                           className="rounded-xl border border-slate-200 p-4"
                         >
-                          <div className="mb-3">
-                            <p className="text-sm font-semibold text-slate-800">
-                              {licencia.nombre || licencia.skuPartNumber || "Licencia"}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {licencia.skuPartNumber || ""}
-                            </p>
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {licencia.nombre || licencia.skuPartNumber || "Licencia"}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {licencia.skuPartNumber || ""}
+                              </p>
+                            </div>
+                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${estadoRenovacion.clases}`}>
+                              {estadoRenovacion.etiqueta}
+                            </span>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
