@@ -186,6 +186,7 @@ const [renovacionData, setRenovacionData] = useState({
     clave_nas: "",
     usuario_admin: "",
     clave_admin: "",
+    clave_equipo: "",
   });
 
   // ---- Estados para la card de detalle del equipo ----
@@ -798,6 +799,7 @@ esFechaAproximada  };
         clave_nas:      editData.clave_nas,
         usuario_admin:  editData.usuario_admin,
         clave_admin:    editData.clave_admin,
+        clave_equipo:   editData.clave_equipo,
       })
       .eq("id", editandoId);
 
@@ -1453,6 +1455,7 @@ async function analizarEquipoIA() {
                                       clave_nas: colaboradorActual.clave_nas || "",
                                       usuario_admin: colaboradorActual.usuario_admin || "",
                                       clave_admin: colaboradorActual.clave_admin || "",
+                                      clave_equipo: colaboradorActual.clave_equipo || "",
                                     });
                                   }}
                                   className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
@@ -1606,8 +1609,20 @@ async function analizarEquipoIA() {
 
                             <CampoEditable label="Clave Administrador">
                               <input
+                                type="password"
                                 value={editData.clave_admin}
                                 onChange={(e) => setEditData({ ...editData, clave_admin: e.target.value })}
+                                className="w-full outline-none text-base font-semibold bg-transparent"
+                                style={{ color: "#1e293b" }}
+                                autoComplete="new-password"
+                              />
+                            </CampoEditable>
+
+                            <CampoEditable label="Contraseña del equipo">
+                              <input
+                                type="password"
+                                value={editData.clave_equipo}
+                                onChange={(e) => setEditData({ ...editData, clave_equipo: e.target.value })}
                                 className="w-full outline-none text-base font-semibold bg-transparent"
                                 style={{ color: "#1e293b" }}
                                 autoComplete="new-password"
@@ -1655,6 +1670,10 @@ async function analizarEquipoIA() {
                             <DetalleItem
                               label="Clave Administrador"
                               valorNodo={<ValorSecreto valor={colaboradorActual?.clave_admin} />}
+                            />
+                            <DetalleItem
+                              label="Contraseña del equipo"
+                              valorNodo={<ValorSecreto valor={colaboradorActual?.clave_equipo} />}
                             />
                           </div>
                         )}

@@ -9,7 +9,8 @@ import {
   Users,
   LogOut,
   Mail,
-  Cloud
+  Cloud,
+  Printer
 } from "lucide-react";
 
 /* =========================================================
@@ -126,6 +127,11 @@ export default function Layout({
       id: "radios",
       label: "Radios",
       icon: WalkieTalkieIcon
+    },
+    {
+      id: "impresoras",
+      label: "Impresoras",
+      icon: Printer
     },
     {
       id: "reportes",
