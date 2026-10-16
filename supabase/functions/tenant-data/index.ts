@@ -33,7 +33,7 @@ const DOMINIOS_EMPRESA: Record<string, string[]> = {
 
 type Acceso = {
   correo: string;
-  rol: "admin_global" | "ti_empresa" | "colaborador";
+  rol: "admin_global" | "ti_empresa" | "colaborador" | "solicitante";
   empresa: string | null;
   host?: string | null;
 };
@@ -66,16 +66,23 @@ async function obtenerIdentidad(req: Request): Promise<Acceso | null> {
   const { data: colaborador, error: errorColaborador } = await supabase
     .from("colaboradores")
     .select("empresa, host")
-    .ilike("correo", correo)
+    .in("correo", correos)
     .maybeSingle();
   if (errorColaborador) throw errorColaborador;
-  if (!colaborador) return null;
-  return {
-    correo,
-    rol: "colaborador",
-    empresa: colaborador.empresa || null,
-    host: colaborador.host || null,
-  };
+  if (colaborador) {
+    return {
+      correo,
+      rol: "colaborador",
+      empresa: colaborador.empresa || null,
+      host: colaborador.host || null,
+    };
+  }
+
+  const dominiosUsuario = correos.map((c) => c.split("@")[1]);
+  const empresa = Object.entries(DOMINIOS_EMPRESA)
+    .find(([, dominios]) => dominiosUsuario.some((dominio) => dominios.includes(dominio)))?.[0] || null;
+  if (!empresa) return null;
+  return { correo, rol: "solicitante", empresa };
 }
 
 async function obtenerHosts(empresa: string) {
@@ -157,6 +164,44 @@ async function autorizarSolicitud(
     return { permitido: false, status: 403 };
   }
 
+  if (identidad.rol === "solicitante") {
+    if (tabla === "categorias" && method === "GET") return { permitido: true, bodyText };
+    if (tabla === "colaboradores" && method === "GET") {
+      url.searchParams.set("empresa", `eq.${identidad.empresa}`);
+      if (url.searchParams.get("select") === "*") {
+        url.searchParams.set("select", "id,empresa,host,colaborador,correo,tipo");
+      }
+      return { permitido: true, bodyText };
+    }
+    if (tabla === "tickets" && method === "GET") {
+      url.searchParams.set("empresa", `eq.${identidad.empresa}`);
+      return { permitido: true, bodyText };
+    }
+    if (tabla === "tickets" && method === "POST") {
+      try {
+        const original = JSON.parse(bodyText || "{}");
+        const filas = Array.isArray(original) ? original : [original];
+        for (const fila of filas) {
+          if (!fila.hostname) return { permitido: false, status: 400 };
+          const { data: equipo, error } = await supabase
+            .from("colaboradores")
+            .select("host, empresa, colaborador")
+            .eq("empresa", identidad.empresa)
+            .eq("host", String(fila.hostname))
+            .maybeSingle();
+          if (error) throw error;
+          if (!equipo || (fila.nombre_colaborador && fila.nombre_colaborador !== equipo.colaborador)) {
+            return { permitido: false, status: 403 };
+          }
+          fila.empresa = identidad.empresa;
+        }
+        return { permitido: true, bodyText: JSON.stringify(Array.isArray(original) ? filas : filas[0]) };
+      } catch {
+        return { permitido: false, status: 400 };
+      }
+    }
+    return { permitido: false, status: 403 };
+  }
   if (TABLAS_EMPRESA.has(tabla)) {
     url.searchParams.set("empresa", `eq.${identidad.empresa}`);
     if (["POST", "PATCH", "PUT"].includes(method) && bodyText) {

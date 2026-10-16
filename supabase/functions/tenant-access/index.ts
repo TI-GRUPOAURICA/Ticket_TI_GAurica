@@ -22,6 +22,25 @@ const EMPRESAS = new Set([
   "MAPAJOYA",
 ]);
 
+const DOMINIOS_EMPRESA: Record<string, string[]> = {
+  AURICA: ["auricasac.com", "auricape.onmicrosoft.com", "aurica.com"],
+  ALENCORSRL: ["alencorsrl.com"],
+  GIANLU: ["gianlusac.com"],
+  MAPAJOYA: ["mapajoya.com"],
+  METALAB: ["metalabsac.com"],
+  MINERALAB: ["mineralabsac.com"],
+  TERRIMETAL: ["terrimetalsac.com"],
+};
+
+function empresaPorDominio(correos: string[]) {
+  for (const correo of correos) {
+    const dominio = correo.split("@")[1];
+    const empresa = Object.entries(DOMINIOS_EMPRESA).find(([, dominios]) => dominios.includes(dominio))?.[0];
+    if (empresa) return empresa;
+  }
+  return null;
+}
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -72,17 +91,18 @@ Deno.serve(async (req) => {
       const { data: colaborador, error } = await supabase
         .from("colaboradores")
         .select("empresa, host")
-        .ilike("correo", usuario.correo)
+        .in("correo", usuario.correos)
         .maybeSingle();
       if (error) throw error;
 
+      const empresa = colaborador?.empresa || empresaPorDominio(usuario.correos);
       return json({
         success: true,
         usuario: {
           correo: usuario.correo,
-          rol: "colaborador",
-          empresa: colaborador?.empresa || null,
-          activo: Boolean(colaborador),
+          rol: colaborador ? "colaborador" : "solicitante",
+          empresa,
+          activo: Boolean(empresa),
         },
       });
     }
