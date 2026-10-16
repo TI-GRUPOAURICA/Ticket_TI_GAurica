@@ -304,8 +304,9 @@ export default function Microsoft365() {
       (usuario.licencias || []).forEach((licencia) => {
         if (!licencia.fechaFin || !licencia.skuId) return;
         const fecha = String(licencia.fechaFin).slice(0, 10);
-        const anterior = porSku.get(licencia.skuId);
-        if (!anterior || fecha < anterior) porSku.set(licencia.skuId, fecha);
+        const fechas = porSku.get(licencia.skuId) || new Set();
+        fechas.add(fecha);
+        porSku.set(licencia.skuId, fechas);
       });
     });
     return porSku;
@@ -318,9 +319,7 @@ export default function Microsoft365() {
         .some((nombre) => tiposPagados.has(obtenerClaveLicencia(nombre))) ||
         licenciasConRenovacion.has(licencia.skuId))
       .sort((a, b) => {
-        const fechaA = licenciasConRenovacion.get(a.skuId) || "9999-12-31";
-        const fechaB = licenciasConRenovacion.get(b.skuId) || "9999-12-31";
-        return fechaA.localeCompare(fechaB) || a.nombre.localeCompare(b.nombre, "es");
+        return a.nombre.localeCompare(b.nombre, "es");
       });
   }, [licencias, tiposLicenciaPagada, licenciasConRenovacion]);
 
@@ -1983,8 +1982,6 @@ export default function Microsoft365() {
                           )
                         : 0;
 
-                    const fechaRenovacion = licenciasConRenovacion.get(licencia.skuId);
-
                     return (
 
                       <div
@@ -2053,12 +2050,6 @@ export default function Microsoft365() {
                           }
 
                         </p>
-
-                        <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${fechaRenovacion ? "bg-amber-50 text-amber-800" : "bg-slate-50 text-slate-500"}`}>
-                          {fechaRenovacion
-                            ? `Fecha de renovación: ${new Date(`${fechaRenovacion}T00:00:00`).toLocaleDateString("es-PE")}`
-                            : "Sin fecha de renovación registrada"}
-                        </div>
 
                         <div className="grid grid-cols-3 gap-2 mt-5">
 
