@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, Pencil, Plus, Printer, Search, Trash2, X } from "lucide-react";
+import { ExternalLink, MapPin, Pencil, Plus, Printer, Search, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const SEDES = ["Lima", "Chala", "Arequipa", "Trapiche", "Bolivia"];
 const FORM_VACIO = { sede: "Lima", area: "", modelo: "", ip: "", numero_serie: "" };
 const CAMPO = "w-full rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400";
+function obtenerUrlPanel(ip) {
+  const valor = String(ip || "").trim();
+  const partes = valor.split(".");
+  const esIpValida = partes.length === 4 && partes.every((parte) => /^\d{1,3}$/.test(parte) && Number(parte) >= 0 && Number(parte) <= 255);
+  return esIpValida ? `https://${valor}/PRESENTATION/ADVANCED/COMMON/TOP` : null;
+}
 
 export default function Impresoras() {
   const [impresoras, setImpresoras] = useState([]);
@@ -109,7 +115,16 @@ export default function Impresoras() {
             <tbody className="divide-y divide-blue-50">{impresorasFiltradas.map((impresora) => (
               <tr key={impresora.id} className="transition hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-3"><span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800"><MapPin size={12} />{impresora.sede}</span></td>
-                <td className="px-4 py-3 font-medium text-slate-800">{impresora.area}</td><td className="px-4 py-3 text-slate-700">{impresora.modelo}</td><td className="px-4 py-3 font-mono text-slate-600">{impresora.ip || "—"}</td><td className="px-4 py-3 font-mono text-slate-600">{impresora.numero_serie || "—"}</td>
+                <td className="px-4 py-3 font-medium text-slate-800">{impresora.area}</td><td className="px-4 py-3 text-slate-700">{impresora.modelo}</td><td className="px-4 py-3">
+                  {obtenerUrlPanel(impresora.ip) ? (
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="font-mono text-slate-600">{impresora.ip}</span>
+                      <a href={obtenerUrlPanel(impresora.ip)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline">
+                        Abrir panel <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  ) : <span className="font-mono text-slate-600">{impresora.ip || "—"}</span>}
+                </td><td className="px-4 py-3 font-mono text-slate-600">{impresora.numero_serie || "—"}</td>
                 <td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => abrirEdicion(impresora)} title="Editar" aria-label={`Editar ${impresora.area}`} className="rounded-lg border border-blue-100 p-2 text-blue-700 hover:bg-blue-50"><Pencil size={15} /></button><button type="button" onClick={() => eliminar(impresora)} title="Eliminar" aria-label={`Eliminar ${impresora.area}`} className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50"><Trash2 size={15} /></button></div></td>
               </tr>
             ))}</tbody>
