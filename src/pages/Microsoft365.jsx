@@ -187,8 +187,10 @@ export default function Microsoft365() {
     setLicencias,
   ] = useState([]);
   const [tiposLicenciaPagada, setTiposLicenciaPagada] = useState([]);
+  const [licenciasPagadasPorCorreo, setLicenciasPagadasPorCorreo] = useState(() => new Map());
   const [cargandoTiposLicenciaPagada, setCargandoTiposLicenciaPagada] = useState(true);
   const [mostrarTodasLasLicencias, setMostrarTodasLasLicencias] = useState(false);
+  const [mostrarTodasLicenciasDetalle, setMostrarTodasLicenciasDetalle] = useState(false);
 
   const [
     resumen,
@@ -230,17 +232,30 @@ export default function Microsoft365() {
 
   useEffect(() => {
     let vigente = true;
-    supabase
-      .from("licencias_correo")
-      .select("tipo_licencia")
-      .then(({ data, error }) => {
+    Promise.all([
+      supabase.from("cuentas_correo").select("id, correo"),
+      supabase.from("licencias_correo").select("cuenta_id, tipo_licencia"),
+    ])
+      .then(([cuentasRes, licenciasRes]) => {
         if (!vigente) return;
         setCargandoTiposLicenciaPagada(false);
-        if (error) {
-          console.error("No se pudieron leer los tipos de licencia de Cuentas de correo:", error);
+        if (cuentasRes.error || licenciasRes.error) {
+          console.error("No se pudieron leer las licencias de Cuentas de correo:", cuentasRes.error || licenciasRes.error);
           return;
         }
-        setTiposLicenciaPagada([...new Set((data || []).map((item) => obtenerClaveLicencia(item.tipo_licencia)))]);
+        const correosPorCuenta = new Map((cuentasRes.data || []).map((cuenta) => [cuenta.id, normalizarNombreLicencia(cuenta.correo)]));
+        const clavesPorCorreo = new Map();
+        const tipos = new Set();
+        (licenciasRes.data || []).forEach((licencia) => {
+          const clave = obtenerClaveLicencia(licencia.tipo_licencia);
+          tipos.add(clave);
+          const correo = correosPorCuenta.get(licencia.cuenta_id);
+          if (!correo) return;
+          if (!clavesPorCorreo.has(correo)) clavesPorCorreo.set(correo, new Set());
+          clavesPorCorreo.get(correo).add(clave);
+        });
+        setTiposLicenciaPagada([...tipos]);
+        setLicenciasPagadasPorCorreo(clavesPorCorreo);
       })
       .catch((error) => {
         if (!vigente) return;
@@ -311,10 +326,13 @@ export default function Microsoft365() {
 
   const licenciasVisibles = mostrarTodasLasLicencias ? licencias : licenciasRelevantes;
 
-  const esLicenciaEnSeguimiento = (licencia) =>
-    Boolean(licencia.fechaFin) ||
-    tiposLicenciaPagada.includes(obtenerClaveLicencia(licencia.skuPartNumber)) ||
-    tiposLicenciaPagada.includes(obtenerClaveLicencia(licencia.nombre));
+  const esLicenciaEnSeguimiento = (licencia, correo) => {
+    if (licencia.fechaFin) return true;
+    const clavesPagadas = licenciasPagadasPorCorreo.get(normalizarNombreLicencia(correo));
+    if (!clavesPagadas) return false;
+    return [licencia.skuPartNumber, licencia.nombre]
+      .some((nombre) => clavesPagadas.has(obtenerClaveLicencia(nombre)));
+  };
 
   // ===========================================================
   // FILTRO DE USUARIOS
@@ -1124,7 +1142,7 @@ export default function Microsoft365() {
     };
 
     const filas = usuarios.flatMap((usuario) =>
-      (usuario.licencias || []).filter(esLicenciaEnSeguimiento).map((licencia) => {
+      (usuario.licencias || []).filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)).map((licencia) => {
         const dias = diasHasta(licencia.fechaFin);
         const estadoRenovacion = !licencia.fechaFin
           ? "Sin fecha de vencimiento"
@@ -1176,6 +1194,10 @@ export default function Microsoft365() {
     enlace.remove();
     URL.revokeObjectURL(url);
   };
+  const licenciasDetalle = (selectedUser?.licencias || []).filter((licencia) =>
+    mostrarTodasLicenciasDetalle || esLicenciaEnSeguimiento(licencia, selectedUser?.correo)
+  );
+
   // =============================================================
   // RENDER
   // =============================================================
@@ -1763,11 +1785,10 @@ export default function Microsoft365() {
                           <td className="px-4 py-4 text-right">
 
                             <button
-                              onClick={() =>
-                                setSelectedUser(
-                                  usuario
-                                )
-                              }
+                              onClick={() => {
+                                setMostrarTodasLicenciasDetalle(false);
+                                setSelectedUser(usuario);
+                              }}
                               className="inline-flex items-center gap-1 text-[#3763a5] hover:underline font-semibold text-xs"
                             >
 
@@ -1910,7 +1931,7 @@ export default function Microsoft365() {
               <button
                 type="button"
                 onClick={exportarReporteRenovaciones}
-                disabled={!usuarios.some((usuario) => (usuario.licencias || []).some(esLicenciaEnSeguimiento))}
+                disabled={!usuarios.some((usuario) => (usuario.licencias || []).some((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)))}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#3763a5] text-white text-sm font-semibold hover:bg-[#2f5792] disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <Download size={16} />
@@ -2253,17 +2274,31 @@ export default function Microsoft365() {
 
               <div>
 
-                <p className="text-xs text-slate-500 mb-2">
-                  Licencias asignadas
-                </p>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600">
+                      Licencias pagadas o con renovación
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                      Mostrando {licenciasDetalle.length} de {selectedUser.licencias?.length || 0} asignadas
+                    </p>
+                  </div>
+                  {!!selectedUser.licencias?.length && (
+                    <button
+                      type="button"
+                      onClick={() => setMostrarTodasLicenciasDetalle((actual) => !actual)}
+                      className="shrink-0 text-xs font-semibold text-[#3763a5] hover:underline"
+                    >
+                      {mostrarTodasLicenciasDetalle ? "Mostrar solo las relevantes" : "Mostrar todas"}
+                    </button>
+                  )}
+                </div>
 
-                {selectedUser.licencias &&
-                selectedUser.licencias.length >
-                  0 ? (
+                {licenciasDetalle.length > 0 ? (
 
                   <div className="space-y-3">
 
-                    {selectedUser.licencias.map((licencia, index) => {
+                    {licenciasDetalle.map((licencia, index) => {
                       const claveLicencia = String(licencia.skuId || "");
                       const guardando = guardandoFechaLicencia === claveLicencia;
 
@@ -2318,7 +2353,9 @@ export default function Microsoft365() {
 
                   <span className="inline-flex px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 text-xs font-semibold">
 
-                    Sin licencia asignada
+                    {selectedUser.licencias?.length
+                      ? "Sin licencias pagadas ni con renovación registrada"
+                      : "Sin licencia asignada"}
 
                   </span>
 
