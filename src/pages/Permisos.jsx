@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { Building2, Globe2, Mail, Pencil, ShieldCheck, UserRoundPlus, UsersRound } from "lucide-react";
+import { Building2, Globe2, Mail, Pencil, ShieldCheck, Trash2, UserRoundPlus, UsersRound } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
 
 const URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tenant-access`;
@@ -15,6 +15,7 @@ export default function Permisos() {
   const [editando, setEditando] = useState("");
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [eliminandoCorreo, setEliminandoCorreo] = useState("");
 
   const llamar = async (payload) => {
     const result = await instance.acquireTokenSilent({ ...loginRequest, account: accounts[0] });
@@ -63,6 +64,21 @@ export default function Permisos() {
     catch (err) { setError(err.message); }
   };
 
+  const eliminar = async (acceso) => {
+    const mensaje = `¿Eliminar el acceso de TI de ${acceso.correo}? Dejará de entrar al panel administrativo. Si está registrada como colaboradora, conservará el portal de tickets.`;
+    if (!window.confirm(mensaje)) return;
+    setEliminandoCorreo(acceso.correo);
+    setError("");
+    try {
+      await llamar({ action: "delete", correo: acceso.correo });
+      if (editando === acceso.correo) limpiarFormulario();
+      await cargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEliminandoCorreo("");
+    }
+  };
   const activos = accesos.filter((acceso) => acceso.activo).length;
 
   return (
@@ -134,6 +150,7 @@ export default function Permisos() {
                 <td className="px-5 py-4"><span className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${a.activo ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}><span className={`h-1.5 w-1.5 rounded-full ${a.activo ? "bg-emerald-500" : "bg-slate-400"}`} />{a.activo ? "Activo" : "Desactivado"}</span></td>
                 <td className="px-5 py-4 sm:px-6"><div className="flex items-center justify-end gap-2">
                   {a.rol === "ti_empresa" && <button onClick={() => alternar(a)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${a.activo ? "text-slate-500 hover:bg-slate-100 hover:text-slate-800" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>{a.activo ? "Desactivar" : "Activar"}</button>}
+                  {a.rol === "ti_empresa" && <button type="button" disabled={eliminandoCorreo === a.correo} onClick={() => eliminar(a)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"><Trash2 size={13} />{eliminandoCorreo === a.correo ? "Eliminando…" : "Eliminar"}</button>}
                   <button type="button" onClick={() => editar(a)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-200 hover:bg-blue-50"><Pencil size={13} />Editar</button>
                 </div></td>
               </tr>)}

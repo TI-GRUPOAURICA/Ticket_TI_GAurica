@@ -147,6 +147,22 @@ Deno.serve(async (req) => {
       return json({ success: true, acceso: data });
     }
 
+    if (action === "delete") {
+      const correo = String(body.correo || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        return json({ error: "Ingresa un correo válido." }, 400);
+      }
+      const { data, error } = await supabase
+        .from("accesos_empresa")
+        .delete()
+        .eq("correo", correo)
+        .eq("rol", "ti_empresa")
+        .select("correo")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return json({ error: "No se encontró un acceso de TI de empresa." }, 404);
+      return json({ success: true, correo: data.correo });
+    }
     if (action === "set-active") {
       const correo = String(body.correo || "").trim().toLowerCase();
       if (!correo) return json({ error: "Falta el correo." }, 400);
