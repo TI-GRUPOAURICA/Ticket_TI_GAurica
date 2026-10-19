@@ -48,6 +48,8 @@ export default function Dashboard({ onNavigate }) {
   // ---- Filtro activo del dashboard ----
   // "" = todas las empresas
   const [filtroEmpresa, setFiltroEmpresa] = useState("");
+  const [mostrarTodasLicencias, setMostrarTodasLicencias] = useState(false);
+  const [mostrarTodosEquipos, setMostrarTodosEquipos] = useState(false);
  
   useEffect(() => {
     fetchData();
@@ -742,7 +744,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             ) : (
               <div className="space-y-2">
-                {notificacionesLicencias.slice(0, 6).map((n, i) => (
+                {notificacionesLicencias.slice(0, mostrarTodasLicencias ? notificacionesLicencias.length : 6).map((n, i) => (
                   <div
                     key={`${n.cuenta}-${n.tipo_licencia}-${i}`}
                     className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl"
@@ -791,11 +793,13 @@ export default function Dashboard({ onNavigate }) {
 
             {notificacionesLicencias.length > 6 && (
               <button
-                onClick={() => onNavigate("microsoft-365")}
+                onClick={() => setMostrarTodasLicencias((mostrar) => !mostrar)}
+                aria-expanded={mostrarTodasLicencias}
                 className="mt-2 text-xs font-semibold flex items-center gap-1"
                 style={{ color: "#345D9D" }}
               >
-                Ver {notificacionesLicencias.length - 6} más <ChevronRight size={13} />
+                {mostrarTodasLicencias ? "Ver menos" : `Ver ${notificacionesLicencias.length - 6} más`}
+                <ChevronRight size={13} style={{ transform: mostrarTodasLicencias ? "rotate(-90deg)" : undefined }} />
               </button>
             )}
           </div>
@@ -850,7 +854,7 @@ export default function Dashboard({ onNavigate }) {
               </div>
             ) : (
               <div className="space-y-2">
-                {notificacionesEquipos.slice(0, 6).map((eq, i) => (
+                {notificacionesEquipos.slice(0, mostrarTodosEquipos ? notificacionesEquipos.length : 6).map((eq, i) => (
                   <div
                     key={`${eq.host}-${i}`}
                     className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl"
@@ -887,11 +891,13 @@ export default function Dashboard({ onNavigate }) {
 
             {notificacionesEquipos.length > 6 && (
               <button
-                onClick={() => onNavigate("inventario")}
+                onClick={() => setMostrarTodosEquipos((mostrar) => !mostrar)}
+                aria-expanded={mostrarTodosEquipos}
                 className="mt-2 text-xs font-semibold flex items-center gap-1"
                 style={{ color: "#345D9D" }}
               >
-                Ver {notificacionesEquipos.length - 6} más <ChevronRight size={13} />
+                {mostrarTodosEquipos ? "Ver menos" : `Ver ${notificacionesEquipos.length - 6} más`}
+                <ChevronRight size={13} style={{ transform: mostrarTodosEquipos ? "rotate(-90deg)" : undefined }} />
               </button>
             )}
           </div>
