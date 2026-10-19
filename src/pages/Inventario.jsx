@@ -4,7 +4,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
-  Pencil, Trash2, Save, X, Monitor, Cpu, HardDrive,
+  Pencil, Trash2, Save, X, Plus, Monitor, Cpu, HardDrive,
   Package, User, CircleCheck, CircleX,
   Wifi, Server, Bot, Clock,
   Info, Ticket, Mail, MapPin,
@@ -35,7 +35,7 @@ const LOGOS_EMPRESA = {
 // =============================================================
 
 // Lista fija de empresas disponibles para el filtro
-const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL"];
+const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"];
 
 // Lista fija de tipos de equipo disponibles
 const TIPOS = ["Laptop", "PC"];
@@ -161,6 +161,11 @@ export default function Inventario() {
   const [filtroEmpresa, setFiltroEmpresa] = useState(""); // Filtro seleccionado de empresa ("" = todas)
   const [filtroTipo, setFiltroTipo] = useState("");       // Filtro seleccionado de tipo ("" = todos)
   const [loading, setLoading] = useState(true);     // Controla el estado de carga inicial
+  const [mostrarFormularioColaborador, setMostrarFormularioColaborador] = useState(false);
+  const [guardandoColaborador, setGuardandoColaborador] = useState(false);
+  const [asignandoHostId, setAsignandoHostId] = useState(null);
+  const [hostPendienteInput, setHostPendienteInput] = useState("");
+  const [nuevoColaborador, setNuevoColaborador] = useState({ colaborador: "", correo: "", empresa: "AURICA", host: "", tipo: "", cargo: "" });
 
   const [editandoId, setEditandoId] = useState(null); // ID del equipo actualmente en modo edición
   const [editandoRenovacion, setEditandoRenovacion] = useState(false);
@@ -772,6 +777,71 @@ esFechaAproximada  };
   }
 
   // ----------------------------------------------------------
+  async function registrarColaborador(event) {
+    event.preventDefault();
+    const colaborador = nuevoColaborador.colaborador.trim();
+    const correo = nuevoColaborador.correo.trim().toLowerCase();
+    const host = nuevoColaborador.host.trim();
+    if (!colaborador || !correo || !nuevoColaborador.empresa) {
+      alert("Completa el nombre, correo y empresa.");
+      return;
+    }
+    setGuardandoColaborador(true);
+    try {
+      const { data: existentes, error: errorBusqueda } = await supabase.from("colaboradores").select("id").ilike("correo", correo).limit(1);
+      if (errorBusqueda) throw errorBusqueda;
+      if (existentes?.length) throw new Error("Ya existe una ficha registrada con ese correo.");
+      if (host) {
+        const { data: hostExistente, error: errorHost } = await supabase.from("colaboradores").select("id").ilike("host", host).limit(1);
+        if (errorHost) throw errorHost;
+        if (hostExistente?.length) throw new Error("Ese hostname ya está asociado a otro registro.");
+      }
+      const { error } = await supabase.from("colaboradores").insert({
+        colaborador, correo, empresa: nuevoColaborador.empresa, host: host || null,
+        tipo: nuevoColaborador.tipo || null, cargo: nuevoColaborador.cargo.trim() || null,
+      });
+      if (error) throw error;
+      setNuevoColaborador({ colaborador: "", correo: "", empresa: "AURICA", host: "", tipo: "", cargo: "" });
+      setMostrarFormularioColaborador(false);
+      await obtenerEquipos();
+      alert(host ? "Colaborador registrado en el inventario." : "Colaborador registrado. El hostname queda pendiente hasta instalar el agente y vincular el equipo.");
+    } catch (error) {
+      console.error("Error registrando colaborador:", error);
+      alert(error.message || "No se pudo registrar el colaborador.");
+    } finally {
+      setGuardandoColaborador(false);
+    }
+  }
+
+  async function guardarHostnamePendiente(id) {
+    const host = hostPendienteInput.trim();
+    if (!host) {
+      alert("Ingresa el hostname del equipo.");
+      return;
+    }
+    const { data: existentes, error: errorBusqueda } = await supabase
+      .from("colaboradores")
+      .select("id")
+      .ilike("host", host)
+      .limit(1);
+    if (errorBusqueda) {
+      alert(errorBusqueda.message || "No se pudo validar el hostname.");
+      return;
+    }
+    if (existentes?.some((registro) => registro.id !== id)) {
+      alert("Ese hostname ya está asociado a otro registro.");
+      return;
+    }
+    const { error } = await supabase.from("colaboradores").update({ host }).eq("id", id);
+    if (error) {
+      alert(error.message || "No se pudo asignar el hostname.");
+      return;
+    }
+    setAsignandoHostId(null);
+    setHostPendienteInput("");
+    await obtenerEquipos();
+  }
+
   // GUARDAR CAMBIOS
   // Actualiza en Supabase el registro cuyo id coincide con
   // editandoId usando los datos temporales de editData.
@@ -1050,7 +1120,8 @@ async function analizarEquipoIA() {
     const coincideBusqueda =
       item.host?.toLowerCase().includes(busqueda.toLowerCase()) ||
       item.colaborador?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.empresa?.toLowerCase().includes(busqueda.toLowerCase());
+      item.empresa?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      item.correo?.toLowerCase().includes(busqueda.toLowerCase());
 
     const coincideEmpresa =
       filtroEmpresa === "" || item.empresa === filtroEmpresa;
@@ -1142,6 +1213,15 @@ async function analizarEquipoIA() {
         <div className="flex items-center gap-3">
 
           <button
+            onClick={() => setMostrarFormularioColaborador((visible) => !visible)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90"
+            style={{ background: "#345D9D", color: "#ffffff" }}
+          >
+            <Plus size={16} />
+            Agregar colaborador
+          </button>
+
+          <button
             onClick={exportarReporteExcel}
             disabled={generandoReporte}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
@@ -1177,6 +1257,36 @@ async function analizarEquipoIA() {
           por host, nombre del colaborador o empresa.
           Dos selects adicionales: empresa y tipo de equipo.
       -------------------------------------------------------- */}
+      {mostrarFormularioColaborador && (
+        <form onSubmit={registrarColaborador} className="mb-5 rounded-2xl p-5 shadow-sm" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="font-bold text-slate-800">Registrar colaborador</h2>
+              <p className="text-sm text-slate-500 mt-1">Crea su ficha aquí. El hostname puede agregarse después de instalar el agente.</p>
+            </div>
+            <button type="button" onClick={() => setMostrarFormularioColaborador(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar formulario"><X size={18} /></button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input required placeholder="Nombre completo" value={nuevoColaborador.colaborador} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, colaborador: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }} />
+            <input required type="email" placeholder="Correo corporativo" value={nuevoColaborador.correo} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, correo: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }} />
+            <select required value={nuevoColaborador.empresa} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, empresa: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }}>
+              {EMPRESAS.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}
+            </select>
+            <input placeholder="Hostname (opcional, por ejemplo PC-KAREN)" value={nuevoColaborador.host} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, host: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }} />
+            <select value={nuevoColaborador.tipo} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, tipo: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }}>
+              <option value="">Tipo de equipo (opcional)</option>
+              {TIPOS.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+            </select>
+            <input placeholder="Cargo (opcional)" value={nuevoColaborador.cargo} onChange={(e) => setNuevoColaborador({ ...nuevoColaborador, cargo: e.target.value })} className="px-3 py-2.5 rounded-lg outline-none" style={{ border: "1px solid #dbeafe", color: "#1e293b" }} />
+          </div>
+          <div className="flex justify-end mt-4">
+            <button type="submit" disabled={guardandoColaborador} className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: "#345D9D" }}>
+              {guardandoColaborador ? "Guardando..." : "Guardar colaborador"}
+            </button>
+          </div>
+        </form>
+      )}
+
       <div className="mb-5 flex flex-col md:flex-row gap-3">
         <input
           type="text"
@@ -1277,14 +1387,29 @@ async function analizarEquipoIA() {
                   {/* CELDA: Host — al hacer clic abre la card de detalle,
                       donde ahora vive toda la edición del equipo. */}
                   <td className="p-4">
-                    <span
-                      onClick={() => abrirDetalle(item.host)}
-                      className="font-semibold cursor-pointer hover:underline"
-                      style={{ color: "#345D9D" }}
-                      title="Ver detalle del equipo"
-                    >
-                      {item.host}
-                    </span>
+                    {item.host ? (
+                      <span
+                        onClick={() => abrirDetalle(item.host)}
+                        className="font-semibold cursor-pointer hover:underline"
+                        style={{ color: "#345D9D" }}
+                        title="Ver detalle del equipo"
+                      >
+                        {item.host}
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-start gap-2">
+                        <span className="px-2 py-1 rounded-lg text-xs font-medium" style={{ color: "#92400e", background: "#fffbeb" }}>Pendiente de equipo</span>
+                        {asignandoHostId === item.id ? (
+                          <div className="flex gap-2">
+                            <input autoFocus value={hostPendienteInput} onChange={(e) => setHostPendienteInput(e.target.value)} placeholder="Hostname" className="px-2 py-1 rounded border text-xs" />
+                            <button onClick={() => guardarHostnamePendiente(item.id)} className="text-xs font-semibold" style={{ color: "#345D9D" }}>Guardar</button>
+                            <button onClick={() => setAsignandoHostId(null)} className="text-xs text-slate-500">Cancelar</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setAsignandoHostId(item.id); setHostPendienteInput(""); }} className="text-xs font-semibold underline" style={{ color: "#345D9D" }}>Asignar hostname</button>
+                        )}
+                      </div>
+                    )}
                   </td>
 
                   {/* CELDA: Colaborador */}
