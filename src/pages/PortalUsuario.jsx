@@ -315,14 +315,14 @@ if (enviado) {
   return (
     <div
       className="min-h-screen w-full flex items-center justify-center transition-all duration-500"
-      style={{ background: `radial-gradient(circle at 92% 5%, ${tema.light} 0, transparent 28%), ${tema.bg}`, padding: "clamp(16px, 4vw, 32px)" }}
+      style={{ background: tema.bg, padding: "clamp(16px, 4vw, 32px)" }}
     >
-      <div className="w-full" style={{ maxWidth: "min(100%, 560px)" }}>
+      <div className="w-full" style={{ maxWidth: "min(100%, 520px)" }}>
 
-        <div className="mb-5">
+        <div className="mb-3">
           <button
             onClick={onVolver}
-            className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-semibold shadow-sm transition hover:-translate-x-0.5"
+            className="text-sm font-medium transition-all hover:translate-x-1"
             style={{ color: "#345D9D" }}
           >
             ← Volver
@@ -330,7 +330,7 @@ if (enviado) {
         </div>
 
         <div
-          className="bg-white rounded-[28px] shadow-[0_24px_70px_rgba(36,66,112,0.12)] transition-all duration-500"
+          className="bg-white rounded-2xl shadow-sm transition-all duration-500"
           style={{ border: `1px solid ${tema.border}`, padding: "clamp(16px, 4vw, 24px)" }}
         >
 
@@ -412,7 +412,7 @@ if (enviado) {
               </div>
 
               <div
-                className="rounded-2xl p-4 flex items-center justify-between transition-all duration-500"
+                className="rounded-lg p-3 flex items-center justify-between transition-all duration-500"
                 style={{ background: tema.light, border: `1px solid ${tema.border}` }}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -440,7 +440,7 @@ if (enviado) {
                   onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                   placeholder="Describe el inconveniente que estás presentando..."
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl focus:outline-none resize-none transition focus:ring-4"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none resize-none transition"
                   style={{ border: "1.5px solid #cbd5e0", color: "#2d3748", background: "#fff", fontSize: "clamp(13px, 3vw, 15px)" }}
                   onFocus={(e) => e.target.style.border = `1.5px solid ${tema.primary}`}
                   onBlur={(e) => e.target.style.border = "1.5px solid #cbd5e0"}
@@ -453,7 +453,7 @@ if (enviado) {
                   <button
                     onClick={enviarTicket}
                     disabled={enviando}
-                    className="rounded-xl font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:opacity-50"
+                    className="rounded-lg font-semibold text-white transition disabled:opacity-50"
                     style={{
                       background: "#345d9d",
                       padding: "clamp(10px, 2.5vw, 14px) clamp(32px, 8vw, 48px)",
