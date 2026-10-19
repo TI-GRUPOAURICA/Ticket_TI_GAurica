@@ -8,8 +8,6 @@ import Dashboard from "./pages/Dashboard";
 
 import Tickets from "./pages/Tickets";
 
-import Usuarios from "./pages/Usuarios";
-
 import Layout from "./components/Layout";
 
 import PortalUsuario from "./pages/PortalUsuario";
@@ -160,10 +158,6 @@ export default function App() {
       case "reportes":
 
         return <Reportes />;
-
-      case "usuarios":
-
-        return <Usuarios />;
 
       case "inventario":
 

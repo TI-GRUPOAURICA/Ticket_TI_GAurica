@@ -139,11 +139,6 @@ export default function Layout({
       icon: FileSpreadsheet
     },
     {
-      id: "usuarios",
-      label: "Usuarios",
-      icon: Users
-    },
-    {
       id: "microsoft-365",
       label: "Microsoft 365",
       icon: Cloud
