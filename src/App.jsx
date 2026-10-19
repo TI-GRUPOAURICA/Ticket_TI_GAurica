@@ -302,7 +302,8 @@ export default function App() {
 
       user={{
         name: userName,
-        email: userEmail
+        email: userEmail,
+        company: accesoEmpresa?.empresa
       }}
 
       onRegistrarTicket={() =>

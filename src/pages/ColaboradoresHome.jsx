@@ -1,16 +1,28 @@
 import { Ticket, ClipboardList } from "lucide-react";
 
+const EMPRESA_LOGOS = {
+  AURICA: "/grupoaurica-letrasazules.png",
+  METALAB: "/icono metalab.svg",
+  MINERALAB: "/icono mineralab.svg",
+  GIANLU: "/Gianlu_imagotipo_principal.png",
+  TERRIMETAL: "/Terrimetal_imagotipo_principal.png",
+};
+
 export default function ColaboradorHome({
   user,
   onRegistrarTicket,
   onSeguimiento,
   onLogout,
 }) {
+  const empresa = user?.company?.toUpperCase() || "AURICA";
+  const logo = EMPRESA_LOGOS[empresa] || EMPRESA_LOGOS.AURICA;
+  const nombreEmpresa = empresa === "TERRIMETAL" ? "Terrimetal" : empresa;
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "#f0f4f8" }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <img src="/grupoaurica-letrasazules.png" alt="Grupo Aurica" className="w-64 mx-auto object-contain mb-6" />
+          <img src={logo} alt={nombreEmpresa} className="w-64 h-20 mx-auto object-contain mb-6" />
           <h1 className="text-3xl font-bold mb-2" style={{ color: "#345D9D" }}>Hola {user?.name || "Colaborador"}</h1>
           <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>Gestiona tus solicitudes de soporte de forma rápida y sencilla.</p>
         </div>
