@@ -70,7 +70,7 @@ const TEMA_DEFAULT = {
 
 export default function PortalUsuario({ onVolver, userEmail, userName, initialCollaborator }) {
 
-  const [paso, setPaso] = useState(1);
+  const [paso, setPaso] = useState(2);
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState([]);
   const [colaborador, setColaborador] = useState(null);
@@ -83,6 +83,7 @@ export default function PortalUsuario({ onVolver, userEmail, userName, initialCo
   const [enviado, setEnviado] = useState(false);
   const [ticketNumero, setTicketNumero] = useState(null);
   const [cargandoUsuario, setCargandoUsuario] = useState(true);
+  const [errorPerfil, setErrorPerfil] = useState("");
 
   useEffect(() => {
     cargarUsuarioAutomatico();
@@ -98,16 +99,21 @@ export default function PortalUsuario({ onVolver, userEmail, userName, initialCo
       setCargandoUsuario(false);
       return;
     }
-    if (!userEmail) return;
+    if (!userEmail) {
+      setErrorPerfil("No encontramos el correo de tu sesión para cargar tu ficha.");
+      setCargandoUsuario(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("colaboradores")
       .select("*")
       .ilike("correo", userEmail)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
-      console.log("Usuario no encontrado:", userEmail);
+      console.log("Usuario no encontrado:", userEmail, error);
+      setErrorPerfil("No encontramos una ficha de colaborador asociada a tu cuenta. Contacta a TI para vincular tu correo.");
       setCargandoUsuario(false);
       return;
     }
@@ -269,6 +275,18 @@ try {
     );
   }
 
+if (errorPerfil) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: tema.bg }}>
+      <div className="w-full max-w-md rounded-2xl border bg-white p-7 text-center shadow-sm" style={{ borderColor: tema.border }}>
+        <h2 className="text-lg font-bold text-slate-800">No pudimos reconocer tu ficha</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{errorPerfil}</p>
+        <p className="mt-2 break-all text-xs text-slate-400">{userEmail}</p>
+        <button onClick={onVolver} className="mt-6 rounded-lg px-5 py-2.5 text-sm font-semibold text-white" style={{ background: tema.primary }}>Volver</button>
+      </div>
+    </div>
+  );
+}
 if (enviado) {
   return (
     <div
@@ -404,7 +422,7 @@ if (enviado) {
 
               <div className="text-center mb-4">
                 <h2 className="font-bold" style={{ color: "#345D9D", fontSize: "clamp(20px, 5vw, 24px)" }}>
-                  Hola {userName || colaborador?.colaborador || "Usuario"}
+                  Hola {colaborador?.colaborador || userName || "Usuario"}
                 </h2>
                 <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
                   Estamos listos para ayudarte
