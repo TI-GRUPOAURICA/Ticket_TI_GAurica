@@ -37,8 +37,13 @@ export default function Radios() {
 
   const [formulario, setFormulario] = useState({
     usuario: "",
-    empresa: "",
+    empresa: "AURICA",
     sede: "",
+    area: "",
+    justificacion: "",
+    cantidad: "1",
+    estado: "Entregado",
+    canal: "",
     marca: "",
     modelo: "",
     numero_serie: "",
@@ -118,6 +123,18 @@ export default function Radios() {
         String(radio.sede || "")
           .toLowerCase()
           .includes(texto) ||
+        String(radio.area || "")
+          .toLowerCase()
+          .includes(texto) ||
+        String(radio.justificacion || "")
+          .toLowerCase()
+          .includes(texto) ||
+        String(radio.canal || "")
+          .toLowerCase()
+          .includes(texto) ||
+        String(radio.estado || "")
+          .toLowerCase()
+          .includes(texto) ||
         String(radio.marca || "")
           .toLowerCase()
           .includes(texto) ||
@@ -182,6 +199,11 @@ export default function Radios() {
       Usuario: radio.usuario || "",
       Empresa: radio.empresa || "",
       Sede: radio.sede || "",
+      Área: radio.area || "",
+      Justificación: radio.justificacion || "",
+      Cantidad: radio.cantidad ?? 1,
+      Estado: radio.estado || "",
+      Canal: radio.canal || "",
       Marca: radio.marca || "",
       Modelo: radio.modelo || "",
       "Número de serie": radio.numero_serie || "",
@@ -190,12 +212,17 @@ export default function Radios() {
     const hoja = XLSX.utils.json_to_sheet(datosReporte);
 
     hoja["!cols"] = [
-      { wch: 28 },
-      { wch: 20 },
-      { wch: 20 },
+      { wch: 30 },
       { wch: 18 },
-      { wch: 22 },
-      { wch: 25 },
+      { wch: 20 },
+      { wch: 28 },
+      { wch: 48 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 24 },
     ];
 
     const libro = XLSX.utils.book_new();
@@ -228,8 +255,13 @@ export default function Radios() {
 
     setFormulario({
       usuario: "",
-      empresa: "",
+      empresa: "AURICA",
       sede: "",
+      area: "",
+      justificacion: "",
+      cantidad: "1",
+      estado: "Entregado",
+      canal: "",
       marca: "",
       modelo: "",
       numero_serie: "",
@@ -249,6 +281,11 @@ export default function Radios() {
       usuario: radio.usuario || "",
       empresa: radio.empresa || "",
       sede: radio.sede || "",
+      area: radio.area || "",
+      justificacion: radio.justificacion || "",
+      cantidad: String(radio.cantidad ?? 1),
+      estado: radio.estado || "Entregado",
+      canal: radio.canal || "",
       marca: radio.marca || "",
       modelo: radio.modelo || "",
       numero_serie: radio.numero_serie || "",
@@ -288,6 +325,11 @@ export default function Radios() {
       usuario: formulario.usuario.trim(),
       empresa: formulario.empresa.trim(),
       sede: formulario.sede.trim(),
+      area: formulario.area.trim() || null,
+      justificacion: formulario.justificacion.trim() || null,
+      cantidad: Math.max(1, Number(formulario.cantidad) || 1),
+      estado: formulario.estado.trim() || null,
+      canal: formulario.canal.trim() || null,
       marca: formulario.marca.trim(),
       modelo: formulario.modelo.trim(),
       numero_serie: formulario.numero_serie.trim(),
@@ -438,7 +480,7 @@ export default function Radios() {
 
             <input
               type="text"
-              placeholder="Buscar usuario, empresa, modelo, serie..."
+              placeholder="Buscar usuario, empresa, área, canal, modelo o serie..."
               value={busqueda}
               onChange={(e) =>
                 setBusqueda(e.target.value)
@@ -762,6 +804,12 @@ export default function Radios() {
                         valor={radio.sede}
                       />
 
+                      <CampoDetalle icono={Building2} etiqueta="Área" valor={radio.area} />
+                      <CampoDetalle icono={User} etiqueta="Justificación" valor={radio.justificacion} />
+                      <CampoDetalle icono={Hash} etiqueta="Cantidad" valor={radio.cantidad ?? 1} />
+                      <CampoDetalle icono={Radio} etiqueta="Estado" valor={radio.estado} />
+                      <CampoDetalle icono={Radio} etiqueta="Canal" valor={radio.canal} />
+
                       <CampoDetalle
                         icono={Tag}
                         etiqueta="Marca"
@@ -899,6 +947,41 @@ export default function Radios() {
                     }
                     required
                   />
+
+                </div>
+
+                <div className="form-grupo">
+
+                  <label>Área</label>
+                  <input type="text" value={formulario.area} onChange={(e) => cambiarCampo("area", e.target.value)} />
+
+                </div>
+
+                <div className="form-grupo">
+
+                  <label>Justificación</label>
+                  <input type="text" value={formulario.justificacion} onChange={(e) => cambiarCampo("justificacion", e.target.value)} />
+
+                </div>
+
+                <div className="form-grupo">
+
+                  <label>Cantidad</label>
+                  <input type="number" min="1" step="1" value={formulario.cantidad} onChange={(e) => cambiarCampo("cantidad", e.target.value)} required />
+
+                </div>
+
+                <div className="form-grupo">
+
+                  <label>Estado</label>
+                  <input type="text" value={formulario.estado} onChange={(e) => cambiarCampo("estado", e.target.value)} />
+
+                </div>
+
+                <div className="form-grupo">
+
+                  <label>Canal</label>
+                  <input type="text" value={formulario.canal} onChange={(e) => cambiarCampo("canal", e.target.value)} />
 
                 </div>
 
