@@ -117,8 +117,9 @@ export default function App() {
   const userEmail =
     accesoEmpresa?.correo || accounts[0]?.username || "";
 
+  const colaboradorAutenticado = accesoEmpresa?.colaborador || null;
   const userName =
-    accounts[0]?.name || "";
+    colaboradorAutenticado?.colaborador || accounts[0]?.name || "";
 
   const esAdmin = esAdminTest || accesoEmpresa?.rol === "admin_global";
   const esTiEmpresa = accesoEmpresa?.rol === "ti_empresa" && accesoEmpresa?.activo;
@@ -208,8 +209,9 @@ export default function App() {
         onVolver={() =>
           setViendoPortal(false)
         }
-        userEmail={userEmail}
+        userEmail={colaboradorAutenticado?.correo || userEmail}
         userName={userName}
+        initialCollaborator={colaboradorAutenticado}
       />
     );
 

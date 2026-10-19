@@ -63,22 +63,24 @@ async function obtenerIdentidad(req: Request): Promise<Acceso | null> {
   if (errorPermiso) throw errorPermiso;
   if (permiso?.activo) return permiso;
 
+  const dominiosUsuario = correos.map((c) => c.split("@")[1]);
+  const empresaPorCorreo = Object.entries(DOMINIOS_EMPRESA)
+    .find(([, dominios]) => dominiosUsuario.some((dominio) => dominios.includes(dominio)))?.[0] || null;
   const { data: colaborador, error: errorColaborador } = await supabase
     .from("colaboradores")
-    .select("empresa, host")
+    .select("empresa, host, correo")
     .in("correo", correos)
     .maybeSingle();
   if (errorColaborador) throw errorColaborador;
   if (colaborador) {
     return {
-      correo,
+      correo: colaborador.correo || correo,
       rol: "colaborador",
-      empresa: colaborador.empresa || null,
+      empresa: colaborador.empresa || empresaPorCorreo,
       host: colaborador.host || null,
     };
   }
 
-  const dominiosUsuario = correos.map((c) => c.split("@")[1]);
   const empresa = Object.entries(DOMINIOS_EMPRESA)
     .find(([, dominios]) => dominiosUsuario.some((dominio) => dominios.includes(dominio)))?.[0] || null;
   if (!empresa) return null;

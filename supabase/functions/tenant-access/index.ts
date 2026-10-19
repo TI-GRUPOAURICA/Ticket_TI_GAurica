@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       // pero no concede acceso al panel administrativo.
       const { data: colaborador, error } = await supabase
         .from("colaboradores")
-        .select("empresa, host")
+        .select("id, empresa, host, colaborador, correo, anydesk, tipo")
         .in("correo", usuario.correos)
         .maybeSingle();
       if (error) throw error;
@@ -99,9 +99,10 @@ Deno.serve(async (req) => {
       return json({
         success: true,
         usuario: {
-          correo: usuario.correo,
+          correo: colaborador?.correo || usuario.correo,
           rol: colaborador ? "colaborador" : "solicitante",
           empresa,
+          colaborador: colaborador || null,
           activo: Boolean(empresa),
         },
       });
@@ -123,18 +124,16 @@ Deno.serve(async (req) => {
 
     if (action === "save") {
       const correo = String(body.correo || "").trim().toLowerCase();
-      const empresa = String(body.empresa || "").trim().toUpperCase();
+      const empresaSeleccionada = String(body.empresa || "").trim();
+      const esAdminGlobal = empresaSeleccionada === "__admin_global__";
+      const empresa = esAdminGlobal ? null : empresaSeleccionada.toUpperCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
         return json({ error: "Ingresa un correo válido." }, 400);
       }
-      if (!EMPRESAS.has(empresa)) return json({ error: "La empresa seleccionada no es válida." }, 400);
-
-      const { data: existente, error: errorExistente } = await supabase.from("accesos_empresa").select("rol").eq("correo", correo).maybeSingle();
-      if (errorExistente) throw errorExistente;
-      if (existente?.rol === "admin_global") return json({ error: "No se puede reemplazar un administrador global por un acceso de empresa." }, 409);
+      if (!esAdminGlobal && !EMPRESAS.has(empresa)) return json({ error: "La empresa seleccionada no es válida." }, 400);
       const registro = {
         correo,
-        rol: "ti_empresa",
+        rol: esAdminGlobal ? "admin_global" : "ti_empresa",
         empresa,
         activo: body.activo !== false,
         actualizado_en: new Date().toISOString(),

@@ -68,7 +68,7 @@ const TEMA_DEFAULT = {
   nombre: "",
 };
 
-export default function PortalUsuario({ onVolver, userEmail, userName }) {
+export default function PortalUsuario({ onVolver, userEmail, userName, initialCollaborator }) {
 
   const [paso, setPaso] = useState(1);
   const [busqueda, setBusqueda] = useState("");
@@ -88,7 +88,16 @@ export default function PortalUsuario({ onVolver, userEmail, userName }) {
     cargarUsuarioAutomatico();
   }, []);
 
-  const cargarUsuarioAutomatico = async () => {
+  const cargarUsuarioAutomatico = async () =>
+  {
+    if (initialCollaborator) {
+      setColaborador(initialCollaborator);
+      setTema(TEMAS[initialCollaborator.empresa] || TEMA_DEFAULT);
+      setForm((prev) => ({ ...prev, anydesk: initialCollaborator.anydesk || "" }));
+      setPaso(2);
+      setCargandoUsuario(false);
+      return;
+    }
     if (!userEmail) return;
 
     const { data, error } = await supabase
