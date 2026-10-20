@@ -45,25 +45,11 @@ export default function App() {
 
   const isAuthenticated = useIsAuthenticated();
 
-  // ----------------------------------------------------------
-  // PARÁMETROS DE URL
-  // ----------------------------------------------------------
-
-  const params = new URLSearchParams(
-    window.location.search
-  );
-
   const ruta = window.location.pathname;
 
   if (ruta === "/evaluacion") {
     return <Evaluacion />;
   }
-
-  const esAdminTest =
-    params.get("admin") === "true";
-
-  const esUsuarioTest =
-    params.get("user") === "true";
 
   // ----------------------------------------------------------
   // ESTADOS DE NAVEGACIÓN
@@ -119,7 +105,7 @@ export default function App() {
   const userName =
     colaboradorAutenticado?.colaborador || accounts[0]?.name || "";
 
-  const esAdmin = esAdminTest || accesoEmpresa?.rol === "admin_global";
+  const esAdmin = accesoEmpresa?.rol === "admin_global";
   const esTiEmpresa = accesoEmpresa?.rol === "ti_empresa" && accesoEmpresa?.activo;
 
   // ----------------------------------------------------------
@@ -249,42 +235,13 @@ export default function App() {
   }
 
   // ----------------------------------------------------------
-  // PRIORIDAD 4: Modo colaborador de prueba
+  // PRIORIDAD 4: Sin sesión de Microsoft
   // ----------------------------------------------------------
-
-  if (esUsuarioTest) {
-
-    return (
-      <ColaboradorHome
-        user={{
-          name: "Stanley"
-        }}
-
-        onRegistrarTicket={() =>
-          setViendoPortal(true)
-        }
-
-        onSeguimiento={() =>
-          setViendoSeguimiento(true)
-        }
-
-        onLogout={() =>
-          (window.location.href = "/")
-        }
-      />
-    );
-
-  }
-
-  // ----------------------------------------------------------
-  // PRIORIDAD 5: Sin sesión de Microsoft
-  // ----------------------------------------------------------
-
   if (!isAuthenticated) return <Login />;
 
   if (cargandoAcceso) return <div className="flex min-h-screen items-center justify-center text-slate-600">Validando acceso…</div>;
 
-  if (!accesoEmpresa?.activo && !esUsuarioTest) return <div className="flex min-h-screen items-center justify-center p-6 text-center"><div><h1 className="text-xl font-bold">Acceso no configurado</h1><p className="mt-2 text-slate-600">Tu cuenta inició sesión, pero todavía no tiene permisos para esta plataforma. Contacta al administrador de TI.</p><button onClick={handleLogout} className="mt-4 rounded-lg bg-blue-700 px-4 py-2 text-white">Cerrar sesión</button></div></div>;
+  if (!accesoEmpresa?.activo) return <div className="flex min-h-screen items-center justify-center p-6 text-center"><div><h1 className="text-xl font-bold">Acceso no configurado</h1><p className="mt-2 text-slate-600">Tu cuenta inició sesión, pero todavía no tiene permisos para esta plataforma. Contacta al administrador de TI.</p><button onClick={handleLogout} className="mt-4 rounded-lg bg-blue-700 px-4 py-2 text-white">Cerrar sesión</button></div></div>;
 
   // ----------------------------------------------------------
   // PRIORIDAD 6: Colaborador autenticado

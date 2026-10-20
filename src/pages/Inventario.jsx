@@ -81,7 +81,7 @@ const NOMBRE_PROGRAMA_AGENTE = "aurica inventory agent";
 // "tickets" (abierto / resuelto, y bajo / medio / alto / critico / emergencia).
 const ESTADOS_TICKET = {
   abierto:  { label: "Abierto",  bg: "#fef9c3", color: "#a16207", border: "#fde68a" },
-  proceso:  { label: "En proceso", bg: "#dbeafe", color: "#345D9D", border: "#bfdbfe" },
+  en_proceso: { label: "En proceso", bg: "#dbeafe", color: "#345D9D", border: "#bfdbfe" },
   resuelto: { label: "Resuelto", bg: "#dcfce7", color: "#16a34a", border: "#86efac" },
   _default: { label: "Sin estado", bg: "#f1f5f9", color: "#64748b", border: "#e2e8f0" },
 };

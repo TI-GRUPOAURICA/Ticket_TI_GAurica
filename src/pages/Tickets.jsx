@@ -25,18 +25,23 @@ function GestionTicket({
       return;
     }
     setGuardando(true);
-
-    await supabase
-      .from("tickets")
-      .update({
-        comentario_proceso: comentario,
-        estado:             "en_proceso",
-        updated_at:         new Date(),
-      })
-      .eq("id", ticketId);
-
-    setGuardando(false);
-    onActualizado();
+    try {
+      const { error } = await supabase
+        .from("tickets")
+        .update({
+          comentario_proceso: comentario,
+          estado:             "en_proceso",
+          updated_at:         new Date(),
+        })
+        .eq("id", ticketId);
+      if (error) throw error;
+      onActualizado();
+    } catch (error) {
+      console.error("Error guardando seguimiento del ticket:", error);
+      alert("No se pudo guardar el seguimiento: " + (error.message || "Error inesperado."));
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const resolverTicket = async () => {
@@ -45,108 +50,58 @@ function GestionTicket({
       return;
     }
     setGuardando(true);
+    try {
+      const { error: errorActualizacion } = await supabase
+        .from("tickets")
+        .update({
+          solucion,
+          comentario_proceso: comentario,
+          estado:             "resuelto",
+          updated_at:         new Date(),
+          resuelto_at:        new Date().toISOString(),
+          resuelto_por:       adminNombre,
+        })
+        .eq("id", ticketId);
+      if (errorActualizacion) throw errorActualizacion;
 
-    await supabase
-      .from("tickets")
-      .update({
-        solucion,
-        comentario_proceso: comentario,
-        estado:             "resuelto",
-        updated_at:         new Date(),
-        resuelto_at:        new Date().toISOString(),
-        resuelto_por:       adminNombre,
-      })
-      .eq("id", ticketId);
+      const { data: colData, error: errorColaborador } = await supabase
+        .from("colaboradores")
+        .select("correo")
+        .eq("colaborador", nombreColaborador)
+        .maybeSingle();
+      if (errorColaborador) console.warn("No se pudo buscar el correo del colaborador:", errorColaborador);
 
-    const { data: colData } = await supabase
-      .from("colaboradores")
-      .select("correo")
-      .eq("colaborador", nombreColaborador)
-      .single();
+      const correo = colData?.correo || correoColaborador;
+      let errorCorreo = null;
+      try {
+        const resultadoCorreo = await supabase.functions.invoke(
+          "enviar-correo",
+          {
+            body: {
+              tipo: "resuelto",
+              ticket_id: ticketId,
+              colaborador: nombreColaborador,
+              email: correo,
+              solucion,
+            },
+          }
+        );
+        errorCorreo = resultadoCorreo.error;
+      } catch (error) {
+        errorCorreo = error;
+      }
+      if (errorCorreo) {
+        console.error("Error enviando correo de resolución:", errorCorreo);
+        alert("El ticket se resolvió, pero no se pudo enviar el correo de notificación.");
+      }
 
-    const correo = colData?.correo || correoColaborador;
-// 🚫 EMAILJS DESACTIVADO (Comentado para evitar duplicación de correos)
-/*
- try {
-  await emailjs.send(
-    "service_wzdct0i",
-    "template_nj9wy5n",
-    {
-      ticket_id:          ticketId,
-      colaborador:        nombreColaborador,
-      email:              correo,
-      icono:              "",
-      titulo_email:       "Solicitud resuelta",
-      mensaje_intro:      `Tu solicitud de soporte #${ticketId} ha sido atendida y resuelta`,
-      label_detalle:      "Solución aplicada",
-      detalle:            solucion,
-      mensaje_footer:     "Esperamos haber resuelto tu inconveniente. Si el problema persiste, no dudes en abrir un nuevo ticket.",
-      // 👇 Vacío a propósito: el número de ticket ya va en mensaje_intro, no se repite la caja.
-      ticket_box_html:    "",
-      // ⚠️ OJO: URL_1...URL_5 son placeholders. Hay que reemplazarlos por links reales
-      // (ver mensaje aparte) o el correo seguirá mostrando "[URL_1]" en vez del link.
-link_encuesta_html: `
-<div style="text-align:center;margin-top:28px;">
-
-  <p style="color:#64748b;font-size:14px;margin-bottom:15px;">
-    Tu opinión nos ayuda a mejorar nuestro servicio
-  </p>
-
-<p style="margin-top:15px;color:#64748b;font-size:13px;">
-  ¿Cómo calificarías la atención recibida?
-</p>
-
-<div style="text-align:center;margin-top:15px;">
-
-  <a href="URL_1" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
-
-  <a href="URL_2" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
-
-  <a href="URL_3" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
-
-  <a href="URL_4" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
-
-  <a href="URL_5" style="text-decoration:none;font-size:38px;color:#345D9D;">★</a>
-
-</div>
-
-<div style="display:flex;justify-content:space-between;margin-top:8px;padding:0 20px;font-size:12px;color:#64748b;">
-  <span>Muy mala</span>
-  <span>Regular</span>
-  <span>Excelente</span>
-</div>
-
-</div>
-`,
-    },
-    "ema3sApQIaIKPzpnq"
-  );
-  } catch (e) {
-  console.error("Error enviando correo de cierre:", e);
-}
-  */
-try {
-  const brevoResult = await supabase.functions.invoke(
-    "enviar-correo",
-    {
-      body: {
-        tipo: "resuelto",
-        ticket_id: ticketId,
-        colaborador: nombreColaborador,
-        email: correo,
-        solucion: solucion,
-      },
+      onActualizado();
+    } catch (error) {
+      console.error("Error resolviendo ticket:", error);
+      alert("No se pudo resolver el ticket: " + (error.message || "Error inesperado."));
+    } finally {
+      setGuardando(false);
     }
-  );
-
-  console.log("BREVO RESUELTO:", brevoResult);
-
-} catch (e) {
-  console.error("Error Brevo Resuelto:", e);
-}
-
-    setGuardando(false);
-    onActualizado();
   };
 
   return (
@@ -240,14 +195,20 @@ useEffect(() => {
   };
 
   const fetchTickets = async () => {
-    const { data } = await supabase
-      .from("tickets")
-      .select(`*, profiles:usuario_id(full_name, email), categorias(nombre)`)
-      .in("estado", ["abierto", "en_proceso","resuelto"])
-      .order("created_at", { ascending: false });
-
-    if (data) setTickets(data);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select(`*, profiles:usuario_id(full_name, email), categorias(nombre)`)
+        .in("estado", ["abierto", "en_proceso","resuelto"])
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setTickets(data || []);
+    } catch (error) {
+      console.error("Error cargando tickets:", error);
+      alert("No se pudieron cargar los tickets: " + (error.message || "Error inesperado."));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const abrirTicket = (ticket) => {
@@ -255,13 +216,18 @@ useEffect(() => {
   };
 
   const cambiarEstado = async (ticketId, nuevoEstado) => {
-    await supabase
-      .from("tickets")
-      .update({ estado: nuevoEstado, updated_at: new Date() })
-      .eq("id", ticketId);
-
-    fetchTickets();
-    setTicketSeleccionado({ ...ticketSeleccionado, estado: nuevoEstado });
+    try {
+      const { error } = await supabase
+        .from("tickets")
+        .update({ estado: nuevoEstado, updated_at: new Date() })
+        .eq("id", ticketId);
+      if (error) throw error;
+      await fetchTickets();
+      setTicketSeleccionado((actual) => actual ? { ...actual, estado: nuevoEstado } : actual);
+    } catch (error) {
+      console.error("Error actualizando estado del ticket:", error);
+      alert("No se pudo cambiar el estado: " + (error.message || "Error inesperado."));
+    }
   };
 
   const estadoConfig = {
@@ -444,12 +410,18 @@ useEffect(() => {
       <button
         key={p}
         onClick={async () => {
-          await supabase
-            .from("tickets")
-            .update({ prioridad: p })
-            .eq("id", ticketSeleccionado.id);
-          fetchTickets();
-          setTicketSeleccionado({ ...ticketSeleccionado, prioridad: p });
+          try {
+            const { error } = await supabase
+              .from("tickets")
+              .update({ prioridad: p })
+              .eq("id", ticketSeleccionado.id);
+            if (error) throw error;
+            setTicketSeleccionado({ ...ticketSeleccionado, prioridad: p });
+            await fetchTickets();
+          } catch (error) {
+            console.error("Error actualizando prioridad del ticket:", error);
+            alert("No se pudo cambiar la prioridad: " + (error.message || "Error inesperado."));
+          }
         }}
         className="px-4 py-2 rounded-xl text-sm font-medium capitalize"
         style={{
@@ -471,12 +443,18 @@ useEffect(() => {
       <button
         key={c.id}
         onClick={async () => {
-          await supabase
-            .from("tickets")
-            .update({ categoria_id: c.id })
-            .eq("id", ticketSeleccionado.id);
-          fetchTickets();
-          setTicketSeleccionado({ ...ticketSeleccionado, categoria_id: c.id, categorias: { nombre: c.nombre } });
+          try {
+            const { error } = await supabase
+              .from("tickets")
+              .update({ categoria_id: c.id })
+              .eq("id", ticketSeleccionado.id);
+            if (error) throw error;
+            setTicketSeleccionado({ ...ticketSeleccionado, categoria_id: c.id, categorias: { nombre: c.nombre } });
+            await fetchTickets();
+          } catch (error) {
+            console.error("Error actualizando categoría del ticket:", error);
+            alert("No se pudo cambiar la categoría: " + (error.message || "Error inesperado."));
+          }
         }}
         className="px-4 py-2 rounded-xl text-sm font-medium capitalize"
         style={{
