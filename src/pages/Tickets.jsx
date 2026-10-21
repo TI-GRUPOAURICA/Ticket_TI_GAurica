@@ -2,6 +2,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
 
+function formatearFechaCreacion(fecha) {
+  if (!fecha) return "Fecha no disponible";
+  const fechaTicket = new Date(fecha);
+  if (Number.isNaN(fechaTicket.getTime())) return "Fecha no disponible";
+  return new Intl.DateTimeFormat("es-PE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Lima",
+  }).format(fechaTicket);
+}
+
 
 function GestionTicket({
   ticketId,
@@ -327,6 +338,7 @@ useEffect(() => {
                       </p>
                       <p className="text-xs mt-1" style={{ color: "#64748b" }}>
                         #{ticket.id} · {ticket.nombre_colaborador || ticket.profiles?.full_name} · {ticket.empresa || ""} · {ticket.categorias?.nombre}
+                        <p className="text-xs mt-1" style={{ color: "#64748b" }}>Creado el {formatearFechaCreacion(ticket.created_at)}</p>
                       </p>
                     </div>
 
@@ -364,6 +376,7 @@ useEffect(() => {
                 {" · "}
                 {ticketSeleccionado.empresa}
               </p>
+              <p className="text-xs mt-1" style={{ color: "#64748b" }}>Creado el {formatearFechaCreacion(ticketSeleccionado.created_at)}</p>
             </div>
             <button
               onClick={() => setTicketSeleccionado(null)}
