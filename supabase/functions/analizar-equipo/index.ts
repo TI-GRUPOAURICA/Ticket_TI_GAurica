@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SYSTEM_PROMPT } from "./prompt.ts";
 import { RESPONSE_SCHEMA } from "./schema.ts";
+import { autenticarTI } from "../_shared/tenant-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,13 @@ serve(async (req) => {
   }
 
   try {
+    const acceso = await autenticarTI(req);
+    if (!acceso) {
+      return new Response(JSON.stringify({ success: false, error: "Solo TI autorizado puede analizar equipos." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const {
       procesador,
       nucleos,

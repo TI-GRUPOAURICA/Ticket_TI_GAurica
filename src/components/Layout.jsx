@@ -9,7 +9,8 @@ import {
   Users,
   LogOut,
   Cloud,
-  Printer
+  Printer,
+  Bot
 } from "lucide-react";
 
 /* =========================================================
@@ -132,6 +133,11 @@ export default function Layout({
       id: "impresoras",
       label: "Impresoras",
       icon: Printer
+    },
+    {
+      id: "asistente-ia",
+      label: "Asistente IA",
+      icon: Bot
     },
     {
       id: "reportes",

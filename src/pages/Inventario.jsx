@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useMsal } from "@azure/msal-react";
+import { loginRequest } from "../Config/authConfig";
 import { supabase } from "../lib/supabase";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
@@ -152,6 +154,7 @@ function cargarLogoComoPNG(urlLogo) {
 }
 
 export default function Inventario() {
+  const { instance, accounts } = useMsal();
 
   // ----------------------------------------------------------
   // ESTADOS DEL COMPONENTE
@@ -1014,11 +1017,15 @@ async function abrirDetalle(hostname) {
 
 async function analizarEquipoIA() {
   setAnalizandoIA(true);
-
   try {
+    const account = accounts?.[0];
+    if (!account) throw new Error("Inicia sesión con Microsoft para analizar el equipo.");
+    const token = await instance.acquireTokenSilent({ ...loginRequest, account });
+
     const { data, error } = await supabase.functions.invoke(
       "analizar-equipo",
       {
+        headers: { Authorization: `Bearer ${token.accessToken}` },
         body: {
           // =========================
           // HARDWARE
@@ -1093,9 +1100,13 @@ async function analizarEquipoIA() {
       console.error("Error guardando análisis IA:", saveError);
     }
 
+  } catch (error) {
+    console.error("Error al analizar equipo:", error);
+    alert(error.message || "No se pudo analizar el equipo.");
   } finally {
     setAnalizandoIA(false);
   }
+
 }   
   
 

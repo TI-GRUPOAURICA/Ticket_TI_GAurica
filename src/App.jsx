@@ -32,6 +32,7 @@ import Radios from "./pages/radios";
 import Microsoft365 from "./pages/Microsoft365";
 import Impresoras from "./pages/Impresoras";
 import Permisos from "./pages/Permisos";
+import AsistenteIA from "./pages/AsistenteIA";
 import { loginRequest } from "./Config/authConfig";
 import { configurarProveedorTokenMicrosoft } from "./lib/supabase";
 
@@ -140,6 +141,9 @@ export default function App() {
             adminCorreo={userEmail}
           />
         );
+
+      case "asistente-ia":
+        return <AsistenteIA />;
 
       case "reportes":
 
