@@ -12,19 +12,32 @@ const PREGUNTAS_SUGERIDAS = [
 
 function Robotito({ size = 28, className = "" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" className={className} aria-hidden="true" fill="none">
-      <path d="M32 10V6" stroke="#1D4ED8" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="32" cy="5" r="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
-      <rect x="7" y="25" width="7" height="14" rx="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
-      <rect x="50" y="25" width="7" height="14" rx="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
-      <rect x="12" y="12" width="40" height="37" rx="13" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="2" />
-      <rect x="18" y="19" width="28" height="23" rx="9" fill="#EFF6FF" />
-      <circle cx="26" cy="29" r="2.5" fill="#1E3A8A" />
-      <circle cx="38" cy="29" r="2.5" fill="#1E3A8A" />
-      <path d="M27 35C28.5 37 30 38 32 38C34 38 35.5 37 37 35" stroke="#1E3A8A" strokeWidth="2" strokeLinecap="round" />
-      <rect x="21" y="48" width="22" height="10" rx="5" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1.5" />
-      <circle cx="27" cy="53" r="1" fill="#BFDBFE" />
-      <circle cx="37" cy="53" r="1" fill="#BFDBFE" />
+    <svg width={size} height={Math.round(size * 1.18)} viewBox="0 0 64 76" className={className} aria-hidden="true" fill="none" shapeRendering="crispEdges">
+      <ellipse cx="32" cy="72" rx="12" ry="2.5" fill="#334155" opacity="0.7" />
+      {/* Llamita celeste pixelada */}
+      <rect x="28" y="2" width="8" height="6" fill="#BAE6FD" />
+      <rect x="22" y="8" width="8" height="6" fill="#7DD3FC" />
+      <rect x="34" y="8" width="8" height="6" fill="#38BDF8" />
+      <rect x="20" y="14" width="8" height="6" fill="#38BDF8" />
+      <rect x="28" y="14" width="8" height="8" fill="#E0F2FE" />
+      <rect x="36" y="14" width="8" height="6" fill="#0EA5E9" />
+      <rect x="18" y="20" width="8" height="6" fill="#0EA5E9" />
+      <rect x="26" y="20" width="12" height="6" fill="#7DD3FC" />
+      <rect x="38" y="20" width="8" height="6" fill="#0284C7" />
+      {/* Cabeza cuadradita */}
+      <rect x="14" y="25" width="36" height="30" rx="4" fill="#0284C7" stroke="#075985" strokeWidth="2" />
+      <rect x="18" y="29" width="28" height="21" rx="3" fill="#E0F2FE" />
+      <rect x="23" y="35" width="4" height="5" fill="#0C4A6E" />
+      <rect x="37" y="35" width="4" height="5" fill="#0C4A6E" />
+      <rect x="28" y="43" width="8" height="2" fill="#0C4A6E" />
+      {/* Cuerpo pequeño */}
+      <rect x="27" y="55" width="10" height="4" fill="#0369A1" />
+      <rect x="21" y="59" width="22" height="9" rx="2" fill="#38BDF8" stroke="#075985" strokeWidth="2" />
+      <rect x="16" y="60" width="5" height="7" fill="#7DD3FC" stroke="#075985" strokeWidth="1.5" />
+      <rect x="43" y="60" width="5" height="7" fill="#7DD3FC" stroke="#075985" strokeWidth="1.5" />
+      <rect x="25" y="68" width="5" height="4" fill="#0369A1" />
+      <rect x="34" y="68" width="5" height="4" fill="#0369A1" />
+      <rect x="29" y="61" width="6" height="4" fill="#E0F2FE" />
     </svg>
   );
 }
@@ -129,9 +142,9 @@ export default function AsistenteIA() {
         </section>
       )}
 
-      <button type="button" onClick={() => setAbierto((actual) => !actual)} aria-label={abierto ? "Minimizar asistente de TI" : "Abrir asistente de TI"} aria-expanded={abierto} className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#345D9D] text-white shadow-lg ring-4 ring-white transition duration-200 hover:scale-105 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
+      <button type="button" onClick={() => setAbierto((actual) => !actual)} aria-label={abierto ? "Minimizar asistente de TI" : "Abrir asistente de TI"} aria-expanded={abierto} className={`group relative flex items-center justify-center transition duration-200 focus:outline-none ${abierto ? "h-14 w-14 rounded-full bg-[#345D9D] text-white shadow-lg ring-4 ring-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-200" : "h-[76px] w-[64px] bg-transparent hover:scale-105"}`}>
         <span className="absolute inset-0 rounded-full bg-blue-400 opacity-20 transition group-hover:animate-ping" />
-        {abierto ? <MessageCircle size={25} className="relative" /> : <Robotito size={38} className="relative" />}
+        {abierto ? <MessageCircle size={25} className="relative" /> : <Robotito size={62} className="relative drop-shadow-[0_3px_1px_rgba(15,23,42,0.22)]" />}
         {!abierto && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />}
       </button>
       {!abierto && <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-md">¿Te ayudo?</span>}
