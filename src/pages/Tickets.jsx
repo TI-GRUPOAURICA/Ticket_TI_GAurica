@@ -338,7 +338,9 @@ useEffect(() => {
                       </p>
                       <p className="text-xs mt-1" style={{ color: "#64748b" }}>
                         #{ticket.id} · {ticket.nombre_colaborador || ticket.profiles?.full_name} · {ticket.empresa || ""} · {ticket.categorias?.nombre}
-                        <p className="text-xs mt-1" style={{ color: "#64748b" }}>Creado el {formatearFechaCreacion(ticket.created_at)}</p>
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: "#64748b" }}>
+                        Creado el {formatearFechaCreacion(ticket.created_at)}
                       </p>
                     </div>
 
