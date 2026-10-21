@@ -1,13 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { Bot, Send, UserRound, Sparkles, X, MessageCircle, Minus } from "lucide-react";
+import { Send, UserRound, Sparkles, X, MessageCircle, Minus } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
 
 const PREGUNTAS_SUGERIDAS = [
   "¿Quién usa la LAP0002 y qué IP tiene?",
   "¿Qué equipos usa Karen?",
   "¿Qué tickets recientes tiene la LAP0002?",
+  "¿Qué equipos no tienen colaborador asignado?",
 ];
+
+function Robotito({ size = 28, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" className={className} aria-hidden="true" fill="none">
+      <path d="M32 10V6" stroke="#1D4ED8" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="32" cy="5" r="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
+      <rect x="7" y="25" width="7" height="14" rx="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
+      <rect x="50" y="25" width="7" height="14" rx="3.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
+      <rect x="12" y="12" width="40" height="37" rx="13" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="2" />
+      <rect x="18" y="19" width="28" height="23" rx="9" fill="#EFF6FF" />
+      <circle cx="26" cy="29" r="2.5" fill="#1E3A8A" />
+      <circle cx="38" cy="29" r="2.5" fill="#1E3A8A" />
+      <path d="M27 35C28.5 37 30 38 32 38C34 38 35.5 37 37 35" stroke="#1E3A8A" strokeWidth="2" strokeLinecap="round" />
+      <rect x="21" y="48" width="22" height="10" rx="5" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1.5" />
+      <circle cx="27" cy="53" r="1" fill="#BFDBFE" />
+      <circle cx="37" cy="53" r="1" fill="#BFDBFE" />
+    </svg>
+  );
+}
 
 export default function AsistenteIA() {
   const { instance, accounts } = useMsal();
@@ -62,7 +82,7 @@ export default function AsistenteIA() {
         <section className="flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl" style={{ height: "min(34rem, calc(100vh - 7rem))" }} aria-label="Chat con el asistente de TI">
           <header className="flex items-center justify-between bg-[#345D9D] px-4 py-3 text-white">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><Bot size={23} /></div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><Robotito size={30} /></div>
               <div>
                 <h2 className="text-sm font-bold">Asistente de TI</h2>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-blue-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />Listo para ayudarte</p>
@@ -91,14 +111,14 @@ export default function AsistenteIA() {
             )}
             {mensajes.map((mensaje, indice) => (
               <div key={`${indice}-${mensaje.rol}`} className={`flex items-end gap-2 ${mensaje.rol === "user" ? "justify-end" : "justify-start"}`}>
-                {mensaje.rol === "assistant" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Bot size={16} /></div>}
+                {mensaje.rol === "assistant" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Robotito size={20} /></div>}
                 <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-5 ${mensaje.rol === "user" ? "rounded-br-md bg-blue-700 text-white" : mensaje.error ? "border border-red-200 bg-red-50 text-red-700" : "rounded-bl-md border border-slate-200 bg-white text-slate-700"}`}>
                   {mensaje.texto}
                 </div>
                 {mensaje.rol === "user" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600"><UserRound size={15} /></div>}
               </div>
             ))}
-            {consultando && <div className="flex items-center gap-2 text-xs text-slate-500"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Bot size={16} /></div>Buscando en el inventario…</div>}
+            {consultando && <div className="flex items-center gap-2 text-xs text-slate-500"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Robotito size={20} /></div>Buscando en el inventario…</div>}
           </div>
 
           <form onSubmit={(event) => { event.preventDefault(); enviarPregunta(); }} className="flex items-center gap-2 border-t border-slate-100 bg-white p-3">
@@ -111,7 +131,7 @@ export default function AsistenteIA() {
 
       <button type="button" onClick={() => setAbierto((actual) => !actual)} aria-label={abierto ? "Minimizar asistente de TI" : "Abrir asistente de TI"} aria-expanded={abierto} className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#345D9D] text-white shadow-lg ring-4 ring-white transition duration-200 hover:scale-105 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
         <span className="absolute inset-0 rounded-full bg-blue-400 opacity-20 transition group-hover:animate-ping" />
-        {abierto ? <MessageCircle size={25} className="relative" /> : <Bot size={27} className="relative" />}
+        {abierto ? <MessageCircle size={25} className="relative" /> : <Robotito size={38} className="relative" />}
         {!abierto && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />}
       </button>
       {!abierto && <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-md">¿Te ayudo?</span>}

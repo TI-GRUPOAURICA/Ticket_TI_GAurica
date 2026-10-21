@@ -28,7 +28,7 @@ async function interpretarPregunta(pregunta: string) {
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: `Clasifica preguntas en español para un asistente de inventario TI. No respondas la pregunta. Extrae solo el término exacto de búsqueda. Usa intent="equipo" para buscar quién usa un hostname, IP, hostname, datos de red o sincronización; usa intent="tickets" si pregunta por historial/incidencias; usa intent="no_soportado" si solicita acciones, cambios, datos que no sean de equipos/personas/tickets o no hay término claro. buscar_por debe ser "persona" cuando el término sea un nombre de persona, "ip" cuando sea una dirección IP y "hostname" cuando sea un identificador de equipo. Devuelve solo JSON con el esquema dado.` }],
+          parts: [{ text: `Clasifica preguntas en español para un asistente de inventario TI. No respondas la pregunta. Extrae solo el término exacto de búsqueda. Usa intent="equipo" para buscar quién usa un hostname, IP, hostname, datos de red o sincronización; usa intent="tickets" si pregunta por historial/incidencias; usa intent="equipos_sin_asignar" cuando pida equipos que no están vinculados a un colaborador; usa intent="no_soportado" si solicita acciones, cambios, datos que no sean de equipos/personas/tickets o no hay término claro. buscar_por debe ser "persona" cuando el término sea un nombre de persona, "ip" cuando sea una dirección IP y "hostname" cuando sea un identificador de equipo. Devuelve solo JSON con el esquema dado.` }],
         },
         contents: [{ role: "user", parts: [{ text: pregunta }] }],
         generationConfig: {
@@ -36,7 +36,7 @@ async function interpretarPregunta(pregunta: string) {
           responseSchema: {
             type: "object",
             properties: {
-              intent: { type: "string", enum: ["equipo", "tickets", "no_soportado"] },
+              intent: { type: "string", enum: ["equipo", "tickets", "equipos_sin_asignar", "no_soportado"] },
               buscar_por: { type: "string", enum: ["hostname", "persona", "ip"] },
               termino: { type: "string" },
             },
@@ -79,10 +79,31 @@ Deno.serve(async (req) => {
     if (!pregunta) return json({ error: "Escribe una pregunta." }, 400);
 
     const consulta = await interpretarPregunta(pregunta);
+    if (consulta.intent === "equipos_sin_asignar") {
+      if (acceso.rol !== "admin_global") {
+        return json({ success: true, respuesta: "La empresa del equipo no se puede determinar cuando todavía no tiene colaborador asignado. Pide a un administrador global que revise esos equipos." });
+      }
+      const [{ data: equiposSinAsignar, error: errorEquipos }, { data: asignaciones, error: errorAsignaciones }] = await Promise.all([
+        supabase.from("equipos").select("hostname, ip").limit(1000),
+        supabase.from("colaboradores").select("host"),
+      ]);
+      if (errorEquipos) throw errorEquipos;
+      if (errorAsignaciones) throw errorAsignaciones;
+      const hostsAsignados = new Set((asignaciones || []).map((fila: any) => String(fila.host || "").trim().toUpperCase()).filter(Boolean));
+      const pendientes = (equiposSinAsignar || []).filter((equipo: any) => {
+        const host = String(equipo.hostname || "").trim();
+        return host && !hostsAsignados.has(host.toUpperCase());
+      });
+      if (!pendientes.length) return json({ success: true, respuesta: "Todos los equipos registrados tienen un colaborador vinculado." });
+      const lista = pendientes.slice(0, 20).map((equipo: any) => `• ${equipo.hostname} · IP local: ${equipo.ip || "No registrada"}`).join("\n");
+      const restante = pendientes.length > 20 ? `\n…y ${pendientes.length - 20} equipos más.` : "";
+      return json({ success: true, respuesta: `Encontré ${pendientes.length} equipos sin colaborador vinculado:\n${lista}${restante}` });
+    }
+
     if (consulta.intent === "no_soportado" || !consulta.termino?.trim()) {
       return json({
         success: true,
-        respuesta: "Por ahora puedo consultar quién usa un equipo, hostname, IP local, última sincronización e historial de tickets. Prueba con: ¿Quién usa la LAP0002?",
+        respuesta: "Puedo consultar quién usa un equipo, su IP, última sincronización, tickets recientes y equipos sin colaborador vinculado (solo administrador global). Prueba: ¿Quién usa la LAP0002?",
       });
     }
 
