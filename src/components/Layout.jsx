@@ -1,3 +1,4 @@
+import AsistenteIA from "../pages/AsistenteIA";
 import { useState, useEffect } from "react";
 
 import {
@@ -10,7 +11,6 @@ import {
   LogOut,
   Cloud,
   Printer,
-  Bot
 } from "lucide-react";
 
 /* =========================================================
@@ -133,11 +133,6 @@ export default function Layout({
       id: "impresoras",
       label: "Impresoras",
       icon: Printer
-    },
-    {
-      id: "asistente-ia",
-      label: "Asistente IA",
-      icon: Bot
     },
     {
       id: "reportes",
@@ -342,8 +337,8 @@ export default function Layout({
             Sistema de tickets
           </p>
         </div>
-
         {children}
+        <AsistenteIA />
       </div>
     </div>
   );

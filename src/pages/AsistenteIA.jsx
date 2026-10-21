@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { Bot, Send, UserRound, Sparkles } from "lucide-react";
+import { Bot, Send, UserRound, Sparkles, X, MessageCircle, Minus } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
 
 const PREGUNTAS_SUGERIDAS = [
@@ -11,6 +11,7 @@ const PREGUNTAS_SUGERIDAS = [
 
 export default function AsistenteIA() {
   const { instance, accounts } = useMsal();
+  const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState([]);
   const [pregunta, setPregunta] = useState("");
   const [consultando, setConsultando] = useState(false);
@@ -18,7 +19,7 @@ export default function AsistenteIA() {
 
   useEffect(() => {
     mensajesRef.current?.scrollTo({ top: mensajesRef.current.scrollHeight, behavior: "smooth" });
-  }, [mensajes, consultando]);
+  }, [mensajes, consultando, abierto]);
 
   const enviarPregunta = async (texto = pregunta) => {
     const consulta = texto.trim();
@@ -56,47 +57,64 @@ export default function AsistenteIA() {
   };
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-5xl flex-col p-4 md:p-7">
-      <header className="mb-5">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Asistente de TI</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">Consulta tu inventario</h1>
-        <p className="mt-1 text-sm text-slate-500">Pregunta por equipos, personas, IP local, sincronización o tickets. Solo consulta información.</p>
-      </header>
-
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
-        <div ref={mensajesRef} className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6">
-          {mensajes.length === 0 && (
-            <div className="mx-auto mt-8 max-w-2xl text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Sparkles size={26} /></div>
-              <h2 className="mt-4 text-lg font-semibold text-slate-800">¿Qué necesitas encontrar?</h2>
-              <p className="mt-1 text-sm text-slate-500">El asistente consulta los datos que TI ya tiene registrados.</p>
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {PREGUNTAS_SUGERIDAS.map((ejemplo) => (
-                  <button key={ejemplo} type="button" onClick={() => enviarPregunta(ejemplo)} className="rounded-full border border-blue-100 bg-blue-50/60 px-4 py-2 text-left text-xs text-blue-800 transition hover:bg-blue-100">
-                    {ejemplo}
-                  </button>
-                ))}
+    <div className="fixed bottom-5 right-5 z-[100] flex flex-col items-end gap-3">
+      {abierto && (
+        <section className="flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl" style={{ height: "min(34rem, calc(100vh - 7rem))" }} aria-label="Chat con el asistente de TI">
+          <header className="flex items-center justify-between bg-[#345D9D] px-4 py-3 text-white">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><Bot size={23} /></div>
+              <div>
+                <h2 className="text-sm font-bold">Asistente de TI</h2>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-blue-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />Listo para ayudarte</p>
               </div>
             </div>
-          )}
-          {mensajes.map((mensaje, indice) => (
-            <div key={`${indice}-${mensaje.rol}`} className={`flex items-start gap-3 ${mensaje.rol === "user" ? "justify-end" : "justify-start"}`}>
-              {mensaje.rol === "assistant" && <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Bot size={19} /></div>}
-              <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 ${mensaje.rol === "user" ? "bg-blue-700 text-white" : mensaje.error ? "border border-red-200 bg-red-50 text-red-700" : "border border-slate-100 bg-slate-50 text-slate-700"}`}>
-                {mensaje.texto}
-              </div>
-              {mensaje.rol === "user" && <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><UserRound size={18} /></div>}
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setAbierto(false)} aria-label="Minimizar asistente" className="rounded-lg p-2 transition hover:bg-white/15"><Minus size={17} /></button>
+              <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar asistente" className="rounded-lg p-2 transition hover:bg-white/15"><X size={17} /></button>
             </div>
-          ))}
-          {consultando && <div className="flex items-center gap-3 text-sm text-slate-500"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Bot size={19} /></div>Consultando el inventario…</div>}
-        </div>
+          </header>
 
-        <form onSubmit={(event) => { event.preventDefault(); enviarPregunta(); }} className="flex items-center gap-3 border-t border-slate-100 p-3 md:p-4">
-          <input value={pregunta} onChange={(event) => setPregunta(event.target.value)} maxLength={300} placeholder="Ejemplo: ¿Qué IP tiene la LAP0002?" disabled={consultando} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50" />
-          <button type="submit" disabled={!pregunta.trim() || consultando} aria-label="Enviar pregunta" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><Send size={18} /></button>
-        </form>
-      </section>
-      <p className="mt-3 text-center text-xs text-slate-400">El asistente no cambia ni asigna información.</p>
+          <div ref={mensajesRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-4">
+            {mensajes.length === 0 && (
+              <div className="pt-3 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700"><Sparkles size={23} /></div>
+                <h3 className="mt-3 text-sm font-semibold text-slate-800">¿Qué necesitas encontrar?</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Puedo buscar equipos, personas, IP, sincronizaciones y tickets.</p>
+                <div className="mt-4 space-y-2">
+                  {PREGUNTAS_SUGERIDAS.map((ejemplo) => (
+                    <button key={ejemplo} type="button" onClick={() => enviarPregunta(ejemplo)} className="w-full rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left text-xs leading-5 text-blue-800 transition hover:border-blue-300 hover:bg-blue-50">
+                      {ejemplo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {mensajes.map((mensaje, indice) => (
+              <div key={`${indice}-${mensaje.rol}`} className={`flex items-end gap-2 ${mensaje.rol === "user" ? "justify-end" : "justify-start"}`}>
+                {mensaje.rol === "assistant" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Bot size={16} /></div>}
+                <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-5 ${mensaje.rol === "user" ? "rounded-br-md bg-blue-700 text-white" : mensaje.error ? "border border-red-200 bg-red-50 text-red-700" : "rounded-bl-md border border-slate-200 bg-white text-slate-700"}`}>
+                  {mensaje.texto}
+                </div>
+                {mensaje.rol === "user" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600"><UserRound size={15} /></div>}
+              </div>
+            ))}
+            {consultando && <div className="flex items-center gap-2 text-xs text-slate-500"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Bot size={16} /></div>Buscando en el inventario…</div>}
+          </div>
+
+          <form onSubmit={(event) => { event.preventDefault(); enviarPregunta(); }} className="flex items-center gap-2 border-t border-slate-100 bg-white p-3">
+            <input value={pregunta} onChange={(event) => setPregunta(event.target.value)} maxLength={300} placeholder="Pregunta por un equipo o persona…" disabled={consultando} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50" />
+            <button type="submit" disabled={!pregunta.trim() || consultando} aria-label="Enviar pregunta" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><Send size={16} /></button>
+          </form>
+          <p className="bg-white pb-2 text-center text-[10px] text-slate-400">Solo consulta información; no realiza cambios.</p>
+        </section>
+      )}
+
+      <button type="button" onClick={() => setAbierto((actual) => !actual)} aria-label={abierto ? "Minimizar asistente de TI" : "Abrir asistente de TI"} aria-expanded={abierto} className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#345D9D] text-white shadow-lg ring-4 ring-white transition duration-200 hover:scale-105 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
+        <span className="absolute inset-0 rounded-full bg-blue-400 opacity-20 transition group-hover:animate-ping" />
+        {abierto ? <MessageCircle size={25} className="relative" /> : <Bot size={27} className="relative" />}
+        {!abierto && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />}
+      </button>
+      {!abierto && <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-md">¿Te ayudo?</span>}
     </div>
   );
 }
