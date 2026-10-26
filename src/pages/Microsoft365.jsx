@@ -1771,9 +1771,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                             <div className="min-w-[240px] space-y-2">
                               {(usuario.licencias || []).length ? (
                                 (usuario.licencias || []).map((licencia, index) => {
-                                  const estadoRenovacion = esLicenciaEnSeguimiento(licencia, usuario.correo)
-                                    ? obtenerEstadoRenovacion(licencia.fechaFin)
-                                    : { etiqueta: "Sin seguimiento", clases: "bg-slate-100 text-slate-600 ring-slate-200" };
+                                  const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
                                   const fecha = licencia.fechaFin
                                     ? new Date(`${String(licencia.fechaFin).slice(0, 10)}T00:00:00`).toLocaleDateString("es-PE")
                                     : "Sin fecha registrada";
@@ -2354,9 +2352,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                     {licenciasDetalle.map((licencia, index) => {
                       const claveLicencia = String(licencia.skuId || "");
                       const guardando = guardandoFechaLicencia === claveLicencia;
-                      const estadoRenovacion = esLicenciaEnSeguimiento(licencia, selectedUser.correo)
-                                    ? obtenerEstadoRenovacion(licencia.fechaFin)
-                                    : { etiqueta: "Sin seguimiento", clases: "bg-slate-100 text-slate-600 ring-slate-200" };
+                      const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
 
                       return (
                         <div
