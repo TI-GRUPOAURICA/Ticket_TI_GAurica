@@ -176,10 +176,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
     setEmpresa,
   ] = useState("Todas");
 
-  const [
-    estado,
-    setEstado,
-  ] = useState("Todos");
+  const [estadosSeleccionados, setEstadosSeleccionados] = useState([]);
 
   const [
     filtroTipoLicencia,
@@ -307,6 +304,8 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
     ].sort();
   }, [usuarios]);
 
+  const estadosDisponibles = useMemo(() => [...new Set(usuarios.map((usuario) => usuario.estado).filter(Boolean))].sort(), [usuarios]);
+
   const tiposLicencia = useMemo(() => {
     const nombres = usuarios.flatMap((usuario) =>
       (usuario.licencias || []).map(
@@ -415,8 +414,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
               ));
 
         const coincideEstado =
-          estado === "Todos" ||
-          usuario.estado === estado;
+          estadosSeleccionados.length === 0 || estadosSeleccionados.includes(usuario.estado);
 
         return (
           coincideBusqueda &&
@@ -426,13 +424,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
         );
       }
     );
-  }, [
-    usuarios,
-    busqueda,
-    empresa,
-    estado,
-    filtroTipoLicencia,
-  ]);
+  }, [usuarios, busqueda, empresa, estadosSeleccionados, filtroTipoLicencia]);
 
   // ===========================================================
   // SINCRONIZAR MICROSOFT 365
@@ -1101,7 +1093,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
       1,
       ...usuariosFiltrados.map((usuario) => usuario.licencias?.length || 0)
     );
-    const encabezados = ["Nombre de usuario", "Correo", "Empresa"];
+    const encabezados = ["Nombre de usuario", "Correo", "Empresa", "Estado", "Tipo de usuario", "Cantidad de licencias"];
 
     for (let indice = 1; indice <= maxLicencias; indice += 1) {
       encabezados.push(
@@ -1137,6 +1129,9 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
         usuario.nombre,
         usuario.correo,
         usuario.empresa === "—" ? "" : usuario.empresa,
+        usuario.estado,
+        usuario.tipo,
+        usuario.cantidadLicencias,
         ...datosLicencias,
       ];
     });
@@ -1162,6 +1157,9 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
       "Usuario",
       "Correo",
       "Empresa",
+      "Estado del usuario",
+      "Tipo de usuario",
+      "Cantidad de licencias",
       "Licencia",
       "SKU",
       "Fecha de inicio",
@@ -1186,14 +1184,17 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
           ? "Sin fecha de vencimiento"
           : dias < 0
             ? "Vencida"
-            : dias <= 90
-              ? "Renovar en los próximos 90 días"
+            : dias <= 30
+              ? "Por vencer en los próximos 30 días"
               : "Vigente";
 
         return [
           usuario.nombre,
           usuario.correo,
           usuario.empresa === "—" ? "" : usuario.empresa,
+          usuario.estado,
+          usuario.tipo,
+          usuario.cantidadLicencias,
           licencia.nombre || licencia.skuPartNumber || "Licencia",
           licencia.skuPartNumber,
           licencia.fechaInicio,
@@ -1600,29 +1601,15 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                 ))}
               </select>
 
-              <select
-                value={estado}
-                onChange={(e) =>
-                  setEstado(
-                    e.target.value
-                  )
-                }
-                className="h-11 px-3 rounded-lg border border-slate-200 outline-none focus:border-[#3763a5] text-sm bg-white"
-              >
-
-                <option value="Todos">
-                  Todos los estados
-                </option>
-
-                <option value="Activo">
-                  Activos
-                </option>
-
-                <option value="Bloqueado">
-                  Bloqueados
-                </option>
-
-              </select>
+              <fieldset className="flex min-h-11 items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 text-sm">
+  <legend className="sr-only">Filtrar por estados</legend>
+  {estadosDisponibles.map((estadoDisponible) => (
+    <label key={estadoDisponible} className="flex items-center gap-2 text-slate-700">
+      <input type="checkbox" checked={estadosSeleccionados.includes(estadoDisponible)} onChange={(e) => setEstadosSeleccionados((actuales) => e.target.checked ? [...actuales, estadoDisponible] : actuales.filter((estadoActual) => estadoActual !== estadoDisponible))} className="accent-[#3763a5]" />
+      {estadoDisponible === "Activo" ? "Activos" : estadoDisponible === "Bloqueado" ? "Bloqueados" : estadoDisponible}
+    </label>
+  ))}
+</fieldset>
 
             </div>
 
