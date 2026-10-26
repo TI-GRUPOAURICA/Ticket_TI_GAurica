@@ -177,6 +177,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
   ] = useState("Todas");
 
   const [estadosSeleccionados, setEstadosSeleccionados] = useState([]);
+  const [mostrarFiltroEstados, setMostrarFiltroEstados] = useState(false);
 
   const [
     filtroTipoLicencia,
@@ -1536,7 +1537,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
 
             {/* FILTROS */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_190px_250px_260px] gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_190px_250px_220px] gap-3 mb-4">
 
               <div className="relative">
 
@@ -1605,15 +1606,52 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                 ))}
               </select>
 
-              <fieldset className="flex min-h-11 items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 text-sm">
-  <legend className="sr-only">Filtrar por estado de licencia</legend>
-  {estadosDisponibles.map((estadoDisponible) => (
-    <label key={estadoDisponible} className="flex items-center gap-2 text-slate-700">
-      <input type="checkbox" checked={estadosSeleccionados.includes(estadoDisponible)} onChange={(e) => setEstadosSeleccionados((actuales) => e.target.checked ? [...actuales, estadoDisponible] : actuales.filter((estadoActual) => estadoActual !== estadoDisponible))} className="accent-[#3763a5]" />
-      {estadoDisponible}
-    </label>
-  ))}
-</fieldset>
+              <div className="relative">
+  <button
+    type="button"
+    onClick={() => setMostrarFiltroEstados((visible) => !visible)}
+    aria-expanded={mostrarFiltroEstados}
+    className="flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none hover:border-[#3763a5] focus:border-[#3763a5]"
+  >
+    <span className="truncate">
+      {estadosSeleccionados.length === 0
+        ? "Todos los estados de licencia"
+        : `${estadosSeleccionados.length} estado${estadosSeleccionados.length === 1 ? "" : "s"} seleccionado${estadosSeleccionados.length === 1 ? "" : "s"}`}
+    </span>
+    <span aria-hidden="true" className="text-slate-400">⌄</span>
+  </button>
+  {mostrarFiltroEstados && (
+    <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+      <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
+        <span className="text-xs font-semibold text-slate-700">Estado de licencia</span>
+        <button
+          type="button"
+          onClick={() => setEstadosSeleccionados([])}
+          className="text-xs font-medium text-[#3763a5] hover:underline"
+        >
+          Limpiar
+        </button>
+      </div>
+      <div className="space-y-1">
+        {estadosDisponibles.map((estadoDisponible) => (
+          <label key={estadoDisponible} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <input
+              type="checkbox"
+              checked={estadosSeleccionados.includes(estadoDisponible)}
+              onChange={(e) => setEstadosSeleccionados((actuales) =>
+                e.target.checked
+                  ? [...actuales, estadoDisponible]
+                  : actuales.filter((estadoActual) => estadoActual !== estadoDisponible)
+              )}
+              className="accent-[#3763a5]"
+            />
+            {estadoDisponible}
+          </label>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
 
             </div>
 
