@@ -400,15 +400,7 @@ async function leerDesdeBase(empresaSolicitante?: string) {
     .filter((u: any) => dominioPermitido(u.correo || u.user_principal_name))
     .filter((u: any) => !empresaSolicitante || empresaDeUsuario(u) === empresaSolicitante)
     .map((u: any) => ({ id: u.id, nombre: u.nombre, correo: u.correo, userPrincipalName: u.user_principal_name, empresa: empresaDeUsuario(u), estado: u.estado, habilitado: u.habilitado, tipo: u.tipo, cantidadLicencias: u.cantidad_licencias, licencias: u.licencias || [] }));
-  const licenciasBase = empresaSolicitante
-    ? Array.from(usuarios.reduce((mapa: Map<string, number>, usuario: any) => {
-        for (const licencia of usuario.licencias || []) { const id = String(licencia.skuId).toLowerCase(); mapa.set(id, (mapa.get(id) || 0) + 1); }
-        return mapa;
-      }, new Map<string, number>()).entries()).map(([skuId, cantidad]) => {
-        const base = licenciasDb.find((item: any) => String(item.sku_id).toLowerCase() === skuId);
-        return base ? { ...base, total: cantidad, asignadas: cantidad, disponibles: 0 } : null;
-      }).filter(Boolean)
-    : licenciasDb;
+  const licenciasBase = licenciasDb;
   const licencias = licenciasBase.map((l: any) => ({
     id: l.sku_id,
     skuId: l.sku_id,

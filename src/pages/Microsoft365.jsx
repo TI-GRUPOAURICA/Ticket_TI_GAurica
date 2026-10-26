@@ -207,7 +207,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
   const [licenciasPagadasPorCorreo, setLicenciasPagadasPorCorreo] = useState(() => new Map());
   const [cargandoTiposLicenciaPagada, setCargandoTiposLicenciaPagada] = useState(true);
   const [mostrarTodasLasLicencias, setMostrarTodasLasLicencias] = useState(false);
-  const [mostrarTodasLicenciasDetalle, setMostrarTodasLicenciasDetalle] = useState(false);
+  const [mostrarTodasLicenciasDetalle, setMostrarTodasLicenciasDetalle] = useState(true);
 
   const [
     resumen,
@@ -1769,9 +1769,11 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                           <td className="px-4 py-4">
 
                             <div className="min-w-[240px] space-y-2">
-                              {(usuario.licencias || []).filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)).length ? (
-                                (usuario.licencias || []).filter((licencia) => esLicenciaEnSeguimiento(licencia, usuario.correo)).map((licencia, index) => {
-                                  const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
+                              {(usuario.licencias || []).length ? (
+                                (usuario.licencias || []).map((licencia, index) => {
+                                  const estadoRenovacion = esLicenciaEnSeguimiento(licencia, usuario.correo)
+                                    ? obtenerEstadoRenovacion(licencia.fechaFin)
+                                    : { etiqueta: "Sin seguimiento", clases: "bg-slate-100 text-slate-600 ring-slate-200" };
                                   const fecha = licencia.fechaFin
                                     ? new Date(`${String(licencia.fechaFin).slice(0, 10)}T00:00:00`).toLocaleDateString("es-PE")
                                     : "Sin fecha registrada";
@@ -2328,7 +2330,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold text-slate-600">
-                      Licencias pagadas o con renovación
+                      Licencias asignadas
                     </p>
                     <p className="mt-0.5 text-[11px] text-slate-400">
                       Mostrando {licenciasDetalle.length} de {selectedUser.licencias?.length || 0} asignadas
@@ -2352,7 +2354,9 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
                     {licenciasDetalle.map((licencia, index) => {
                       const claveLicencia = String(licencia.skuId || "");
                       const guardando = guardandoFechaLicencia === claveLicencia;
-                      const estadoRenovacion = obtenerEstadoRenovacion(licencia.fechaFin);
+                      const estadoRenovacion = esLicenciaEnSeguimiento(licencia, selectedUser.correo)
+                                    ? obtenerEstadoRenovacion(licencia.fechaFin)
+                                    : { etiqueta: "Sin seguimiento", clases: "bg-slate-100 text-slate-600 ring-slate-200" };
 
                       return (
                         <div
