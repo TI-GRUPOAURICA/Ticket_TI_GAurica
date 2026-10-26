@@ -304,7 +304,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
     ].sort();
   }, [usuarios]);
 
-  const estadosDisponibles = useMemo(() => [...new Set(usuarios.map((usuario) => usuario.estado).filter(Boolean))].sort(), [usuarios]);
+  const estadosDisponibles = ["Activa", "Por vencer", "Expirada"];
 
   const tiposLicencia = useMemo(() => {
     const nombres = usuarios.flatMap((usuario) =>
@@ -414,7 +414,11 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
               ));
 
         const coincideEstado =
-          estadosSeleccionados.length === 0 || estadosSeleccionados.includes(usuario.estado);
+          estadosSeleccionados.length === 0 ||
+          (usuario.licencias || []).some((licencia) =>
+            esLicenciaEnSeguimiento(licencia, usuario.correo) &&
+            estadosSeleccionados.includes(obtenerEstadoRenovacion(licencia.fechaFin).etiqueta)
+          );
 
         return (
           coincideBusqueda &&
@@ -1532,7 +1536,7 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
 
             {/* FILTROS */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_190px_250px_170px] gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_190px_250px_260px] gap-3 mb-4">
 
               <div className="relative">
 
@@ -1602,11 +1606,11 @@ export default function Microsoft365({ esAdminGlobal = false } = {}) {
               </select>
 
               <fieldset className="flex min-h-11 items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 text-sm">
-  <legend className="sr-only">Filtrar por estados</legend>
+  <legend className="sr-only">Filtrar por estado de licencia</legend>
   {estadosDisponibles.map((estadoDisponible) => (
     <label key={estadoDisponible} className="flex items-center gap-2 text-slate-700">
       <input type="checkbox" checked={estadosSeleccionados.includes(estadoDisponible)} onChange={(e) => setEstadosSeleccionados((actuales) => e.target.checked ? [...actuales, estadoDisponible] : actuales.filter((estadoActual) => estadoActual !== estadoDisponible))} className="accent-[#3763a5]" />
-      {estadoDisponible === "Activo" ? "Activos" : estadoDisponible === "Bloqueado" ? "Bloqueados" : estadoDisponible}
+      {estadoDisponible}
     </label>
   ))}
 </fieldset>
