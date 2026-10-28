@@ -187,7 +187,7 @@ await llamar({
             </button>
           )}
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Recursos humanos</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#345D9D]">Recursos humanos</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Actas de entrega</h1>
             <p className="mt-2 text-sm text-slate-500">Registro privado de documentos de entrega de equipos.</p>
           </div>
@@ -203,7 +203,7 @@ await llamar({
       {puedeSubir && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-5 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><FileSignature size={20} /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#345D9D]"><FileSignature size={20} /></span>
             <div>
               <h2 className="font-semibold text-slate-900">Subir acta firmada</h2>
               <p className="text-sm text-slate-500">Adjunta el PDF firmado y registra los datos del colaborador.</p>
@@ -226,10 +226,10 @@ await llamar({
               <input required type="date" value={form.fechaEntrega} onChange={(e) => actualizar("fechaEntrega", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-3">Acta firmada (PDF, máximo 10 MB)
-              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
+              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#345D9D]" />
             </label>
             <div className="sm:col-span-2 lg:col-span-3">
-              <button disabled={subiendo} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+              <button disabled={subiendo} className="inline-flex items-center gap-2 rounded-xl bg-[#345D9D] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2d528c] disabled:opacity-50">
                 {subiendo ? <LoaderCircle size={17} className="animate-spin" /> : <Upload size={17} />}
                 {subiendo ? "Guardando acta..." : "Subir acta"}
               </button>
@@ -285,7 +285,7 @@ await llamar({
                     <td className="px-5 py-3.5 text-slate-600"><div className="max-w-56 truncate text-xs">{acta.nombre_archivo}</div></td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-1">
-                        <button onClick={() => verActa(acta)} disabled={abriendo === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
+                        <button onClick={() => verActa(acta)} disabled={abriendo === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[#345D9D] hover:bg-blue-50 disabled:opacity-50">
                           {abriendo === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Eye size={14} />}
                           Ver
                         </button>

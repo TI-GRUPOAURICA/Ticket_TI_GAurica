@@ -84,9 +84,9 @@ export default function Login() {
           />
           
           <img
-            src="/4xempresasaurica.png"
-            alt="Empresas del Grupo"
-            className="w-[180px] object-contain -mt-14"
+            src="/5-ISOTIPOS.svg"
+            alt="Cinco empresas del Grupo Aurica"
+            className="w-[260px] object-contain -mt-10"
           />
         </div>
 
