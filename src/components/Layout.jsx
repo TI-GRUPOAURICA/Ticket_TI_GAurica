@@ -77,7 +77,8 @@ export default function Layout({
   onNavigate,
   currentPage,
   onLogout,
-  esAdminGlobal = false
+  esAdminGlobal = false,
+  soloActas = false
 }) {
   const [isMobile, setIsMobile] = useState(
     window.innerWidth < 768
@@ -104,52 +105,54 @@ export default function Layout({
   /* =========================================================
      MENÚ
      ========================================================= */
-  const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard
-    },
-    {
-      id: "tickets",
-      label: "Tickets",
-      icon: Ticket
-    },
-    {
-      id: "inventario",
-      label: "Inventario",
-      icon: Laptop
-    },
-    {
-      id: "equipos-celulares",
-      label: "Equipos celulares",
-      icon: Smartphone
-    },
-    {
-      id: "radios",
-      label: "Radios",
-      icon: WalkieTalkieIcon
-    },
-    {
-      id: "impresoras",
-      label: "Impresoras",
-      icon: Printer
-    },
-    {
-      id: "reportes",
-      label: "Reportes",
-      icon: FileSpreadsheet
-    },
-    {
-      id: "microsoft-365",
-      label: "Microsoft 365",
-      icon: Cloud
-    },
-    ...(esAdminGlobal ? [
-      { id: "actas", label: "Actas", icon: FileSignature },
-      { id: "permisos", label: "Permisos", icon: Users }
-    ] : [])
-  ];
+  const menuItems = soloActas
+    ? [{ id: "actas", label: "Actas", icon: FileSignature }]
+    : [
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          icon: LayoutDashboard
+        },
+        {
+          id: "tickets",
+          label: "Tickets",
+          icon: Ticket
+        },
+        {
+          id: "inventario",
+          label: "Inventario",
+          icon: Laptop
+        },
+        {
+          id: "equipos-celulares",
+          label: "Equipos celulares",
+          icon: Smartphone
+        },
+        {
+          id: "radios",
+          label: "Radios",
+          icon: WalkieTalkieIcon
+        },
+        {
+          id: "impresoras",
+          label: "Impresoras",
+          icon: Printer
+        },
+        {
+          id: "reportes",
+          label: "Reportes",
+          icon: FileSpreadsheet
+        },
+        {
+          id: "microsoft-365",
+          label: "Microsoft 365",
+          icon: Cloud
+        },
+        ...(esAdminGlobal ? [
+          { id: "actas", label: "Actas", icon: FileSignature },
+          { id: "permisos", label: "Permisos", icon: Users }
+        ] : [])
+      ];
 
   return (
     <div

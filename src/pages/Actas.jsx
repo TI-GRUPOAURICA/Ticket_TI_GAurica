@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { ArrowLeft, Download, FileSignature, LoaderCircle, RefreshCw, Upload } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileSignature, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
 import { supabase } from "../lib/supabase";
 
@@ -17,6 +17,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
   const [descargando, setDescargando] = useState("");
+  const [abriendo, setAbriendo] = useState("");
+  const [actaEnVista, setActaEnVista] = useState(null);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [form, setForm] = useState({
@@ -123,10 +125,23 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     }
   };
 
+  const verActa = async (acta) => {
+    setAbriendo(acta.id);
+    setError("");
+    try {
+      const data = await llamar({ action: "ver", id: acta.id });
+      setActaEnVista({ ...acta, url: data.url });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAbriendo("");
+    }
+  };
+
   const descargar = async (acta) => {
     const ventana = window.open("about:blank", "_blank");
     if (!ventana) {
-      setError("Permite las ventanas emergentes para abrir el acta.");
+      setError("Permite las ventanas emergentes para descargar el acta.");
       return;
     }
     ventana.opener = null;
@@ -224,10 +239,16 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
                     <td className="px-5 py-3.5 text-slate-600">{acta.fecha_entrega}</td>
                     <td className="max-w-56 truncate px-5 py-3.5 text-slate-600">{acta.nombre_archivo}</td>
                     <td className="px-5 py-3.5 text-right">
-                      <button onClick={() => descargar(acta)} disabled={descargando === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
-                        {descargando === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />}
-                        Descargar
-                      </button>
+                      <div className="inline-flex items-center gap-1">
+                        <button onClick={() => verActa(acta)} disabled={abriendo === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
+                          {abriendo === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Eye size={14} />}
+                          Ver
+                        </button>
+                        <button onClick={() => descargar(acta)} disabled={descargando === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50">
+                          {descargando === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />}
+                          Descargar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -237,6 +258,21 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
         )}
       </section>
       <p className="text-xs text-slate-400">Los documentos se guardan en almacenamiento privado y solo usuarios autorizados pueden consultarlos.</p>
+
+      {actaEnVista && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="presentation" onClick={() => setActaEnVista(null)}>
+          <section role="dialog" aria-modal="true" aria-label={"Vista previa de " + actaEnVista.nombre_archivo} className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
+              <div className="min-w-0">
+                <h2 className="truncate font-semibold text-slate-900">{actaEnVista.nombre_archivo}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{actaEnVista.nombre_colaborador} · {actaEnVista.empresa}</p>
+              </div>
+              <button type="button" onClick={() => setActaEnVista(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Cerrar vista previa"><X size={20} /></button>
+            </header>
+            <iframe title={"Acta de " + actaEnVista.nombre_colaborador} src={actaEnVista.url} className="min-h-0 w-full flex-1 bg-slate-100" />
+          </section>
+        </div>
+      )}
     </main>
   );
 }

@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
       return json({ success: true, id: data.id });
     }
 
-    if (action === "descargar") {
+    if (action === "ver" || action === "descargar") {
       const id = String(body.id || "");
       const { data: acta, error: errorActa } = await supabase
         .from("actas_entrega")
@@ -156,9 +156,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (errorActa) throw errorActa;
       if (!acta) return json({ error: "No se encontró el acta." }, 404);
+      const opciones = action === "descargar" ? { download: true } : {};
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .createSignedUrl(acta.ruta_archivo, 60);
+        .createSignedUrl(acta.ruta_archivo, 60, opciones);
       if (error) throw error;
       return json({ url: data.signedUrl });
     }

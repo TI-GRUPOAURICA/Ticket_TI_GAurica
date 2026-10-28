@@ -186,7 +186,16 @@ export default function App() {
 
   // Nadia también puede abrir Actas desde su portal de colaboradora.
   if (viendoActas) {
-    return <Actas userEmail={userEmail} onVolver={() => setViendoActas(false)} />;
+    return (
+      <Layout
+        onNavigate={() => setViendoActas(true)}
+        currentPage="actas"
+        onLogout={handleLogout}
+        soloActas
+      >
+        <Actas userEmail={userEmail} onVolver={() => setViendoActas(false)} />
+      </Layout>
+    );
   }
 
   // ----------------------------------------------------------
