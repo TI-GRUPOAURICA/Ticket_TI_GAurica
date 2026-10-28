@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Ticket,
+  FileSignature,
   Laptop,
   Smartphone,
   FileSpreadsheet,
@@ -144,7 +145,10 @@ export default function Layout({
       label: "Microsoft 365",
       icon: Cloud
     },
-    ...(esAdminGlobal ? [{ id: "permisos", label: "Permisos", icon: Users }] : [])
+    ...(esAdminGlobal ? [
+      { id: "actas", label: "Actas", icon: FileSignature },
+      { id: "permisos", label: "Permisos", icon: Users }
+    ] : [])
   ];
 
   return (

@@ -11,6 +11,7 @@ import Tickets from "./pages/Tickets";
 import Layout from "./components/Layout";
 
 import PortalUsuario from "./pages/PortalUsuario";
+import Actas from "./pages/Actas";
 
 import Reportes from "./pages/Reportes";
 
@@ -60,6 +61,8 @@ export default function App() {
 
   const [viendoPortal, setViendoPortal] =
     useState(false);
+
+  const [viendoActas, setViendoActas] = useState(false);
 
   const [viendoSeguimiento, setViendoSeguimiento] = useState(false);
   const [accesoEmpresa, setAccesoEmpresa] = useState(null);
@@ -168,6 +171,9 @@ export default function App() {
       case "permisos":
         return esAdmin ? <Permisos /> : <Dashboard onNavigate={setCurrentPage} />;
 
+      case "actas":
+        return esAdmin ? <Actas userEmail={userEmail} /> : <Dashboard onNavigate={setCurrentPage} />;
+
       default:
 
         return (
@@ -177,6 +183,11 @@ export default function App() {
         );
     }
   };
+
+  // Nadia también puede abrir Actas desde su portal de colaboradora.
+  if (viendoActas) {
+    return <Actas userEmail={userEmail} onVolver={() => setViendoActas(false)} />;
+  }
 
   // ----------------------------------------------------------
   // PRIORIDAD 1: Portal de registro de tickets
@@ -264,6 +275,9 @@ export default function App() {
       onSeguimiento={() =>
         setViendoSeguimiento(true)
       }
+
+      mostrarActas={userEmail.trim().toLowerCase() === "asistenterrhh@auricasac.com"}
+      onActas={() => setViendoActas(true)}
 
       onLogout={handleLogout}
 

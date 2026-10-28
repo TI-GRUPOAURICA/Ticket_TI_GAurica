@@ -40,6 +40,10 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+[functions.actas-entrega]
+enabled = true
+verify_jwt = false
+
 [functions.sync-microsoft365]
 enabled = true
 verify_jwt = false

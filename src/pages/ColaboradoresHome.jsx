@@ -1,4 +1,4 @@
-import { Ticket, ClipboardList } from "lucide-react";
+import { Ticket, ClipboardList, FileSignature } from "lucide-react";
 
 const EMPRESA_LOGOS = {
   AURICA: "/grupoaurica-letrasazules.png",
@@ -20,6 +20,8 @@ export default function ColaboradorHome({
   user,
   onRegistrarTicket,
   onSeguimiento,
+  onActas,
+  mostrarActas = false,
   onLogout,
 }) {
   const empresa = user?.company?.toUpperCase() || "AURICA";
@@ -48,6 +50,14 @@ export default function ColaboradorHome({
               <div><h2 className="font-semibold text-lg" style={{ color: tema.primary }}>Seguimiento ticket</h2><p className="text-sm mt-1" style={{ color: "#718096" }}>Consulta el estado de tu solicitud</p></div>
             </div>
           </button>
+          {mostrarActas && (
+            <button onClick={onActas} className="w-full bg-white rounded-2xl p-5 text-left transition hover:scale-[1.01]" style={{ border: "1px solid " + tema.border, boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: tema.light }}><FileSignature size={28} color={tema.primary} strokeWidth={2} /></div>
+                <div><h2 className="font-semibold text-lg" style={{ color: tema.primary }}>Actas de entrega</h2><p className="text-sm mt-1" style={{ color: "#718096" }}>Sube y consulta actas firmadas</p></div>
+              </div>
+            </button>
+          )}
         </div>
         <div className="text-center mt-6">
           <button onClick={onLogout} className="px-8 py-3 rounded-xl text-sm font-medium transition text-white" style={{ background: tema.primary, border: "none" }}>Cerrar sesión</button>
