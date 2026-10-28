@@ -20,6 +20,9 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
+  const [analizando, setAnalizando] = useState(false);
+  const [rutaPreparada, setRutaPreparada] = useState("");
+  const [estadoAnalisis, setEstadoAnalisis] = useState("");
   const [descargando, setDescargando] = useState("");
   const [abriendo, setAbriendo] = useState("");
   const [actaEnVista, setActaEnVista] = useState(null);
@@ -31,7 +34,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     empresa: "",
     tipoActa: "Entrega inicial",
     equipos: [{ tipo: "", descripcion: "", identificador: "" }],
-    fechaEntrega: new Date().toISOString().slice(0, 10),
+    fechaEntrega: "",
     archivo: null,
   });
 
@@ -87,12 +90,60 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const agregarEquipo = () => setForm((actual) => ({ ...actual, equipos: [...actual.equipos, { tipo: "", descripcion: "", identificador: "" }] }));
   const quitarEquipo = (indice) => setForm((actual) => ({ ...actual, equipos: actual.equipos.filter((_, i) => i !== indice) }));
 
+  const prepararArchivo = async (archivo) => {
+    const preparado = await llamar({ action: "preparar-carga", nombreArchivo: archivo.name, tipoArchivo: archivo.type, tamanoBytes: archivo.size });
+    const { error: errorCarga } = await supabase.storage.from(BUCKET).uploadToSignedUrl(preparado.rutaArchivo, preparado.token, archivo, { contentType: "application/pdf", upsert: false });
+    if (errorCarga) throw errorCarga;
+    return preparado.rutaArchivo;
+  };
+
+  const analizarActa = async () => {
+    const archivo = form.archivo;
+    if (!archivo || archivo.type !== "application/pdf" || archivo.size > MAX_BYTES) {
+      setError("Selecciona un PDF de hasta 10 MB.");
+      return;
+    }
+    setAnalizando(true);
+    setError("");
+    setEstadoAnalisis("");
+    try {
+      const ruta = rutaPreparada || await prepararArchivo(archivo);
+      setRutaPreparada(ruta);
+      const respuesta = await llamar({ action: "analizar", rutaArchivo: ruta, nombreArchivo: archivo.name });
+      const datos = respuesta.datos || {};
+      if (!datos.esActa) {
+        setEstadoAnalisis("Este archivo no parece una guía de entrega. Selecciona la guía correcta.");
+        return;
+      }
+      const equipos = (datos.equipos || []).filter((equipo) => equipo.tipo || equipo.descripcion).map((equipo) => ({
+        tipo: equipo.tipo || "",
+        descripcion: equipo.descripcion || "",
+        identificador: equipo.identificador || "",
+        confianzaIdentificador: equipo.confianzaIdentificador || "baja",
+      }));
+      setForm((actual) => ({
+        ...actual,
+        nombreColaborador: datos.nombreColaborador || "",
+        dni: datos.dni || "",
+        empresa: EMPRESAS.includes(datos.empresa) ? datos.empresa : "",
+        fechaEntrega: /^\d{4}-\d{2}-\d{2}$/.test(datos.fechaEntrega || "") ? datos.fechaEntrega : "",
+        equipos: equipos.length ? equipos : [{ tipo: "", descripcion: "", identificador: "" }],
+      }));
+      setEstadoAnalisis("Lectura lista. Revisa y corrige los datos detectados, especialmente los manuscritos y las series, antes de guardar.");
+    } catch (e) {
+      setError(e.message || "No se pudo leer el acta.");
+      setEstadoAnalisis("Puedes completar los campos manualmente y guardar el PDF.");
+    } finally {
+      setAnalizando(false);
+    }
+  };
+
   const subirActa = async (event) => {
     event.preventDefault();
     const formulario = event.currentTarget;
     const archivo = form.archivo;
-    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa || !form.tipoActa || !form.fechaEntrega || !archivo || form.equipos.length === 0 || form.equipos.some((equipo) => !equipo.tipo.trim() || !equipo.descripcion.trim() || !equipo.identificador.trim())) {
-      setError("Completa los datos y selecciona el PDF del acta.");
+    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa || !form.tipoActa || !form.fechaEntrega || !archivo || form.equipos.length === 0 || form.equipos.some((equipo) => !equipo.tipo.trim() || !equipo.descripcion.trim())) {
+      setError("Completa colaborador, DNI, empresa, fecha y los equipos. El número de serie es opcional si el artículo no tiene uno.");
       return;
     }
     if (archivo.type !== "application/pdf" || archivo.size > MAX_BYTES) {
@@ -104,21 +155,10 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     setError("");
     setMensaje("");
     try {
-      const preparado = await llamar({
-        action: "preparar-carga",
-        nombreArchivo: archivo.name,
-        tipoArchivo: archivo.type,
-        tamanoBytes: archivo.size,
-      });
-      const { error: errorCarga } = await supabase.storage
-        .from(BUCKET)
-        .uploadToSignedUrl(preparado.rutaArchivo, preparado.token, archivo, {
-          contentType: "application/pdf",
-          upsert: false,
-        });
-      if (errorCarga) throw errorCarga;
+      const rutaArchivo = rutaPreparada || await prepararArchivo(archivo);
+      setRutaPreparada(rutaArchivo);
 
-      await llamar({
+await llamar({
         action: "registrar",
         nombreColaborador: form.nombreColaborador,
         dni: form.dni,
@@ -127,7 +167,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
         equipos: form.equipos,
         fechaEntrega: form.fechaEntrega,
         nombreArchivo: archivo.name,
-        rutaArchivo: preparado.rutaArchivo,
+        rutaArchivo,
         tamanoBytes: archivo.size,
       });
       setForm({
@@ -136,9 +176,11 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
         empresa: "",
         tipoActa: "Entrega inicial",
         equipos: [{ tipo: "", descripcion: "", identificador: "" }],
-        fechaEntrega: new Date().toISOString().slice(0, 10),
+        fechaEntrega: "",
         archivo: null,
       });
+      setRutaPreparada("");
+      setEstadoAnalisis("");
       formulario.reset();
       setMensaje("Acta cargada y registrada correctamente.");
       await cargar();
@@ -235,17 +277,25 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
               {form.equipos.map((equipo, indice) => <div key={indice} className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-3">
                 <label className="text-xs font-medium text-slate-600">Tipo de equipo<input required value={equipo.tipo} onChange={(e) => actualizarEquipo(indice, "tipo", e.target.value)} placeholder="Laptop, celular, monitor..." className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
                 <label className="text-xs font-medium text-slate-600">Descripción<input required value={equipo.descripcion} onChange={(e) => actualizarEquipo(indice, "descripcion", e.target.value)} placeholder="Marca / modelo" className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
-                <label className="text-xs font-medium text-slate-600">Código o número de serie<div className="mt-1 flex gap-2"><input required value={equipo.identificador} onChange={(e) => actualizarEquipo(indice, "identificador", e.target.value)} placeholder="Código inventario / serie" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" />{form.equipos.length > 1 && <button type="button" onClick={() => quitarEquipo(indice)} className="rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label="Quitar equipo">×</button>}</div></label>
+                <label className="text-xs font-medium text-slate-600">Serie, IMEI o código (si tiene)<div className="mt-1 flex gap-2"><input value={equipo.identificador} onChange={(e) => actualizarEquipo(indice, "identificador", e.target.value)} placeholder="Serie / IMEI / código (si tiene)" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" />{form.equipos.length > 1 && <button type="button" onClick={() => quitarEquipo(indice)} className="rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label="Quitar equipo">×</button>}</div></label>
               </div>)}
               <button type="button" onClick={agregarEquipo} className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">+ Añadir otro equipo</button>
             </fieldset>
             <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-3">Acta firmada (PDF, máximo 10 MB)
-              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
+              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => { actualizar("archivo", e.target.files?.[0] || null); setRutaPreparada(""); setEstadoAnalisis(""); }} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
             </label>
+            {form.archivo && <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-3">
+              <button type="button" onClick={analizarActa} disabled={analizando || subiendo} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-50">
+                {analizando ? <LoaderCircle size={16} className="animate-spin" /> : <Eye size={16} />}
+                {analizando ? "Leyendo guía..." : "Leer datos del PDF"}
+              </button>
+              <span className="text-xs text-slate-500">La lectura es una propuesta; verifica todo antes de guardar.</span>
+            </div>}
+            {estadoAnalisis && <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:col-span-2 lg:col-span-3">{estadoAnalisis}</div>}
             <div className="sm:col-span-2 lg:col-span-3">
-              <button disabled={subiendo} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+              <button disabled={subiendo || analizando} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
                 {subiendo ? <LoaderCircle size={17} className="animate-spin" /> : <Upload size={17} />}
-                {subiendo ? "Subiendo acta..." : "Subir acta"}
+                {subiendo ? "Guardando acta..." : "Guardar acta"}
               </button>
             </div>
           </form>

@@ -58,6 +58,51 @@ function validarFecha(fecha: unknown) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === fecha;
 }
 
+async function analizarActaPdf(archivo: Blob, nombreArchivo: string) {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) throw new Error("Falta configurar OPENAI_API_KEY como secreto de Supabase.");
+  const bytes = new Uint8Array(await archivo.arrayBuffer());
+  const partes: string[] = [];
+  for (let i = 0; i < bytes.length; i += 0x8000) partes.push(String.fromCharCode(...bytes.subarray(i, i + 0x8000)));
+  const pdfBase64 = btoa(partes.join(""));
+  const empresas = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"];
+  const confianza = { type: "string", enum: ["alta", "media", "baja"] };
+  const textoNullable = { type: ["string", "null"] };
+  const schema = {
+    type: "object", additionalProperties: false,
+    required: ["esActa", "nombreColaborador", "confianzaNombre", "dni", "confianzaDni", "empresa", "confianzaEmpresa", "fechaEntrega", "confianzaFecha", "equipos"],
+    properties: {
+      esActa: { type: "boolean" }, nombreColaborador: textoNullable, confianzaNombre: confianza,
+      dni: textoNullable, confianzaDni: confianza,
+      empresa: { type: ["string", "null"], enum: [...empresas, null] }, confianzaEmpresa: confianza,
+      fechaEntrega: textoNullable, confianzaFecha: confianza,
+      equipos: { type: "array", items: {
+        type: "object", additionalProperties: false,
+        required: ["tipo", "descripcion", "identificador", "confianzaIdentificador"],
+        properties: { tipo: { type: "string" }, descripcion: { type: "string" }, identificador: textoNullable, confianzaIdentificador: confianza },
+      } },
+    },
+  };
+  const respuesta = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(90000),
+    body: JSON.stringify({
+      model: Deno.env.get("OPENAI_ACTAS_MODEL") || "gpt-4.1-mini", store: false, max_output_tokens: 2500,
+      input: [{ role: "user", content: [
+        { type: "input_file", filename: nombreArchivo, file_data: `data:application/pdf;base64,${pdfBase64}`, detail: "high" },
+        { type: "input_text", text: "Lee esta guía de entrega de equipos. Extrae solo datos presentes en el documento; nunca inventes. Devuelve una fila por cada equipo o accesorio. Copia serie, IMEI o código exactamente; usa null si no hay o no se lee. No deduzcas empresa si no aparece claramente. Pon confianza baja si hay duda. Si no es un acta/guía de entrega, marca esActa=false y deja los datos nulos o la lista de equipos vacía." },
+      ] }],
+      text: { format: { type: "json_schema", name: "acta_entrega", strict: true, schema } },
+    }),
+  });
+  const cuerpo = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    console.error("Error del servicio de lectura de actas:", respuesta.status);
+    throw new Error(respuesta.status === 401 ? "La clave de lectura no es válida." : "No se pudo leer el PDF automáticamente. Puedes completar los campos manualmente.");
+  }
+  const texto = (cuerpo.output || []).flatMap((item: any) => item.content || []).find((item: any) => item.type === "output_text")?.text;
+  if (!texto) throw new Error("No se reconocieron datos. Puedes completar los campos manualmente.");
+  return JSON.parse(texto);
+}
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Método no permitido." }, 405);
@@ -104,6 +149,24 @@ Deno.serve(async (req) => {
       return json({ rutaArchivo, token: data.token });
     }
 
+    if (action === "analizar") {
+      if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede analizar actas." }, 403);
+      const rutaArchivo = String(body.rutaArchivo || "").trim();
+      if (!rutaArchivo.startsWith("nadia/")) return json({ error: "La ruta del PDF no es válida." }, 400);
+      const { data: archivo, error } = await supabase.storage.from(BUCKET).download(rutaArchivo);
+      if (error || !archivo) return json({ error: "No se encontró el PDF. Vuelve a seleccionarlo." }, 404);
+      if (archivo.size > MAX_BYTES) return json({ error: "El PDF supera el máximo de 10 MB." }, 400);
+      const bytes = new Uint8Array(await archivo.slice(0, 5).arrayBuffer());
+      if (new TextDecoder().decode(bytes) !== "%PDF-") return json({ error: "El archivo seleccionado no es un PDF válido." }, 400);
+      try {
+        const datos = await analizarActaPdf(archivo, String(body.nombreArchivo || "acta.pdf").slice(0, 150));
+        return json({ datos });
+      } catch (errorAnalisis) {
+        const mensaje = errorAnalisis instanceof Error ? errorAnalisis.message : "No se pudo analizar el PDF.";
+        return json({ error: mensaje }, mensaje.includes("Falta configurar") ? 503 : 502);
+      }
+    }
+
     if (action === "registrar") {
       if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede registrar actas." }, 403);
       const nombreColaborador = String(body.nombreColaborador || "").trim();
@@ -114,7 +177,7 @@ Deno.serve(async (req) => {
       const nombreArchivo = String(body.nombreArchivo || "").trim();
       const rutaArchivo = String(body.rutaArchivo || "").trim();
       const tamanoBytes = Number(body.tamanoBytes || 0);
-      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || equipos.length < 1 || equipos.length > 50 || equipos.some((equipo: any) => !String(equipo.tipo || "").trim() || !String(equipo.descripcion || "").trim() || !String(equipo.identificador || "").trim() || String(equipo.tipo).length > 100 || String(equipo.descripcion).length > 300 || String(equipo.identificador).length > 150) || !nombreArchivo ||
+      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || equipos.length < 1 || equipos.length > 50 || equipos.some((equipo: any) => !String(equipo.tipo || "").trim() || !String(equipo.descripcion || "").trim() || String(equipo.tipo).length > 100 || String(equipo.descripcion).length > 300 || String(equipo.identificador).length > 150) || !nombreArchivo ||
           !validarFecha(body.fechaEntrega) ||
           !rutaArchivo.startsWith("nadia/") ||
           !nombreArchivo.toLowerCase().endsWith(".pdf") ||
@@ -149,7 +212,7 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (error) throw error;
-      const { error: errorEquipos } = await supabase.from("actas_entrega_equipos").insert(equipos.map((equipo: any) => ({ acta_id: data.id, tipo: String(equipo.tipo).trim(), descripcion: String(equipo.descripcion).trim(), identificador: String(equipo.identificador).trim() })));
+      const { error: errorEquipos } = await supabase.from("actas_entrega_equipos").insert(equipos.map((equipo: any) => ({ acta_id: data.id, tipo: String(equipo.tipo).trim(), descripcion: String(equipo.descripcion).trim(), identificador: String(equipo.identificador || "").trim() })));
       if (errorEquipos) { await supabase.from("actas_entrega").delete().eq("id", data.id); throw errorEquipos; }
       return json({ success: true, id: data.id });
     }
