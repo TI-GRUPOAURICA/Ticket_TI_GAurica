@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { ArrowLeft, Download, Eye, FileSignature, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
@@ -14,6 +14,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const correo = String(userEmail || accounts[0]?.username || "").trim().toLowerCase();
   const puedeSubir = correo === NADIA || esAdminGlobal;
   const [actas, setActas] = useState([]);
+  const [filtroEmpresa, setFiltroEmpresa] = useState("");
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
   const [descargando, setDescargando] = useState("");
@@ -64,6 +65,18 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  const empresas = useMemo(
+    () => [...new Set(actas.map((acta) => acta.empresa).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es")),
+    [actas]
+  );
+  const actasFiltradas = useMemo(
+    () => filtroEmpresa
+      ? actas.filter((acta) => acta.empresa === filtroEmpresa)
+      : actas,
+    [actas, filtroEmpresa]
+  );
 
   const actualizar = (campo, valor) => setForm((actual) => ({ ...actual, [campo]: valor }));
 
@@ -217,13 +230,32 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
       )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div><h2 className="font-semibold text-slate-900">Actas registradas</h2><p className="mt-1 text-sm text-slate-500">{actas.length} documentos</p></div>
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-900">Actas registradas</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {actasFiltradas.length}{filtroEmpresa ? " de " + actas.length : ""} {actasFiltradas.length === 1 ? "documento" : "documentos"}
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+            <span>Empresa</span>
+            <select
+              value={filtroEmpresa}
+              onChange={(e) => setFiltroEmpresa(e.target.value)}
+              className="min-w-44 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              aria-label="Filtrar actas por empresa"
+            >
+              <option value="">Todas las empresas</option>
+              {empresas.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}
+            </select>
+          </label>
         </div>
         {cargando ? (
           <div className="p-10 text-center text-sm text-slate-500">Cargando actas...</div>
         ) : actas.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">Aún no hay actas registradas.</div>
+        ) : actasFiltradas.length === 0 ? (
+          <div className="p-10 text-center text-sm text-slate-500">No hay actas registradas para {filtroEmpresa}.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
@@ -231,7 +263,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
                 <tr><th className="px-5 py-3">Colaborador</th><th className="px-5 py-3">DNI</th><th className="px-5 py-3">Empresa</th><th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Documento</th><th className="px-5 py-3 text-right">Acción</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {actas.map((acta) => (
+                {actasFiltradas.map((acta) => (
                   <tr key={acta.id} className="hover:bg-slate-50">
                     <td className="px-5 py-3.5 font-medium text-slate-800">{acta.nombre_colaborador}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.dni}</td>
