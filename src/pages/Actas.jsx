@@ -20,9 +20,6 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
-  const [analizando, setAnalizando] = useState(false);
-  const [rutaPreparada, setRutaPreparada] = useState("");
-  const [estadoAnalisis, setEstadoAnalisis] = useState("");
   const [descargando, setDescargando] = useState("");
   const [abriendo, setAbriendo] = useState("");
   const [actaEnVista, setActaEnVista] = useState(null);
@@ -34,7 +31,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     empresa: "",
     tipoActa: "Entrega inicial",
     equipos: [{ tipo: "", descripcion: "", identificador: "" }],
-    fechaEntrega: "",
+    fechaEntrega: new Date().toISOString().slice(0, 10),
     archivo: null,
   });
 
@@ -97,47 +94,6 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     return preparado.rutaArchivo;
   };
 
-  const analizarActa = async () => {
-    const archivo = form.archivo;
-    if (!archivo || archivo.type !== "application/pdf" || archivo.size > MAX_BYTES) {
-      setError("Selecciona un PDF de hasta 10 MB.");
-      return;
-    }
-    setAnalizando(true);
-    setError("");
-    setEstadoAnalisis("");
-    try {
-      const ruta = rutaPreparada || await prepararArchivo(archivo);
-      setRutaPreparada(ruta);
-      const respuesta = await llamar({ action: "analizar", rutaArchivo: ruta, nombreArchivo: archivo.name });
-      const datos = respuesta.datos || {};
-      if (!datos.esActa) {
-        setEstadoAnalisis("Este archivo no parece una guía de entrega. Selecciona la guía correcta.");
-        return;
-      }
-      const equipos = (datos.equipos || []).filter((equipo) => equipo.tipo || equipo.descripcion).map((equipo) => ({
-        tipo: equipo.tipo || "",
-        descripcion: equipo.descripcion || "",
-        identificador: equipo.identificador || "",
-        confianzaIdentificador: equipo.confianzaIdentificador || "baja",
-      }));
-      setForm((actual) => ({
-        ...actual,
-        nombreColaborador: datos.nombreColaborador || "",
-        dni: datos.dni || "",
-        empresa: EMPRESAS.includes(datos.empresa) ? datos.empresa : "",
-        fechaEntrega: /^\d{4}-\d{2}-\d{2}$/.test(datos.fechaEntrega || "") ? datos.fechaEntrega : "",
-        equipos: equipos.length ? equipos : [{ tipo: "", descripcion: "", identificador: "" }],
-      }));
-      setEstadoAnalisis("Lectura lista. Revisa y corrige los datos detectados, especialmente los manuscritos y las series, antes de guardar.");
-    } catch (e) {
-      setError(e.message || "No se pudo leer el acta.");
-      setEstadoAnalisis("Puedes completar los campos manualmente y guardar el PDF.");
-    } finally {
-      setAnalizando(false);
-    }
-  };
-
   const subirActa = async (event) => {
     event.preventDefault();
     const formulario = event.currentTarget;
@@ -155,8 +111,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     setError("");
     setMensaje("");
     try {
-      const rutaArchivo = rutaPreparada || await prepararArchivo(archivo);
-      setRutaPreparada(rutaArchivo);
+      const rutaArchivo = await prepararArchivo(archivo);
+
 
 await llamar({
         action: "registrar",
@@ -176,11 +132,11 @@ await llamar({
         empresa: "",
         tipoActa: "Entrega inicial",
         equipos: [{ tipo: "", descripcion: "", identificador: "" }],
-        fechaEntrega: "",
+        fechaEntrega: new Date().toISOString().slice(0, 10),
         archivo: null,
       });
-      setRutaPreparada("");
-      setEstadoAnalisis("");
+      
+      
       formulario.reset();
       setMensaje("Acta cargada y registrada correctamente.");
       await cargar();
@@ -282,20 +238,12 @@ await llamar({
               <button type="button" onClick={agregarEquipo} className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">+ Añadir otro equipo</button>
             </fieldset>
             <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-3">Acta firmada (PDF, máximo 10 MB)
-              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => { actualizar("archivo", e.target.files?.[0] || null); setRutaPreparada(""); setEstadoAnalisis(""); }} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
+              <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
             </label>
-            {form.archivo && <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-3">
-              <button type="button" onClick={analizarActa} disabled={analizando || subiendo} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-50">
-                {analizando ? <LoaderCircle size={16} className="animate-spin" /> : <Eye size={16} />}
-                {analizando ? "Leyendo guía..." : "Leer datos del PDF"}
-              </button>
-              <span className="text-xs text-slate-500">La lectura es una propuesta; verifica todo antes de guardar.</span>
-            </div>}
-            {estadoAnalisis && <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:col-span-2 lg:col-span-3">{estadoAnalisis}</div>}
             <div className="sm:col-span-2 lg:col-span-3">
-              <button disabled={subiendo || analizando} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+              <button disabled={subiendo} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
                 {subiendo ? <LoaderCircle size={17} className="animate-spin" /> : <Upload size={17} />}
-                {subiendo ? "Guardando acta..." : "Guardar acta"}
+                {subiendo ? "Guardando acta..." : "Subir acta"}
               </button>
             </div>
           </form>
