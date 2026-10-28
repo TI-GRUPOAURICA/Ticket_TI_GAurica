@@ -8,6 +8,8 @@ const URL = import.meta.env.VITE_SUPABASE_URL + "/functions/v1/actas-entrega";
 const BUCKET = "actas-entrega";
 const NADIA = "asistenterrhh@auricasac.com";
 const MAX_BYTES = 10 * 1024 * 1024;
+const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"];
+const TIPOS_ACTA = ["Entrega inicial", "Entrega adicional"];
 
 export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const { instance, accounts } = useMsal();
@@ -15,6 +17,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const puedeSubir = correo === NADIA || esAdminGlobal;
   const [actas, setActas] = useState([]);
   const [filtroEmpresa, setFiltroEmpresa] = useState("");
+  const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
   const [descargando, setDescargando] = useState("");
@@ -26,6 +29,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     nombreColaborador: "",
     dni: "",
     empresa: "",
+    tipoActa: "Entrega inicial",
+    equipos: [{ tipo: "", descripcion: "", identificador: "" }],
     fechaEntrega: new Date().toISOString().slice(0, 10),
     archivo: null,
   });
@@ -66,25 +71,27 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     cargar();
   }, [cargar]);
 
-  const empresas = useMemo(
-    () => [...new Set(actas.map((acta) => acta.empresa).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, "es")),
-    [actas]
-  );
-  const actasFiltradas = useMemo(
-    () => filtroEmpresa
-      ? actas.filter((acta) => acta.empresa === filtroEmpresa)
-      : actas,
-    [actas, filtroEmpresa]
-  );
+  const empresas = EMPRESAS;
+  const actasFiltradas = useMemo(() => {
+    const consulta = busqueda.trim().toLocaleLowerCase("es");
+    return actas.filter((acta) => {
+      if (filtroEmpresa && acta.empresa !== filtroEmpresa) return false;
+      if (!consulta) return true;
+      const campos = [acta.nombre_colaborador, acta.dni, ...(acta.equipos || []).flatMap((equipo) => [equipo.tipo, equipo.descripcion, equipo.identificador])];
+      return campos.some((campo) => String(campo || "").toLocaleLowerCase("es").includes(consulta));
+    });
+  }, [actas, filtroEmpresa, busqueda]);
 
   const actualizar = (campo, valor) => setForm((actual) => ({ ...actual, [campo]: valor }));
+  const actualizarEquipo = (indice, campo, valor) => setForm((actual) => ({ ...actual, equipos: actual.equipos.map((equipo, i) => i === indice ? { ...equipo, [campo]: valor } : equipo) }));
+  const agregarEquipo = () => setForm((actual) => ({ ...actual, equipos: [...actual.equipos, { tipo: "", descripcion: "", identificador: "" }] }));
+  const quitarEquipo = (indice) => setForm((actual) => ({ ...actual, equipos: actual.equipos.filter((_, i) => i !== indice) }));
 
   const subirActa = async (event) => {
     event.preventDefault();
     const formulario = event.currentTarget;
     const archivo = form.archivo;
-    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa.trim() || !form.fechaEntrega || !archivo) {
+    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa || !form.tipoActa || !form.fechaEntrega || !archivo || form.equipos.length === 0 || form.equipos.some((equipo) => !equipo.tipo.trim() || !equipo.descripcion.trim() || !equipo.identificador.trim())) {
       setError("Completa los datos y selecciona el PDF del acta.");
       return;
     }
@@ -116,6 +123,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
         nombreColaborador: form.nombreColaborador,
         dni: form.dni,
         empresa: form.empresa,
+        tipoActa: form.tipoActa,
+        equipos: form.equipos,
         fechaEntrega: form.fechaEntrega,
         nombreArchivo: archivo.name,
         rutaArchivo: preparado.rutaArchivo,
@@ -125,6 +134,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
         nombreColaborador: "",
         dni: "",
         empresa: "",
+        tipoActa: "Entrega inicial",
+        equipos: [{ tipo: "", descripcion: "", identificador: "" }],
         fechaEntrega: new Date().toISOString().slice(0, 10),
         archivo: null,
       });
@@ -211,12 +222,24 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
               <input required value={form.dni} onChange={(e) => actualizar("dni", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-medium text-slate-700">Empresa
-              <input required value={form.empresa} onChange={(e) => actualizar("empresa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
+              <select required value={form.empresa} onChange={(e) => actualizar("empresa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"><option value="">Selecciona una empresa</option>{EMPRESAS.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}</select>
+            </label>
+            <label className="text-sm font-medium text-slate-700">Tipo de entrega
+              <select required value={form.tipoActa} onChange={(e) => actualizar("tipoActa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">{TIPOS_ACTA.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}</select>
             </label>
             <label className="text-sm font-medium text-slate-700">Fecha de entrega
               <input required type="date" value={form.fechaEntrega} onChange={(e) => actualizar("fechaEntrega", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
-            <label className="text-sm font-medium text-slate-700 sm:col-span-2">Acta firmada (PDF, máximo 10 MB)
+            <fieldset className="space-y-3 sm:col-span-2 lg:col-span-3">
+              <legend className="text-sm font-semibold text-slate-700">Equipos incluidos en esta entrega</legend>
+              {form.equipos.map((equipo, indice) => <div key={indice} className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-3">
+                <label className="text-xs font-medium text-slate-600">Tipo de equipo<input required value={equipo.tipo} onChange={(e) => actualizarEquipo(indice, "tipo", e.target.value)} placeholder="Laptop, celular, monitor..." className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
+                <label className="text-xs font-medium text-slate-600">Descripción<input required value={equipo.descripcion} onChange={(e) => actualizarEquipo(indice, "descripcion", e.target.value)} placeholder="Marca / modelo" className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
+                <label className="text-xs font-medium text-slate-600">Código o número de serie<div className="mt-1 flex gap-2"><input required value={equipo.identificador} onChange={(e) => actualizarEquipo(indice, "identificador", e.target.value)} placeholder="Código inventario / serie" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" />{form.equipos.length > 1 && <button type="button" onClick={() => quitarEquipo(indice)} className="rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label="Quitar equipo">×</button>}</div></label>
+              </div>)}
+              <button type="button" onClick={agregarEquipo} className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">+ Añadir otro equipo</button>
+            </fieldset>
+            <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-3">Acta firmada (PDF, máximo 10 MB)
               <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
             </label>
             <div className="sm:col-span-2 lg:col-span-3">
@@ -237,6 +260,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
               {actasFiltradas.length}{filtroEmpresa ? " de " + actas.length : ""} {actasFiltradas.length === 1 ? "documento" : "documentos"}
             </p>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar colaborador, DNI o equipo" aria-label="Buscar actas por colaborador o equipo" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-64" />
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
             <span>Empresa</span>
             <select
@@ -249,18 +274,19 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
               {empresas.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}
             </select>
           </label>
+          </div>
         </div>
         {cargando ? (
           <div className="p-10 text-center text-sm text-slate-500">Cargando actas...</div>
         ) : actas.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">Aún no hay actas registradas.</div>
         ) : actasFiltradas.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-500">No hay actas registradas para {filtroEmpresa}.</div>
+          <div className="p-10 text-center text-sm text-slate-500">No hay actas que coincidan con los filtros seleccionados.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-5 py-3">Colaborador</th><th className="px-5 py-3">DNI</th><th className="px-5 py-3">Empresa</th><th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Documento</th><th className="px-5 py-3 text-right">Acción</th></tr>
+                <tr><th className="px-5 py-3">Colaborador</th><th className="px-5 py-3">DNI</th><th className="px-5 py-3">Empresa</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Documento</th><th className="px-5 py-3 text-right">Acción</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {actasFiltradas.map((acta) => (
@@ -268,8 +294,9 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
                     <td className="px-5 py-3.5 font-medium text-slate-800">{acta.nombre_colaborador}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.dni}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.empresa}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{acta.tipo_acta || "Entrega inicial"}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.fecha_entrega}</td>
-                    <td className="max-w-56 truncate px-5 py-3.5 text-slate-600">{acta.nombre_archivo}</td>
+                    <td className="px-5 py-3.5 text-slate-600"><div className="space-y-1">{(acta.equipos || []).map((equipo) => <div key={equipo.identificador}><span className="font-medium">{equipo.tipo}</span> · {equipo.descripcion} · <span className="font-mono text-xs">{equipo.identificador}</span></div>)}<div className="max-w-56 truncate pt-1 text-xs text-slate-400">{acta.nombre_archivo}</div></div></td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button onClick={() => verActa(acta)} disabled={abriendo === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">

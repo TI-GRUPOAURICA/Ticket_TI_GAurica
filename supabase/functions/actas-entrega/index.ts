@@ -14,6 +14,8 @@ const corsHeaders = {
 const BUCKET = "actas-entrega";
 const NADIA = "asistenterrhh@auricasac.com";
 const MAX_BYTES = 10 * 1024 * 1024;
+const EMPRESAS = new Set(["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"]);
+const TIPOS_ACTA = new Set(["Entrega inicial", "Entrega adicional"]);
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -73,7 +75,7 @@ Deno.serve(async (req) => {
     if (action === "listar") {
       const { data, error } = await supabase
         .from("actas_entrega")
-        .select("id, nombre_colaborador, dni, empresa, fecha_entrega, nombre_archivo, tamano_bytes, cargado_por, creado_en")
+        .select("id, nombre_colaborador, dni, empresa, tipo_acta, fecha_entrega, nombre_archivo, tamano_bytes, cargado_por, creado_en, equipos:actas_entrega_equipos(tipo, descripcion, identificador)")
         .order("fecha_entrega", { ascending: false })
         .order("creado_en", { ascending: false })
         .limit(500);
@@ -106,11 +108,13 @@ Deno.serve(async (req) => {
       if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede registrar actas." }, 403);
       const nombreColaborador = String(body.nombreColaborador || "").trim();
       const dni = String(body.dni || "").trim();
-      const empresa = String(body.empresa || "").trim();
+      const empresa = String(body.empresa || "").trim().toUpperCase();
+      const tipoActa = String(body.tipoActa || "").trim();
+      const equipos = Array.isArray(body.equipos) ? body.equipos : [];
       const nombreArchivo = String(body.nombreArchivo || "").trim();
       const rutaArchivo = String(body.rutaArchivo || "").trim();
       const tamanoBytes = Number(body.tamanoBytes || 0);
-      if (!nombreColaborador || !dni || !empresa || !nombreArchivo ||
+      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || equipos.length < 1 || equipos.length > 50 || equipos.some((equipo: any) => !String(equipo.tipo || "").trim() || !String(equipo.descripcion || "").trim() || !String(equipo.identificador || "").trim() || String(equipo.tipo).length > 100 || String(equipo.descripcion).length > 300 || String(equipo.identificador).length > 150) || !nombreArchivo ||
           !validarFecha(body.fechaEntrega) ||
           !rutaArchivo.startsWith("nadia/") ||
           !nombreArchivo.toLowerCase().endsWith(".pdf") ||
@@ -135,6 +139,7 @@ Deno.serve(async (req) => {
           nombre_colaborador: nombreColaborador,
           dni,
           empresa,
+          tipo_acta: tipoActa,
           fecha_entrega: body.fechaEntrega,
           nombre_archivo: nombreArchivo,
           ruta_archivo: rutaArchivo,
@@ -144,6 +149,8 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (error) throw error;
+      const { error: errorEquipos } = await supabase.from("actas_entrega_equipos").insert(equipos.map((equipo: any) => ({ acta_id: data.id, tipo: String(equipo.tipo).trim(), descripcion: String(equipo.descripcion).trim(), identificador: String(equipo.identificador).trim() })));
+      if (errorEquipos) { await supabase.from("actas_entrega").delete().eq("id", data.id); throw errorEquipos; }
       return json({ success: true, id: data.id });
     }
 
