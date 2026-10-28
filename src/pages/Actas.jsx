@@ -30,7 +30,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     dni: "",
     empresa: "",
     tipoActa: "Entrega inicial",
-    equipos: [{ tipo: "", descripcion: "", identificador: "" }],
+
     fechaEntrega: new Date().toISOString().slice(0, 10),
     archivo: null,
   });
@@ -77,15 +77,12 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     return actas.filter((acta) => {
       if (filtroEmpresa && acta.empresa !== filtroEmpresa) return false;
       if (!consulta) return true;
-      const campos = [acta.nombre_colaborador, acta.dni, ...(acta.equipos || []).flatMap((equipo) => [equipo.tipo, equipo.descripcion, equipo.identificador])];
+      const campos = [acta.nombre_colaborador, acta.dni, ];
       return campos.some((campo) => String(campo || "").toLocaleLowerCase("es").includes(consulta));
     });
   }, [actas, filtroEmpresa, busqueda]);
 
   const actualizar = (campo, valor) => setForm((actual) => ({ ...actual, [campo]: valor }));
-  const actualizarEquipo = (indice, campo, valor) => setForm((actual) => ({ ...actual, equipos: actual.equipos.map((equipo, i) => i === indice ? { ...equipo, [campo]: valor } : equipo) }));
-  const agregarEquipo = () => setForm((actual) => ({ ...actual, equipos: [...actual.equipos, { tipo: "", descripcion: "", identificador: "" }] }));
-  const quitarEquipo = (indice) => setForm((actual) => ({ ...actual, equipos: actual.equipos.filter((_, i) => i !== indice) }));
 
   const prepararArchivo = async (archivo) => {
     const preparado = await llamar({ action: "preparar-carga", nombreArchivo: archivo.name, tipoArchivo: archivo.type, tamanoBytes: archivo.size });
@@ -98,8 +95,8 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     event.preventDefault();
     const formulario = event.currentTarget;
     const archivo = form.archivo;
-    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa || !form.tipoActa || !form.fechaEntrega || !archivo || form.equipos.length === 0 || form.equipos.some((equipo) => !equipo.tipo.trim() || !equipo.descripcion.trim())) {
-      setError("Completa colaborador, DNI, empresa, fecha y los equipos. El número de serie es opcional si el artículo no tiene uno.");
+    if (!form.nombreColaborador.trim() || !form.dni.trim() || !form.empresa || !form.tipoActa || !form.fechaEntrega || !archivo) {
+      setError("Completa colaborador, DNI, empresa, fecha y adjunta el PDF firmado.");
       return;
     }
     if (archivo.type !== "application/pdf" || archivo.size > MAX_BYTES) {
@@ -120,7 +117,7 @@ await llamar({
         dni: form.dni,
         empresa: form.empresa,
         tipoActa: form.tipoActa,
-        equipos: form.equipos,
+
         fechaEntrega: form.fechaEntrega,
         nombreArchivo: archivo.name,
         rutaArchivo,
@@ -131,7 +128,7 @@ await llamar({
         dni: "",
         empresa: "",
         tipoActa: "Entrega inicial",
-        equipos: [{ tipo: "", descripcion: "", identificador: "" }],
+    
         fechaEntrega: new Date().toISOString().slice(0, 10),
         archivo: null,
       });
@@ -209,7 +206,7 @@ await llamar({
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><FileSignature size={20} /></span>
             <div>
               <h2 className="font-semibold text-slate-900">Subir acta firmada</h2>
-              <p className="text-sm text-slate-500">Adjunta el PDF y registra a quién se entregaron los equipos.</p>
+              <p className="text-sm text-slate-500">Adjunta el PDF firmado y registra los datos del colaborador.</p>
             </div>
           </div>
           <form onSubmit={subirActa} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -228,15 +225,6 @@ await llamar({
             <label className="text-sm font-medium text-slate-700">Fecha de entrega
               <input required type="date" value={form.fechaEntrega} onChange={(e) => actualizar("fechaEntrega", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
-            <fieldset className="space-y-3 sm:col-span-2 lg:col-span-3">
-              <legend className="text-sm font-semibold text-slate-700">Equipos incluidos en esta entrega</legend>
-              {form.equipos.map((equipo, indice) => <div key={indice} className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-3">
-                <label className="text-xs font-medium text-slate-600">Tipo de equipo<input required value={equipo.tipo} onChange={(e) => actualizarEquipo(indice, "tipo", e.target.value)} placeholder="Laptop, celular, monitor..." className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
-                <label className="text-xs font-medium text-slate-600">Descripción<input required value={equipo.descripcion} onChange={(e) => actualizarEquipo(indice, "descripcion", e.target.value)} placeholder="Marca / modelo" className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
-                <label className="text-xs font-medium text-slate-600">Serie, IMEI o código (si tiene)<div className="mt-1 flex gap-2"><input value={equipo.identificador} onChange={(e) => actualizarEquipo(indice, "identificador", e.target.value)} placeholder="Serie / IMEI / código (si tiene)" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" />{form.equipos.length > 1 && <button type="button" onClick={() => quitarEquipo(indice)} className="rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label="Quitar equipo">×</button>}</div></label>
-              </div>)}
-              <button type="button" onClick={agregarEquipo} className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">+ Añadir otro equipo</button>
-            </fieldset>
             <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-3">Acta firmada (PDF, máximo 10 MB)
               <input required type="file" accept="application/pdf,.pdf" onChange={(e) => actualizar("archivo", e.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 font-normal file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-blue-700" />
             </label>
@@ -294,7 +282,7 @@ await llamar({
                     <td className="px-5 py-3.5 text-slate-600">{acta.empresa}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.tipo_acta || "Entrega inicial"}</td>
                     <td className="px-5 py-3.5 text-slate-600">{acta.fecha_entrega}</td>
-                    <td className="px-5 py-3.5 text-slate-600"><div className="space-y-1">{(acta.equipos || []).map((equipo) => <div key={equipo.identificador}><span className="font-medium">{equipo.tipo}</span> · {equipo.descripcion} · <span className="font-mono text-xs">{equipo.identificador}</span></div>)}<div className="max-w-56 truncate pt-1 text-xs text-slate-400">{acta.nombre_archivo}</div></div></td>
+                    <td className="px-5 py-3.5 text-slate-600"><div className="max-w-56 truncate text-xs">{acta.nombre_archivo}</div></td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button onClick={() => verActa(acta)} disabled={abriendo === acta.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">

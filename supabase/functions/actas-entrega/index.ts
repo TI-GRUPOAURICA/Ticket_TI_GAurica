@@ -110,11 +110,10 @@ Deno.serve(async (req) => {
       const dni = String(body.dni || "").trim();
       const empresa = String(body.empresa || "").trim().toUpperCase();
       const tipoActa = String(body.tipoActa || "").trim();
-      const equipos = Array.isArray(body.equipos) ? body.equipos : [];
       const nombreArchivo = String(body.nombreArchivo || "").trim();
       const rutaArchivo = String(body.rutaArchivo || "").trim();
       const tamanoBytes = Number(body.tamanoBytes || 0);
-      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || equipos.length < 1 || equipos.length > 50 || equipos.some((equipo: any) => !String(equipo.tipo || "").trim() || !String(equipo.descripcion || "").trim() || String(equipo.tipo).length > 100 || String(equipo.descripcion).length > 300 || String(equipo.identificador).length > 150) || !nombreArchivo ||
+      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || !nombreArchivo ||
           !validarFecha(body.fechaEntrega) ||
           !rutaArchivo.startsWith("nadia/") ||
           !nombreArchivo.toLowerCase().endsWith(".pdf") ||
@@ -149,8 +148,6 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (error) throw error;
-      const { error: errorEquipos } = await supabase.from("actas_entrega_equipos").insert(equipos.map((equipo: any) => ({ acta_id: data.id, tipo: String(equipo.tipo).trim(), descripcion: String(equipo.descripcion).trim(), identificador: String(equipo.identificador || "").trim() })));
-      if (errorEquipos) { await supabase.from("actas_entrega").delete().eq("id", data.id); throw errorEquipos; }
       return json({ success: true, id: data.id });
     }
 
