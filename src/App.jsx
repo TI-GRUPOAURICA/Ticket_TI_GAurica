@@ -172,7 +172,7 @@ export default function App() {
         return esAdmin ? <Permisos /> : <Dashboard onNavigate={setCurrentPage} />;
 
       case "actas":
-        return esAdmin ? <Actas userEmail={userEmail} /> : <Dashboard onNavigate={setCurrentPage} />;
+        return esAdmin ? <Actas userEmail={userEmail} esAdminGlobal={esAdmin} /> : <Dashboard onNavigate={setCurrentPage} />;
 
       default:
 

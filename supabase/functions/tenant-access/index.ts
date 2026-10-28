@@ -65,7 +65,7 @@ async function autenticar(req: Request) {
 async function accesoDe(correos: string[]) {
   for (const correo of correos) {
     const { data, error } = await supabase.from("accesos_empresa")
-      .select("correo, rol, empresa, activo").eq("correo", correo).maybeSingle();
+      .select("correo, rol, empresa, activo").ilike("correo", correo).maybeSingle();
     if (error) throw error;
     if (data?.activo) return data;
   }
@@ -88,12 +88,19 @@ Deno.serve(async (req) => {
 
       // El acceso básico de colaborador conserva el portal de tickets,
       // pero no concede acceso al panel administrativo.
-      const { data: colaborador, error } = await supabase
-        .from("colaboradores")
-        .select("id, empresa, host, colaborador, correo, anydesk, tipo")
-        .in("correo", usuario.correos)
-        .maybeSingle();
-      if (error) throw error;
+      let colaborador: any = null;
+      for (const correo of usuario.correos) {
+        const { data, error } = await supabase
+          .from("colaboradores")
+          .select("id, empresa, host, colaborador, correo, anydesk, tipo")
+          .ilike("correo", correo)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          colaborador = data;
+          break;
+        }
+      }
 
       const empresa = colaborador?.empresa || empresaPorDominio(usuario.correos);
       return json({

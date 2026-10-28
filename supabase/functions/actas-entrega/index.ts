@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "preparar-carga") {
-      if (!usuario.esNadia) return json({ error: "Solo Nadia puede subir actas." }, 403);
+      if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede subir actas." }, 403);
       const nombreArchivo = String(body.nombreArchivo || "").trim();
       const tamanoBytes = Number(body.tamanoBytes || 0);
       if (!nombreArchivo.toLowerCase().endsWith(".pdf") ||
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "registrar") {
-      if (!usuario.esNadia) return json({ error: "Solo Nadia puede registrar actas." }, 403);
+      if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede registrar actas." }, 403);
       const nombreColaborador = String(body.nombreColaborador || "").trim();
       const dni = String(body.dni || "").trim();
       const empresa = String(body.empresa || "").trim();

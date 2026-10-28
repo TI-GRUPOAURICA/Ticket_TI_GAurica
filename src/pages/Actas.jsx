@@ -9,10 +9,10 @@ const BUCKET = "actas-entrega";
 const NADIA = "asistenterrhh@auricasac.com";
 const MAX_BYTES = 10 * 1024 * 1024;
 
-export default function Actas({ onVolver, userEmail }) {
+export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const { instance, accounts } = useMsal();
   const correo = String(userEmail || accounts[0]?.username || "").trim().toLowerCase();
-  const puedeSubir = correo === NADIA;
+  const puedeSubir = correo === NADIA || esAdminGlobal;
   const [actas, setActas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
