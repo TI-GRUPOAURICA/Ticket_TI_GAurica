@@ -245,6 +245,7 @@ export default function App() {
         currentPage={currentPage}
         onLogout={handleLogout}
         esAdminGlobal={esAdmin}
+        adminEmail={userEmail}
       >
 
         {renderPage()}

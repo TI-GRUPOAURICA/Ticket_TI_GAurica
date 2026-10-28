@@ -1,5 +1,6 @@
 import AsistenteIA from "../pages/AsistenteIA";
 import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 import {
   LayoutDashboard,
@@ -12,6 +13,8 @@ import {
   LogOut,
   Cloud,
   Printer,
+  Bell,
+  X,
 } from "lucide-react";
 
 /* =========================================================
@@ -72,13 +75,88 @@ const WalkieTalkieIcon = ({
   );
 };
 
+const CORREO_ALERTAS_TICKETS = "soporte@auricasac.com";
+
+function AlertasTicketsNuevos({ correo, onNavigate }) {
+  const [alertas, setAlertas] = useState([]);
+
+  useEffect(() => {
+    if (String(correo || "").trim().toLowerCase() !== CORREO_ALERTAS_TICKETS) return;
+    let cancelado = false;
+    let intervalo;
+    let ultimoId = null;
+    let consultando = false;
+
+    const revisar = async (inicial = false) => {
+      if (consultando || cancelado) return;
+      consultando = true;
+      try {
+        let consulta = supabase.from("tickets")
+          .select("id, nombre_colaborador, empresa, titulo")
+          .order("id", { ascending: !inicial })
+          .limit(inicial ? 1 : 20);
+        if (!inicial && ultimoId !== null) consulta = consulta.gt("id", ultimoId).order("id", { ascending: true });
+        const { data, error } = await consulta;
+        if (error) throw error;
+        if (cancelado) return;
+        if (inicial) {
+          if (data?.length) ultimoId = data[0].id;
+          return;
+        }
+        if (!data?.length) return;
+        ultimoId = data[data.length - 1].id;
+        setAlertas((actuales) => [...actuales, ...data.map((ticket) => ({
+          id: ticket.id,
+          nombre: ticket.nombre_colaborador || "Colaborador",
+          empresa: ticket.empresa || "",
+          titulo: ticket.titulo || "Solicitud de soporte",
+        }))].slice(-4));
+      } catch (error) {
+        console.error("No se pudieron consultar los avisos de tickets:", error);
+      } finally {
+        consultando = false;
+      }
+    };
+
+    const iniciar = async () => {
+      await revisar(true);
+      if (!cancelado) intervalo = window.setInterval(() => revisar(false), 12000);
+    };
+    iniciar();
+    return () => {
+      cancelado = true;
+      if (intervalo) window.clearInterval(intervalo);
+    };
+  }, [correo]);
+
+  if (String(correo || "").trim().toLowerCase() !== CORREO_ALERTAS_TICKETS || !alertas.length) return null;
+  return (
+    <div className="fixed right-4 top-4 z-[150] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2" aria-live="polite">
+      {alertas.map((alerta) => (
+        <div key={alerta.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 rounded-lg bg-[#345D9D]/10 p-2 text-[#345D9D]"><Bell size={18} /></span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-900">Nuevo ticket #{alerta.id}</p>
+              <p className="mt-1 text-sm text-slate-600">{alerta.nombre}{alerta.empresa ? ` · ${alerta.empresa}` : ""}</p>
+              <p className="mt-1 truncate text-xs text-slate-500">{alerta.titulo}</p>
+              <button onClick={() => { setAlertas((actuales) => actuales.filter((item) => item.id !== alerta.id)); onNavigate("tickets"); }} className="mt-3 rounded-lg bg-[#345D9D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d528c]">Ver tickets</button>
+            </div>
+            <button onClick={() => setAlertas((actuales) => actuales.filter((item) => item.id !== alerta.id))} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Cerrar alerta"><X size={16} /></button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 export default function Layout({
   children,
   onNavigate,
   currentPage,
   onLogout,
   esAdminGlobal = false,
-  soloActas = false
+  soloActas = false,
+  adminEmail = ""
 }) {
   const [isMobile, setIsMobile] = useState(
     window.innerWidth < 768
@@ -347,6 +425,7 @@ export default function Layout({
         {children}
         <AsistenteIA />
       </div>
+      <AlertasTicketsNuevos correo={adminEmail} onNavigate={onNavigate} />
     </div>
   );
 }
