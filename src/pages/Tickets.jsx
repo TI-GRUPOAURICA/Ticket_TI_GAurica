@@ -24,37 +24,37 @@ function GestionTicket({
   onActualizado,
 }) {
 
-  const [comentario, setComentario] = useState(comentarioInicial || "");
+  const [comentarioGuardado, setComentarioGuardado] = useState(comentarioInicial || "");
+  const [comentario, setComentario] = useState("");
   const [solucion, setSolucion]     = useState(solucionInicial || "");
   const [guardando, setGuardando]   = useState(false);
 
-  const tieneSeguimiento = comentario && comentario.trim().length > 0;
+  const tieneSeguimiento = comentarioGuardado && comentarioGuardado.trim().length > 0;
 
   const guardarProceso = async () => {
-    if (!comentario.trim()) {
-      alert("Escribe un comentario.");
-      return;
-    }
+    if (!comentario.trim()) { alert("Escribe un comentario."); return; }
     setGuardando(true);
     try {
-      const { error } = await supabase
-        .from("tickets")
-        .update({
-          comentario_proceso: comentario,
-          estado:             "en_proceso",
-          updated_at:         new Date(),
-        })
-        .eq("id", ticketId);
+      const fecha = new Intl.DateTimeFormat("es-PE", {
+        dateStyle: "medium", timeStyle: "short", timeZone: "America/Lima",
+      }).format(new Date());
+      const entrada = fecha + " · " + (adminNombre || "Equipo TI") + "\n" + comentario.trim();
+      const historial = comentarioGuardado.trim()
+        ? comentarioGuardado.trim() + "\n\n────────────────────\n\n" + entrada
+        : entrada;
+      const { error } = await supabase.from("tickets").update({
+        comentario_proceso: historial, estado: "en_proceso", updated_at: new Date().toISOString(),
+      }).eq("id", ticketId);
       if (error) throw error;
-      onActualizado();
+      setComentarioGuardado(historial);
+      setComentario("");
+      await onActualizado({ comentario_proceso: historial, estado: "en_proceso" });
+      alert("Seguimiento guardado.");
     } catch (error) {
       console.error("Error guardando seguimiento del ticket:", error);
       alert("No se pudo guardar el seguimiento: " + (error.message || "Error inesperado."));
-    } finally {
-      setGuardando(false);
-    }
+    } finally { setGuardando(false); }
   };
-
   const resolverTicket = async () => {
     if (!solucion.trim()) {
       alert("Debes escribir una solución.");
@@ -66,7 +66,6 @@ function GestionTicket({
         .from("tickets")
         .update({
           solucion,
-          comentario_proceso: comentario,
           estado:             "resuelto",
           updated_at:         new Date(),
           resuelto_at:        new Date().toISOString(),
@@ -106,7 +105,7 @@ function GestionTicket({
         alert("El ticket se resolvió, pero no se pudo enviar el correo de notificación.");
       }
 
-      onActualizado();
+      await onActualizado({ solucion, estado: "resuelto" });
     } catch (error) {
       console.error("Error resolviendo ticket:", error);
       alert("No se pudo resolver el ticket: " + (error.message || "Error inesperado."));
@@ -122,6 +121,15 @@ function GestionTicket({
         <p className="text-sm font-bold mb-2" style={{ color: "#345D9D" }}>
           PASO 1 · Seguimiento interno
         </p>
+                {tieneSeguimiento && (
+          <div className="mb-3 rounded-xl p-4 text-sm whitespace-pre-wrap"
+            style={{ background: "#f8fafc", border: "1px solid #dbeafe", color: "#334155" }}>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: "#345D9D" }}>
+              Historial guardado
+            </p>
+            {comentarioGuardado}
+          </div>
+        )}
         <textarea
           value={comentario}
           onChange={(e) => setComentario(e.target.value)}
@@ -156,7 +164,7 @@ function GestionTicket({
 
         <textarea
           value={solucion}
-          disabled={!tieneSeguimiento}
+          disabled={!tieneSeguimiento || Boolean(comentario.trim())}
           onChange={(e) => setSolucion(e.target.value)}
           placeholder={
             tieneSeguimiento
@@ -169,12 +177,12 @@ function GestionTicket({
             background: "#ffffff",
             border: "1px solid #dbeafe",
             color: "#1e293b",
-            opacity: tieneSeguimiento ? 1 : 0.6,
+            opacity: tieneSeguimiento && !comentario.trim() ? 1 : 0.6,
           }}
         />
         <button
           onClick={resolverTicket}
-          disabled={guardando || !tieneSeguimiento}
+          disabled={guardando || !tieneSeguimiento || Boolean(comentario.trim())}
           className="mt-3 px-5 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
           style={{ background: "#345D9D", color: "#ffffff" }}
         >
@@ -486,15 +494,16 @@ useEffect(() => {
             <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid #dbeafe" }}>
               <p className="text-sm font-semibold text-slate-700 mb-3">Resolver ticket</p>
               <GestionTicket
+                key={ticketSeleccionado.id}
                 ticketId={ticketSeleccionado.id}
                 solucionInicial={ticketSeleccionado.solucion}
                 comentarioInicial={ticketSeleccionado.comentario_proceso}
                 adminNombre={adminNombre}
                 correoColaborador={ticketSeleccionado.email}
                 nombreColaborador={ticketSeleccionado.nombre_colaborador}
-                onActualizado={() => {
-                  setTicketSeleccionado(null);
-                  fetchTickets();
+                onActualizado={async (cambios) => {
+                  setTicketSeleccionado((actual) => actual ? { ...actual, ...cambios } : actual);
+                  await fetchTickets();
                 }}
               />
             </div>
