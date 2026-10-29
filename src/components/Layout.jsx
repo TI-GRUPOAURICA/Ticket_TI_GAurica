@@ -407,12 +407,11 @@ export default function Layout({
         }}
       >
         <div
-          className="rounded-xl px-6 py-4 mb-6 flex items-center justify-between gap-4"
+          className="rounded-xl px-6 py-4 mb-6"
           style={{
             background: "#345D9D"
           }}
         >
-          <div className="min-w-0">
           <h1
             className="text-2xl font-bold text-white"
           >
@@ -422,12 +421,6 @@ export default function Layout({
           <p className="text-white">
             Sistema de tickets
           </p>
-          </div>
-          <img
-            src="/5empresas.png"
-            alt="Logos de las cinco empresas del Grupo Aurica"
-            className="hidden sm:block h-[54px] w-[220px] shrink-0 rounded-lg bg-white object-cover shadow-sm"
-          />
         </div>
         {children}
         <AsistenteIA />
