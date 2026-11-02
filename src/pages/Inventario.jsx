@@ -746,7 +746,7 @@ esFechaAproximada  };
         margin: { left: marginX, right: marginX },
         head: [["Criterio", "Valor"]],
         body: [
-          ["Año de compra", detalleEquipo?.anio_compra || "No registrado"],
+          ["Año de Compra (Aproximado)", detalleEquipo?.anio_compra || "No registrado"],
           [
             "Antigüedad",
             `${datosRenovacion.anos} años${datosRenovacion.esFechaAproximada ? " (estimada por Windows)" : ""}`,
@@ -2044,7 +2044,7 @@ async function analizarEquipoIA() {
 
   {/* Año de compra */}
   <tr>
-    <td className="p-3 font-medium">Año de compra</td>
+    <td className="p-3 font-medium">Año de Compra (Aproximado)</td>
 
     <td className="p-3">
       {editandoRenovacion ? (
