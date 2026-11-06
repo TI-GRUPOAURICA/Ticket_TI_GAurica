@@ -9,7 +9,6 @@ const BUCKET = "actas-entrega";
 const NADIA = "asistenterrhh@auricasac.com";
 const MAX_BYTES = 10 * 1024 * 1024;
 const EMPRESAS = ["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"];
-const TIPOS_ACTA = ["Entrega inicial", "Entrega adicional"];
 
 export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const { instance, accounts } = useMsal();
@@ -220,7 +219,7 @@ await llamar({
               <select required value={form.empresa} onChange={(e) => actualizar("empresa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"><option value="">Selecciona una empresa</option>{EMPRESAS.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}</select>
             </label>
             <label className="text-sm font-medium text-slate-700">Tipo de entrega
-              <select required value={form.tipoActa} onChange={(e) => actualizar("tipoActa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">{TIPOS_ACTA.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}</select>
+              <input required type="text" value={form.tipoActa} onChange={(e) => actualizar("tipoActa", e.target.value)} placeholder="Ej.: Entrega de PC con accesorios" className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-medium text-slate-700">Fecha de entrega
               <input required type="date" value={form.fechaEntrega} onChange={(e) => actualizar("fechaEntrega", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
