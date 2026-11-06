@@ -151,6 +151,32 @@ Deno.serve(async (req) => {
       return json({ success: true, id: data.id });
     }
 
+    if (action === "actualizar") {
+      if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede editar actas." }, 403);
+      const id = String(body.id || "").trim();
+      const nombreColaborador = String(body.nombreColaborador || "").trim();
+      const dni = String(body.dni || "").trim();
+      const empresa = String(body.empresa || "").trim().toUpperCase();
+      const tipoActa = String(body.tipoActa || "").trim();
+      if (!id || !nombreColaborador || nombreColaborador.length > 200 || !dni || dni.length > 30 || !EMPRESAS.has(empresa) || !tipoActa || tipoActa.length > MAX_TIPO_ACTA_LENGTH) return json({ error: "Revisa el nombre, DNI, empresa y tipo de entrega." }, 400);
+      const { error } = await supabase.from("actas_entrega").update({ nombre_colaborador: nombreColaborador, dni, empresa, tipo_acta: tipoActa }).eq("id", id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    if (action === "eliminar") {
+      if (!usuario.esNadia && !usuario.esAdminGlobal) return json({ error: "Solo Nadia o un administrador global puede eliminar actas." }, 403);
+      const id = String(body.id || "").trim();
+      if (!id) return json({ error: "No se indicó el acta que deseas eliminar." }, 400);
+      const { data: acta, error: errorActa } = await supabase.from("actas_entrega").select("id, ruta_archivo").eq("id", id).maybeSingle();
+      if (errorActa) throw errorActa;
+      if (!acta) return json({ error: "No se encontró el acta." }, 404);
+      const { error: errorArchivo } = await supabase.storage.from(BUCKET).remove([acta.ruta_archivo]);
+      if (errorArchivo) throw errorArchivo;
+      const { error } = await supabase.from("actas_entrega").delete().eq("id", id);
+      if (error) throw error;
+      return json({ success: true });
+    }
     if (action === "ver" || action === "descargar") {
       const id = String(body.id || "");
       const { data: acta, error: errorActa } = await supabase

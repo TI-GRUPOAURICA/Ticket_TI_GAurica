@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { ArrowLeft, Download, Eye, FileSignature, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileSignature, LoaderCircle, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { loginRequest } from "../Config/authConfig";
 import { supabase } from "../lib/supabase";
 
@@ -22,6 +22,9 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
   const [descargando, setDescargando] = useState("");
   const [abriendo, setAbriendo] = useState("");
   const [actaEnVista, setActaEnVista] = useState(null);
+  const [actaEditando, setActaEditando] = useState(null);
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [eliminando, setEliminando] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [form, setForm] = useState({
@@ -156,6 +159,37 @@ await llamar({
     }
   };
 
+  const editarActa = (acta) => {
+    setError("");
+    setActaEditando({ id: acta.id, nombreColaborador: acta.nombre_colaborador || "", dni: acta.dni || "", empresa: acta.empresa || "", tipoActa: acta.tipo_acta || "Entrega inicial" });
+  };
+
+  const guardarEdicion = async (event) => {
+    event.preventDefault();
+    setGuardandoEdicion(true);
+    setError("");
+    setMensaje("");
+    try {
+      await llamar({ action: "actualizar", ...actaEditando });
+      setActaEditando(null);
+      setMensaje("Datos del acta actualizados correctamente.");
+      await cargar();
+    } catch (e) { setError(e.message || "No se pudieron actualizar los datos."); }
+    finally { setGuardandoEdicion(false); }
+  };
+
+  const eliminarActa = async (acta) => {
+    if (!window.confirm("¿Eliminar el acta de " + acta.nombre_colaborador + " y su PDF? Esta acción no se puede deshacer.")) return;
+    setEliminando(acta.id);
+    setError("");
+    setMensaje("");
+    try {
+      await llamar({ action: "eliminar", id: acta.id });
+      setMensaje("Acta y PDF eliminados correctamente.");
+      await cargar();
+    } catch (e) { setError(e.message || "No se pudo eliminar el acta."); }
+    finally { setEliminando(""); }
+  };
   const descargar = async (acta) => {
     const ventana = window.open("about:blank", "_blank");
     if (!ventana) {
@@ -271,7 +305,7 @@ await llamar({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-5 py-3">Colaborador</th><th className="px-5 py-3">DNI</th><th className="px-5 py-3">Empresa</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Documento</th><th className="px-5 py-3 text-right">Acción</th></tr>
+                <tr><th className="px-5 py-3">Colaborador</th><th className="px-5 py-3">DNI</th><th className="px-5 py-3">Empresa</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Documento</th><th className="px-5 py-3 text-right">Acciones</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {actasFiltradas.map((acta) => (
@@ -292,6 +326,10 @@ await llamar({
                           {descargando === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />}
                           Descargar
                         </button>
+                        {puedeSubir && <>
+                          <button onClick={() => editarActa(acta)} className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"><Pencil size={14} /> Editar</button>
+                          <button onClick={() => eliminarActa(acta)} disabled={eliminando === acta.id} className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">{eliminando === acta.id ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />} Eliminar</button>
+                        </>}
                       </div>
                     </td>
                   </tr>
@@ -303,6 +341,20 @@ await llamar({
       </section>
       <p className="text-xs text-slate-400">Los documentos se guardan en almacenamiento privado y solo usuarios autorizados pueden consultarlos.</p>
 
+      {actaEditando && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onClick={() => setActaEditando(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="editar-acta-titulo" className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between gap-3"><h2 id="editar-acta-titulo" className="text-lg font-semibold text-slate-900">Editar datos del acta</h2><button type="button" onClick={() => setActaEditando(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Cerrar"><X size={20} /></button></div>
+            <form onSubmit={guardarEdicion} className="grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-medium text-slate-700 sm:col-span-2">Nombre del colaborador<input required maxLength={200} value={actaEditando.nombreColaborador} onChange={(e) => setActaEditando((a) => ({ ...a, nombreColaborador: e.target.value }))} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <label className="text-sm font-medium text-slate-700">DNI<input required maxLength={30} value={actaEditando.dni} onChange={(e) => setActaEditando((a) => ({ ...a, dni: e.target.value }))} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <label className="text-sm font-medium text-slate-700">Empresa<select required value={actaEditando.empresa} onChange={(e) => setActaEditando((a) => ({ ...a, empresa: e.target.value }))} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"><option value="">Selecciona una empresa</option>{EMPRESAS.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}</select></label>
+              <label className="text-sm font-medium text-slate-700 sm:col-span-2">Tipo de entrega<input required maxLength={120} value={actaEditando.tipoActa} onChange={(e) => setActaEditando((a) => ({ ...a, tipoActa: e.target.value }))} placeholder="Ej.: Entrega de PC con accesorios" className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setActaEditando(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button><button disabled={guardandoEdicion} className="inline-flex items-center gap-2 rounded-lg bg-[#345D9D] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{guardandoEdicion ? <LoaderCircle size={16} className="animate-spin" /> : <Pencil size={16} />} Guardar cambios</button></div>
+            </form>
+          </section>
+        </div>
+      )}
       {actaEnVista && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="presentation" onClick={() => setActaEnVista(null)}>
           <section role="dialog" aria-modal="true" aria-label={"Vista previa de " + actaEnVista.nombre_archivo} className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
