@@ -28,7 +28,7 @@ export default function Actas({ onVolver, userEmail, esAdminGlobal = false }) {
     nombreColaborador: "",
     dni: "",
     empresa: "",
-    tipoActa: "Entrega inicial",
+    tipoActa: "",
 
     fechaEntrega: new Date().toISOString().slice(0, 10),
     archivo: null,
@@ -126,7 +126,7 @@ await llamar({
         nombreColaborador: "",
         dni: "",
         empresa: "",
-        tipoActa: "Entrega inicial",
+        tipoActa: "",
     
         fechaEntrega: new Date().toISOString().slice(0, 10),
         archivo: null,
@@ -219,7 +219,7 @@ await llamar({
               <select required value={form.empresa} onChange={(e) => actualizar("empresa", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"><option value="">Selecciona una empresa</option>{EMPRESAS.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}</select>
             </label>
             <label className="text-sm font-medium text-slate-700">Tipo de entrega
-              <input required type="text" value={form.tipoActa} onChange={(e) => actualizar("tipoActa", e.target.value)} placeholder="Ej.: Entrega de PC con accesorios" className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
+              <input required type="text" value={form.tipoActa} onChange={(e) => actualizar("tipoActa", e.target.value)} maxLength={120} placeholder="Ej.: Entrega de PC con accesorios" className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-medium text-slate-700">Fecha de entrega
               <input required type="date" value={form.fechaEntrega} onChange={(e) => actualizar("fechaEntrega", e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" />

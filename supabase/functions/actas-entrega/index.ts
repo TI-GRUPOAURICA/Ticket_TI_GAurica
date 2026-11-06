@@ -15,7 +15,7 @@ const BUCKET = "actas-entrega";
 const NADIA = "asistenterrhh@auricasac.com";
 const MAX_BYTES = 10 * 1024 * 1024;
 const EMPRESAS = new Set(["AURICA", "METALAB", "MINERALAB", "GIANLU", "TERRIMETAL", "ALENCORSRL", "MAPAJOYA"]);
-const TIPOS_ACTA = new Set(["Entrega inicial", "Entrega adicional"]);
+const MAX_TIPO_ACTA_LENGTH = 120;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       const nombreArchivo = String(body.nombreArchivo || "").trim();
       const rutaArchivo = String(body.rutaArchivo || "").trim();
       const tamanoBytes = Number(body.tamanoBytes || 0);
-      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !TIPOS_ACTA.has(tipoActa) || !nombreArchivo ||
+      if (!nombreColaborador || !dni || !EMPRESAS.has(empresa) || !tipoActa || tipoActa.length > MAX_TIPO_ACTA_LENGTH || !nombreArchivo ||
           !validarFecha(body.fechaEntrega) ||
           !rutaArchivo.startsWith("nadia/") ||
           !nombreArchivo.toLowerCase().endsWith(".pdf") ||
