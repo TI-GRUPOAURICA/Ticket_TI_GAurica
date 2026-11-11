@@ -23,6 +23,7 @@ function GestionTicket({
   nombreColaborador,
   categoriaId,
   prioridad,
+  estado,
   onActualizado,
 }) {
 
@@ -132,7 +133,7 @@ function GestionTicket({
 
       <div>
         <p className="text-sm font-bold mb-2" style={{ color: "#345D9D" }}>
-          PASO 1 · Seguimiento interno
+          {estado === "resuelto" ? "Seguimiento registrado" : "PASO 1 · Seguimiento interno"}
         </p>
                 {tieneSeguimiento && (
           <div className="mb-3 rounded-xl p-4 text-sm whitespace-pre-wrap"
@@ -143,6 +144,8 @@ function GestionTicket({
             {comentarioGuardado}
           </div>
         )}
+        {estado !== "resuelto" && (
+        <>
         <textarea
           value={comentario}
           onChange={(e) => setComentario(e.target.value)}
@@ -159,11 +162,13 @@ function GestionTicket({
         >
            Guardar seguimiento
         </button>
+        </>
+        )}
       </div>
 
       <div>
         <p className="text-sm font-bold mb-2" style={{ color: "#345D9D" }}>
-          PASO 2 · Resolver ticket
+          {estado === "resuelto" ? "Ticket resuelto" : "PASO 2 · Resolver ticket"}
         </p>
 
         {!tieneSeguimiento && (
@@ -175,6 +180,13 @@ function GestionTicket({
           </div>
         )}
 
+        {estado === "resuelto" ? (
+          <div className="rounded-xl p-4 text-sm whitespace-pre-wrap" style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", color: "#166534" }}>
+            <p className="mb-2 font-bold">Solución guardada</p>
+            {solucion || "No se registró una solución."}
+          </div>
+        ) : (
+        <>
         <textarea
           value={solucion}
           disabled={!tieneSeguimiento || Boolean(comentario.trim())}
@@ -201,6 +213,8 @@ function GestionTicket({
         >
           Resolver ticket
         </button>
+        </>
+        )}
       </div>
 
     </div>
@@ -529,6 +543,7 @@ useEffect(() => {
                 nombreColaborador={ticketSeleccionado.nombre_colaborador}
                 categoriaId={ticketSeleccionado.categoria_id}
                 prioridad={ticketSeleccionado.prioridad}
+                estado={ticketSeleccionado.estado}
                 onActualizado={async (cambios) => {
                   setTicketSeleccionado((actual) => actual ? { ...actual, ...cambios } : actual);
                   await fetchTickets();
