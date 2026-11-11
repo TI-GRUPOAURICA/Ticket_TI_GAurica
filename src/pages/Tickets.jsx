@@ -21,6 +21,8 @@ function GestionTicket({
   adminNombre,
   correoColaborador,
   nombreColaborador,
+  categoriaId,
+  prioridad,
   onActualizado,
 }) {
 
@@ -56,6 +58,14 @@ function GestionTicket({
     } finally { setGuardando(false); }
   };
   const resolverTicket = async () => {
+    if (!categoriaId) {
+      alert("Debes seleccionar una categoría antes de resolver el ticket.");
+      return;
+    }
+    if (!prioridad) {
+      alert("Debes seleccionar una prioridad antes de resolver el ticket.");
+      return;
+    }
     if (!solucion.trim()) {
       alert("Debes escribir una solución.");
       return;
@@ -73,6 +83,9 @@ function GestionTicket({
         })
         .eq("id", ticketId);
       if (errorActualizacion) throw errorActualizacion;
+
+      await onActualizado({ solucion, estado: "resuelto" });
+      alert("Ticket resuelto y guardado correctamente.");
 
       const { data: colData, error: errorColaborador } = await supabase
         .from("colaboradores")
@@ -105,7 +118,7 @@ function GestionTicket({
         alert("El ticket se resolvió, pero no se pudo enviar el correo de notificación.");
       }
 
-      await onActualizado({ solucion, estado: "resuelto" });
+
     } catch (error) {
       console.error("Error resolviendo ticket:", error);
       alert("No se pudo resolver el ticket: " + (error.message || "Error inesperado."));
@@ -462,17 +475,30 @@ useEffect(() => {
 
   <p className="text-sm font-semibold text-slate-700 mb-3">Categoría</p>
   <div className="flex gap-3 flex-wrap">
-    {categorias.map((c) => (
+    {[...categorias.filter((item) => item.nombre.trim().toLowerCase() !== "otros"), { id: "otros", nombre: "Otros" }].map((c) => (
       <button
         key={c.id}
         onClick={async () => {
           try {
+            let categoriaAsignada = c;
+            if (c.nombre.trim().toLowerCase() === "otros") {
+              const nombre = window.prompt("Escribe el nombre de la categoría:")?.trim();
+              if (!nombre) return;
+              const existente = categorias.find((item) => item.nombre.trim().toLowerCase() === nombre.toLowerCase());
+              if (existente) categoriaAsignada = existente;
+              else {
+                const { data: nuevaCategoria, error: errorCategoria } = await supabase.from("categorias").insert({ nombre }).select("id, nombre").single();
+                if (errorCategoria) throw errorCategoria;
+                categoriaAsignada = nuevaCategoria;
+                setCategorias((actuales) => [...actuales, nuevaCategoria]);
+              }
+            }
             const { error } = await supabase
               .from("tickets")
-              .update({ categoria_id: c.id })
+              .update({ categoria_id: categoriaAsignada.id })
               .eq("id", ticketSeleccionado.id);
             if (error) throw error;
-            setTicketSeleccionado({ ...ticketSeleccionado, categoria_id: c.id, categorias: { nombre: c.nombre } });
+            setTicketSeleccionado({ ...ticketSeleccionado, categoria_id: categoriaAsignada.id, categorias: { nombre: categoriaAsignada.nombre } });
             await fetchTickets();
           } catch (error) {
             console.error("Error actualizando categoría del ticket:", error);
@@ -501,6 +527,8 @@ useEffect(() => {
                 adminNombre={adminNombre}
                 correoColaborador={ticketSeleccionado.email}
                 nombreColaborador={ticketSeleccionado.nombre_colaborador}
+                categoriaId={ticketSeleccionado.categoria_id}
+                prioridad={ticketSeleccionado.prioridad}
                 onActualizado={async (cambios) => {
                   setTicketSeleccionado((actual) => actual ? { ...actual, ...cambios } : actual);
                   await fetchTickets();
