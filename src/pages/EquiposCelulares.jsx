@@ -639,7 +639,7 @@ export default function EquiposCelulares() {
                     <div>
                       <span>CELULAR</span>
                       <strong>
-                        {equipo.telefono || "—"}
+                        {equipo.telefono == null || equipo.telefono === "" ? "—" : String(equipo.telefono).replace(/\.0$/, "")}
                       </strong>
                     </div>
                   </div>
