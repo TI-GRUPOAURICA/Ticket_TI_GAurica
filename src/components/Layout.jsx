@@ -1,4 +1,3 @@
-import AsistenteIA from "../pages/AsistenteIA";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -423,7 +422,6 @@ export default function Layout({
           </p>
         </div>
         {children}
-        <AsistenteIA />
       </div>
       <AlertasTicketsNuevos correo={adminEmail} onNavigate={onNavigate} />
     </div>
