@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import emailjs from "@emailjs/browser";
+import { Clock, User } from "lucide-react";
 
 function formatearFechaCreacion(fecha) {
   if (!fecha) return "Fecha no disponible";
@@ -24,6 +25,8 @@ function GestionTicket({
   categoriaId,
   prioridad,
   estado,
+  resueltoAt,
+  resueltoPor,
   onActualizado,
 }) {
 
@@ -85,7 +88,7 @@ function GestionTicket({
         .eq("id", ticketId);
       if (errorActualizacion) throw errorActualizacion;
 
-      await onActualizado({ solucion, estado: "resuelto" });
+      await onActualizado({ solucion, estado: "resuelto", resuelto_at: new Date().toISOString(), resuelto_por: adminNombre });
       alert("Ticket resuelto y guardado correctamente.");
 
       const { data: colData, error: errorColaborador } = await supabase
@@ -181,9 +184,27 @@ function GestionTicket({
         )}
 
         {estado === "resuelto" ? (
-          <div className="rounded-xl p-4 text-sm whitespace-pre-wrap" style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", color: "#166534" }}>
-            <p className="mb-2 font-bold">Solución guardada</p>
-            {solucion || "No se registró una solución."}
+          <div className="rounded-xl p-4 text-sm" style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", color: "#166534" }}>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <p className="font-bold">Solución guardada</p>
+              {(resueltoAt || resueltoPor) && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium" style={{ color: "#15803d" }}>
+                  {resueltoAt && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock size={13} />
+                      {new Intl.DateTimeFormat("es-PE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Lima" }).format(new Date(resueltoAt))}
+                    </span>
+                  )}
+                  {resueltoPor && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <User size={13} />
+                      {resueltoPor}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <p className="whitespace-pre-wrap">{solucion || "No se registró una solución."}</p>
           </div>
         ) : (
         <>
@@ -544,6 +565,8 @@ useEffect(() => {
                 categoriaId={ticketSeleccionado.categoria_id}
                 prioridad={ticketSeleccionado.prioridad}
                 estado={ticketSeleccionado.estado}
+                resueltoAt={ticketSeleccionado.resuelto_at}
+                resueltoPor={ticketSeleccionado.resuelto_por}
                 onActualizado={async (cambios) => {
                   setTicketSeleccionado((actual) => actual ? { ...actual, ...cambios } : actual);
                   await fetchTickets();
