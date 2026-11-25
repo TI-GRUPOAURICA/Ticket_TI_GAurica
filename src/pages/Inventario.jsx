@@ -44,6 +44,7 @@ const TIPOS = ["Laptop", "PC"];
 
 // Lista fija de sedes disponibles (columna "sede" en colaboradores)
 const SEDES = ["LIMA", "AREQUIPA", "CHALA"];
+const CUENTAS_LICENCIA_OFFICE = Array.from({ length: 12 }, (_, indice) => "licencias" + (indice + 1) + "@auricasac.com");
 const ESTADOS_FISICOS = [
   "Excelente",
   "Bueno",
@@ -928,15 +929,19 @@ rendimiento_actual: renovacionData.rendimiento,
   async function guardarOfficeEquipo() {
     if (!hostSeleccionado) return;
     setGuardandoOffice(true);
-    const { data, error } = await supabase.from("equipos").upsert({
-      hostname: hostSeleccionado,
-      office_activado: officeData.activado,
-      office_cuenta: officeData.cuenta.trim() || null,
-    }, { onConflict: "hostname" }).select("*").single();
+    const { data, error } = await supabase
+      .from("equipos")
+      .update({
+        office_activado: officeData.activado,
+        office_cuenta: officeData.cuenta.trim() || null,
+      })
+      .eq("hostname", hostSeleccionado)
+      .select("*")
+      .single();
     setGuardandoOffice(false);
     if (error) {
       console.error("Error guardando Office del equipo:", error);
-      alert("Error guardando la información de Office del equipo.");
+      alert("Error guardando Office: " + (error.message || "No se pudo actualizar el equipo."));
       return;
     }
     setDetalleEquipo((prev) => ({ ...(prev || {}), ...data }));
@@ -1883,7 +1888,11 @@ async function analizarEquipoIA() {
                         <p className="text-xs mb-3" style={{ color: "#64748b" }}>Se guarda con el equipo, aunque cambie el colaborador asignado.</p>
                         {editandoOffice ? <div className="grid grid-cols-2 gap-4">
                           <CampoEditable label="Estado de activación"><select value={officeData.activado ? "si" : "no"} onChange={(e) => setOfficeData({ ...officeData, activado: e.target.value === "si" })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}><option value="si">Activado</option><option value="no">No activado</option></select></CampoEditable>
-                          <CampoEditable label="Cuenta de Office"><input type="email" value={officeData.cuenta} onChange={(e) => setOfficeData({ ...officeData, cuenta: e.target.value })} placeholder="cuenta@empresa.com" className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }} /></CampoEditable>
+                          <CampoEditable label="Cuenta de Office"><select value={officeData.cuenta} onChange={(e) => setOfficeData({ ...officeData, cuenta: e.target.value })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}>
+                            <option value="">Sin cuenta asignada</option>
+                            {officeData.cuenta && !CUENTAS_LICENCIA_OFFICE.includes(officeData.cuenta) && <option value={officeData.cuenta}>{officeData.cuenta} (actual)</option>}
+                            {CUENTAS_LICENCIA_OFFICE.map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}
+                          </select></CampoEditable>
                           </div> : <div className="grid grid-cols-2 gap-4">
                           <DetalleItem label="Office" valor={detalleEquipo?.office_activado ? "Activado" : "No activado / sin registrar"} />
                           <DetalleItem label="Cuenta vinculada al equipo" valor={detalleEquipo?.office_cuenta} />
