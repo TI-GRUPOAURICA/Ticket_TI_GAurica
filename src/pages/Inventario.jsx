@@ -176,6 +176,34 @@ export default function Inventario() {
   const [editandoOffice, setEditandoOffice] = useState(false);
   const [guardandoOffice, setGuardandoOffice] = useState(false);
   const [officeData, setOfficeData] = useState({ activado: false, cuenta: "" });
+  const [cuentasOfficeStandard, setCuentasOfficeStandard] = useState([]);
+
+  useEffect(() => {
+    let vigente = true;
+    async function cargarCuentasStandard() {
+      const [cuentasRes, licenciasRes] = await Promise.all([
+        supabase.from("cuentas_correo").select("id, correo, empresa"),
+        supabase.from("licencias_correo").select("cuenta_id, tipo_licencia"),
+      ]);
+      if (cuentasRes.error || licenciasRes.error) {
+        console.error("No se pudieron cargar cuentas Office Standard:", cuentasRes.error || licenciasRes.error);
+        return;
+      }
+      const cuentasStandardIds = new Set((licenciasRes.data || [])
+        .filter(({ tipo_licencia }) => {
+          const tipo = String(tipo_licencia || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+          return tipo.includes("STANDARD") || tipo.includes("ESTANDAR");
+        })
+        .map(({ cuenta_id }) => cuenta_id));
+      const cuentas = (cuentasRes.data || [])
+        .filter((cuenta) => cuenta.empresa?.trim().toUpperCase() === "AURICA" && cuentasStandardIds.has(cuenta.id))
+        .map((cuenta) => cuenta.correo)
+        .filter(Boolean);
+      if (vigente) setCuentasOfficeStandard(cuentas);
+    }
+    cargarCuentasStandard().catch((error) => console.error("Error cargando cuentas Office Standard:", error));
+    return () => { vigente = false; };
+  }, []);
 
 const [renovacionData, setRenovacionData] = useState({
   anio_compra: "",
@@ -1890,8 +1918,9 @@ async function analizarEquipoIA() {
                           <CampoEditable label="Estado de activación"><select value={officeData.activado ? "si" : "no"} onChange={(e) => setOfficeData({ ...officeData, activado: e.target.value === "si" })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}><option value="si">Activado</option><option value="no">No activado</option></select></CampoEditable>
                           <CampoEditable label="Cuenta de Office"><select value={officeData.cuenta} onChange={(e) => setOfficeData({ ...officeData, cuenta: e.target.value })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}>
                             <option value="">Sin cuenta asignada</option>
-                            {officeData.cuenta && !CUENTAS_LICENCIA_OFFICE.includes(officeData.cuenta) && <option value={officeData.cuenta}>{officeData.cuenta} (actual)</option>}
+                            {officeData.cuenta && ![...CUENTAS_LICENCIA_OFFICE, ...cuentasOfficeStandard].includes(officeData.cuenta) && <option value={officeData.cuenta}>{officeData.cuenta} (actual)</option>}
                             {CUENTAS_LICENCIA_OFFICE.map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}
+                            {cuentasOfficeStandard.some((cuenta) => !CUENTAS_LICENCIA_OFFICE.includes(cuenta)) && <optgroup label="Cuentas Standard de Aurica">{cuentasOfficeStandard.filter((cuenta) => !CUENTAS_LICENCIA_OFFICE.includes(cuenta)).map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}</optgroup>}
                           </select></CampoEditable>
                           </div> : <div className="grid grid-cols-2 gap-4">
                           <DetalleItem label="Office" valor={detalleEquipo?.office_activado ? "Activado" : "No activado / sin registrar"} />
