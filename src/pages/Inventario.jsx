@@ -1920,6 +1920,8 @@ async function analizarEquipoIA() {
                             <option value="">Sin cuenta asignada</option>
                             {officeData.cuenta && ![...CUENTAS_LICENCIA_OFFICE, ...cuentasOfficeStandard].includes(officeData.cuenta) && <option value={officeData.cuenta}>{officeData.cuenta} (actual)</option>}
                             {CUENTAS_LICENCIA_OFFICE.map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}
+                            <option value="LICENCIA STANDARD">LICENCIA STANDARD</option>
+                            <option value="NO ACTIVADO">NO ACTIVADO</option>
                             {cuentasOfficeStandard.some((cuenta) => !CUENTAS_LICENCIA_OFFICE.includes(cuenta)) && <optgroup label="Cuentas Standard de Aurica">{cuentasOfficeStandard.filter((cuenta) => !CUENTAS_LICENCIA_OFFICE.includes(cuenta)).map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}</optgroup>}
                           </select></CampoEditable>
                           </div> : <div className="grid grid-cols-2 gap-4">
