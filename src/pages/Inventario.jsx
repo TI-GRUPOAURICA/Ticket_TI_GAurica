@@ -175,7 +175,7 @@ export default function Inventario() {
   const [editandoRenovacion, setEditandoRenovacion] = useState(false);
   const [editandoOffice, setEditandoOffice] = useState(false);
   const [guardandoOffice, setGuardandoOffice] = useState(false);
-  const [officeData, setOfficeData] = useState({ activado: false, cuenta: "", licencia: "" });
+  const [officeData, setOfficeData] = useState({ activado: false, cuenta: "" });
 
 const [renovacionData, setRenovacionData] = useState({
   anio_compra: "",
@@ -934,7 +934,6 @@ rendimiento_actual: renovacionData.rendimiento,
       .update({
         office_activado: officeData.activado,
         office_cuenta: officeData.cuenta.trim() || null,
-        office_licencia: officeData.licencia || null,
       })
       .eq("hostname", hostSeleccionado)
       .select("*")
@@ -989,7 +988,7 @@ async function abrirDetalle(hostname) {
     setAnalisisIA(null);
     setTabDetalle("general");
 
-    setOfficeData({ activado: false, cuenta: "", licencia: "" });
+    setOfficeData({ activado: false, cuenta: "" });
     setEditandoOffice(false);
 
     const infoColaborador = equipos.find((e) => e.host === hostname);
@@ -1008,7 +1007,6 @@ async function abrirDetalle(hostname) {
     setOfficeData({
       activado: Boolean(equipoRes.data?.office_activado),
       cuenta: equipoRes.data?.office_cuenta || "",
-      licencia: equipoRes.data?.office_licencia || "",
     });
     if (!estadoRes.error && !equipoRes.error && !estadoRes.data && !equipoRes.data) {
       setDetalleEquipo(null);
@@ -1883,23 +1881,21 @@ async function analizarEquipoIA() {
                           {editandoOffice ? (
                             <div className="flex gap-2">
                               <button onClick={guardarOfficeEquipo} disabled={guardandoOffice} className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50" style={{ background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac" }}><Save size={14} /> {guardandoOffice ? "Guardando..." : "Guardar"}</button>
-                              <button onClick={() => { setOfficeData({ activado: Boolean(detalleEquipo?.office_activado), cuenta: detalleEquipo?.office_cuenta || "", licencia: detalleEquipo?.office_licencia || "" }); setEditandoOffice(false); }} className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}><X size={14} /> Cancelar</button>
+                              <button onClick={() => { setOfficeData({ activado: Boolean(detalleEquipo?.office_activado), cuenta: detalleEquipo?.office_cuenta || "" }); setEditandoOffice(false); }} className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}><X size={14} /> Cancelar</button>
                             </div>
                           ) : <button onClick={() => setEditandoOffice(true)} className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5" style={{ background: "#eff6ff", color: "#345D9D", border: "1px solid #bfdbfe" }}><Pencil size={14} /> Editar</button>}
                         </div>
                         <p className="text-xs mb-3" style={{ color: "#64748b" }}>Se guarda con el equipo, aunque cambie el colaborador asignado.</p>
-                        {editandoOffice ? <div className="grid grid-cols-3 gap-4">
+                        {editandoOffice ? <div className="grid grid-cols-2 gap-4">
                           <CampoEditable label="Estado de activación"><select value={officeData.activado ? "si" : "no"} onChange={(e) => setOfficeData({ ...officeData, activado: e.target.value === "si" })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}><option value="si">Activado</option><option value="no">No activado</option></select></CampoEditable>
                           <CampoEditable label="Cuenta de Office"><select value={officeData.cuenta} onChange={(e) => setOfficeData({ ...officeData, cuenta: e.target.value })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}>
                             <option value="">Sin cuenta asignada</option>
                             {officeData.cuenta && !CUENTAS_LICENCIA_OFFICE.includes(officeData.cuenta) && <option value={officeData.cuenta}>{officeData.cuenta} (actual)</option>}
                             {CUENTAS_LICENCIA_OFFICE.map((cuenta) => <option key={cuenta} value={cuenta}>{cuenta}</option>)}
                           </select></CampoEditable>
-                          <CampoEditable label="Tipo de licencia"><select value={officeData.licencia} onChange={(e) => setOfficeData({ ...officeData, licencia: e.target.value })} className="w-full outline-none text-base font-semibold bg-transparent" style={{ color: "#1e293b" }}><option value="">Sin especificar</option><option value="Estándar">Estándar (Word, Excel, etc.)</option></select></CampoEditable>
-                          </div> : <div className="grid grid-cols-3 gap-4">
+                          </div> : <div className="grid grid-cols-2 gap-4">
                           <DetalleItem label="Office" valor={detalleEquipo?.office_activado ? "Activado" : "No activado / sin registrar"} />
                           <DetalleItem label="Cuenta vinculada al equipo" valor={detalleEquipo?.office_cuenta} />
-                          <DetalleItem label="Tipo de licencia" valor={detalleEquipo?.office_licencia || "Sin especificar"} />
                         </div>}
                       </div>                    </>
                   )}
